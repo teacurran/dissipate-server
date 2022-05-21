@@ -1,0 +1,63 @@
+services:
+   postgres-db:
+     image: postgis/postgis
+     restart: always
+     environment:
+       POSTGRES_USER: gffft
+       POSTGRES_PASSWORD: gffft
+       POSTGRES_DB: gffft
+     volumes:
+       - gffft_db:/var/lib/postgresql/data
+     ports:
+       - "5442:5432"
+
+  firebase-emulator:
+    image: firebase-emulator
+    build:
+      context: ./
+      dockerfile: ./firebase-emulator/Dockerfile
+    volumes:
+      # - ./firebase-emulator:/app
+      - ./server:/app
+      - ./firebase-emulator/data:/app/data
+      - /app/node_modules
+    ports:
+      - "4000:4000"
+      - "5000:5000"
+      - "8080:8080"
+      - "9099:9099"
+      - "9199:9199"
+    command: firebase emulators:start --project ggg-ghost-post --import /app/data
+
+  redis:
+    image: "redis:alpine"
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass 98puOInkjbO&YiubkBt8guhvjhvredrg
+
+  api:
+    image: api-server
+    build:
+      context: server
+      dockerfile: server/Dockerfile
+    volumes:
+      - ./functions:/app
+      - /app/node_modules
+    environment:
+      SERVICE: local
+      NODE_ENV: dockerCompose
+      FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
+      FIRESTORE_EMULATOR_HOST: "firebase-emulator:8080"
+      FIREBASE_STORAGE_EMULATOR_HOST: "firebase-emulator:9199"
+      GCLOUD_PROJECT: "ggg-ghost-post"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
+
+    ports:
+      - "3000:3000"
+
+volumes:
+  gffft_db: null
+  cache: null
