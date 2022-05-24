@@ -27,7 +27,7 @@ services:
       - "8080:8080"
       - "9099:9099"
       - "9199:9199"
-    command: firebase emulators:start --project ggg-ghost-post --import /app/data
+    command: firebase emulators:start --project dissipate --import /app/data
 
   redis:
     image: "redis:alpine"
@@ -50,7 +50,7 @@ services:
       FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
       FIRESTORE_EMULATOR_HOST: "firebase-emulator:8080"
       FIREBASE_STORAGE_EMULATOR_HOST: "firebase-emulator:9199"
-      GCLOUD_PROJECT: "ggg-ghost-post"
+      GCLOUD_PROJECT: "dissipate"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
