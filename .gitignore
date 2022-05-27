@@ -66,6 +66,7 @@ node_modules/
 
 .ide
 .idea
+.iml
 
 .DS_Store
 gffft-auth-b0debe95266a.json
