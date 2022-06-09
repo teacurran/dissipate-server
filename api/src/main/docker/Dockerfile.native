@@ -17,13 +17,12 @@
 FROM softinstigate/graalvm-maven AS builder
 WORKDIR /app
 
+# COPY ./.env /usr/src/app/
 COPY ./pom.xml /app/
+COPY ./src /app/src
 
 # RUN mvn -f /app/pom.xml -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
 RUN mvn -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies clean package -Pnative
-
-# COPY ./.env /usr/src/app/
-COPY ./src /app/src
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
 
