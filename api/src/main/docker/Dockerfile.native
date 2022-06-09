@@ -28,10 +28,10 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
 
 WORKDIR /app
 
-COPY --chown=1001 --from=builder /app/target/quarkus-app/lib/ /app/lib/
-COPY --chown=1001 --from=builder /app/target/quarkus-app/*.jar /app/
-COPY --chown=1001 --from=builder /app/target/quarkus-app/app/ /app/app/
-COPY --chown=1001 --from=builder /app/target/quarkus-app/quarkus/ /app/quarkus/
+# COPY --chown=1001 --from=builder /app/target/quarkus-app/lib/ /app/lib/
+# COPY --chown=1001 --from=builder /app/target/quarkus-app/*.jar /app/
+# COPY --chown=1001 --from=builder /app/target/quarkus-app/app/ /app/app/
+# COPY --chown=1001 --from=builder /app/target/quarkus-app/quarkus/ /app/quarkus/
 COPY --chown=1001 --from=builder /app/target/*-runner /app/application
 
 #WORKDIR /work/
