@@ -1,15 +1,19 @@
 services:
-   postgres-db:
-     image: postgis/postgis
-     restart: always
-     environment:
-       POSTGRES_USER: gffft
-       POSTGRES_PASSWORD: gffft
-       POSTGRES_DB: gffft
-     volumes:
-       - gffft_db:/var/lib/postgresql/data
-     ports:
-       - "5442:5432"
+  postgres-db:
+    image: postgis/postgis
+    restart: always
+    environment:
+      POSTGRES_USER: gffft
+      POSTGRES_PASSWORD: gffft
+      POSTGRES_DB: gffft
+    volumes:
+      - gffft_db:/var/lib/postgresql/data
+    ports:
+      - "5442:5432"
+
+  scylla-db:
+    image: scylladb/scylla
+    container_name: scylla-db
 
   firebase-emulator:
     image: firebase-emulator
