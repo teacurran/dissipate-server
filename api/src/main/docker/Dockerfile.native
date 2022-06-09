@@ -15,20 +15,23 @@
 #
 ###
 FROM softinstigate/graalvm-maven AS builder
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY ./pom.xml /usr/src/app/
-RUN mvn -f /usr/src/app/pom.xml -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
+COPY ./pom.xml /app/
+RUN mvn -f /app/pom.xml -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
 # COPY ./.env /usr/src/app/
-COPY ./src /usr/src/app/src
+COPY ./src /app/src
 RUN mvn -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies clean package -Pnative
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
 
-COPY --chown=1001 --from=builder /usr/src/app/target/quarkus-app/lib/ /deployments/lib/
-COPY --chown=1001 --from=builder /usr/src/app/target/quarkus-app/*.jar /deployments/
-COPY --chown=1001 --from=builder /usr/src/app/target/quarkus-app/app/ /deployments/app/
-COPY --chown=1001 --from=builder /usr/src/app/target/quarkus-app/quarkus/ /deployments/quarkus/
+WORKDIR /app
+
+COPY --chown=1001 --from=builder /app/target/quarkus-app/lib/ /app/lib/
+COPY --chown=1001 --from=builder /app/target/quarkus-app/*.jar /app/
+COPY --chown=1001 --from=builder /app/target/quarkus-app/app/ /app/app/
+COPY --chown=1001 --from=builder /app/target/quarkus-app/quarkus/ /app/quarkus/
+COPY --chown=1001 --from=builder /app/target/*-runner /app/application
 
 #WORKDIR /work/
 #RUN chown 1001 /work \
@@ -39,4 +42,4 @@ COPY --chown=1001 --from=builder /usr/src/app/target/quarkus-app/quarkus/ /deplo
 EXPOSE 8080
 USER 1001
 
-CMD ["./application", "-Dquarkus.http.host=0.0.0.0"]
+CMD ["/app/application", "-Dquarkus.http.host=0.0.0.0"]
