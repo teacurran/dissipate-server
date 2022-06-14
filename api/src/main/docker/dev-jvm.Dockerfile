@@ -87,18 +87,36 @@ RUN apk add --update maven
 RUN mkdir -p /app
 # RUN chown appuser /app
 
+ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
+
+RUN echo \
+    "<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0\' \
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' \
+    xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd'> \
+        <localRepository>/app/.m2/repository</localRepository> \
+        <interactiveMode>true</interactiveMode> \
+        <usePluginRegistry>false</usePluginRegistry> \
+        <offline>false</offline> \
+    </settings>" \
+    > /usr/share/java/maven-3/conf/settings.xml
+
 # USER appuser
 WORKDIR /app
 
-ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
+RUN chown 1001 /app \
+    && chmod "g+rwX" /app \
+    && chown 1001:root /app
 
-COPY ./pom.xml $WORKDIR
+USER 1001
+
+COPY ./pom.xml ./
 
 RUN mkdir target
 RUN mvn install
 
 # COPY ./.env /usr/src/app/
-COPY ./src $WORKDIR/src
+COPY ./src ./src/
+RUN mvn package
 
 # We make four distinct layers so if there are application changes the library layers can be re-used
 # COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
@@ -107,7 +125,8 @@ COPY ./src $WORKDIR/src
 # COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
 
 EXPOSE 8080
-USER 185
+# USER 185
+
 ENV AB_JOLOKIA_OFF=""
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 # ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
