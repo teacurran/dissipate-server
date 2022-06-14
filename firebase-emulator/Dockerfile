@@ -21,7 +21,7 @@ RUN npm install -g firebase-tools
 #
 #RUN npm rebuild --verbose sharp
 
-ADD ./server/firebase.json /app/firebase.json
+ADD ./firebase.json /app/firebase.json
 # COPY ./functions/ /app
 
 # RUN npm run build

@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: gffft
       POSTGRES_DB: gffft
     volumes:
-      - gffft_db:/var/lib/postgresql/data
+      - postgres_db:/var/lib/postgresql/data
     ports:
       - "5442:5432"
 
@@ -47,17 +47,13 @@ services:
   firebase-emulator:
     image: firebase-emulator
     build:
-      context: ./
-      dockerfile: ./firebase-emulator/Dockerfile
+      context: ./firebase-emulator
+      dockerfile: ./Dockerfile
     volumes:
-      # - ./firebase-emulator:/app
-      - ./server:/app
-      - ./firebase-emulator/data:/app/data
-      - /app/node_modules
+      - ./firebase-emulator/:/app/
     ports:
       - "4000:4000"
       - "5000:5000"
-      - "8080:8080"
       - "9099:9099"
       - "9199:9199"
     command: firebase emulators:start --project dissipate --import /app/data
@@ -73,15 +69,12 @@ services:
     image: api-server
     build:
       context: ./api
-      dockerfile: src/main/docker/dev-jvm.Dockerfile
+      dockerfile: src/main/docker/dev-jvm.dockerfile
     volumes:
-      - ./functions:/app
-      - /app/node_modules
+      - ./api:/app
     environment:
       SERVICE: local
-      NODE_ENV: dockerCompose
       FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
-      FIRESTORE_EMULATOR_HOST: "firebase-emulator:8080"
       FIREBASE_STORAGE_EMULATOR_HOST: "firebase-emulator:9199"
       GCLOUD_PROJECT: "dissipate"
       REDIS_HOST: redis
@@ -89,8 +82,8 @@ services:
       REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
 
     ports:
-      - "3000:3000"
+      - "8080:8080"
 
 volumes:
-  gffft_db: null
+  postgres_db: null
   cache: null

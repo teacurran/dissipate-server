@@ -7,7 +7,7 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/dev-jvm.Dockerfile -t quarkus/getting-started-jvm .
+# docker build -f src/main/docker/dev-jvm.dockerfile -t quarkus/getting-started-jvm .
 #
 # Then run the container using:
 #

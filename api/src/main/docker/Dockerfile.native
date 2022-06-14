@@ -45,7 +45,8 @@ COPY --chown=1001 --from=builder /app/target/*-runner /app/application
 #    && chown 1001:root /work
 #COPY --chown=1001:root target/*-runner /work/application
 
-EXPOSE 8080
 USER 1001
+
+EXPOSE 8080
 
 CMD ["/app/application", "-Dquarkus.http.host=0.0.0.0"]
