@@ -27,7 +27,7 @@ services:
     image: "datastax/dse-server:6.7.17"
     environment:
       - DS_LICENSE=accept
-      - SEEDS=seed_node
+      - SEEDS=dse_seed_node
     links:
       - dse_seed_node
       - dse_opscenter
