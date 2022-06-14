@@ -11,9 +11,38 @@ services:
     ports:
       - "5442:5432"
 
-  scylla-db:
-    image: scylladb/scylla
-    container_name: scylla-db
+  dse_seed_node:
+    image: "datastax/dse-server:6.7.17"
+    environment:
+      - DS_LICENSE=accept
+    # Allow DSE to lock memory with mlock
+    links:
+      - dse_opscenter
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
+
+  dse_node:
+    image: "datastax/dse-server:6.7.17"
+    environment:
+      - DS_LICENSE=accept
+      - SEEDS=seed_node
+    links:
+      - dse_seed_node
+      - dse_opscenter
+    # Allow DSE to lock memory with mlock
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
+
+  dse_opscenter:
+    image: "datastax/dse-opscenter:6.8.19"
+    ports:
+      - 8888:8888
+    environment:
+      - DS_LICENSE=accept
 
   firebase-emulator:
     image: firebase-emulator
@@ -43,8 +72,8 @@ services:
   api:
     image: api-server
     build:
-      context: server
-      dockerfile: server/Dockerfile
+      context: ./server
+      dockerfile: Dockerfile
     volumes:
       - ./functions:/app
       - /app/node_modules
