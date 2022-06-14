@@ -75,18 +75,30 @@
 #   accessed directly. (example: "foo.example.com,bar.example.com")
 #
 ###
-FROM registry.access.redhat.com/ubi8/openjdk-17:latest
+FROM amazoncorretto:17-alpine-jdk
 
+RUN apk add --update maven
+
+# Create a group and user
+# RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Tell docker that all future commands should run as the appuser user
+
+RUN mkdir -p /app
+# RUN chown appuser /app
+
+# USER appuser
 WORKDIR /app
 
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
 
-COPY ./pom.xml /app/
+COPY ./pom.xml $WORKDIR
 
+RUN mkdir target
 RUN mvn install
 
 # COPY ./.env /usr/src/app/
-COPY ./src /app/src
+COPY ./src $WORKDIR/src
 
 # We make four distinct layers so if there are application changes the library layers can be re-used
 # COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/

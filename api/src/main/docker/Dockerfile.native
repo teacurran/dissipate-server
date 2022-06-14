@@ -24,9 +24,14 @@ COPY ./src /app/src
 # RUN mvn -f /app/pom.xml -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
 RUN mvn -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies clean package -Pnative
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
+#FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
+FROM quay.io/quarkus/quarkus-micro-image:1.0
 
 WORKDIR /app
+
+RUN chown 1001 /app \
+    && chmod "g+rwX" /app \
+    && chown 1001:root /app
 
 # COPY --chown=1001 --from=builder /app/target/quarkus-app/lib/ /app/lib/
 # COPY --chown=1001 --from=builder /app/target/quarkus-app/*.jar /app/

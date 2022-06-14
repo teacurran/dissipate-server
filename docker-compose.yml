@@ -72,8 +72,8 @@ services:
   api:
     image: api-server
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: ./api
+      dockerfile: src/main/docker/dev-jvm.Dockerfile
     volumes:
       - ./functions:/app
       - /app/node_modules
