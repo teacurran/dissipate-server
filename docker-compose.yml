@@ -53,17 +53,17 @@ services:
       - ./firebase-emulator/:/app/
     ports:
       - "4000:4000"
-      - "5000:5000"
+      - "5001:5000"
       - "9099:9099"
       - "9199:9199"
     command: firebase emulators:start --project dissipate --import /app/data
 
-  redis:
-    image: "redis:alpine"
-    restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass 98puOInkjbO&YiubkBt8guhvjhvredrg
+#  redis:
+#    image: "redis:alpine"
+#    restart: always
+#    ports:
+#      - '6379:6379'
+#    command: redis-server --save 20 1 --loglevel warning --requirepass 98puOInkjbO&YiubkBt8guhvjhvredrg
 
   api:
     image: api-server
