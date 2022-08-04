@@ -1,11 +1,11 @@
 services:
-  postgres-db:
+  main-db:
     image: postgis/postgis
     restart: always
     environment:
-      POSTGRES_USER: gffft
-      POSTGRES_PASSWORD: gffft
-      POSTGRES_DB: gffft
+      POSTGRES_USER: dissipate
+      POSTGRES_PASSWORD: dissipate
+      POSTGRES_DB: dissipate
     volumes:
       - postgres_db:/var/lib/postgresql/data
     ports:
@@ -70,6 +70,8 @@ services:
     build:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
+    depends_on:
+      - main-db
     volumes:
       - ./api:/app
     environment:
@@ -80,7 +82,14 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
-
+    command:
+      - mvn
+      - -Dquarkus.datasource.reactive.url=vertx-reactive:postgresql://main-db:5432/dissipate;INIT=RUNSCRIPT FROM 'classpath:main-db-init.sql'
+      - -Dquarkus.datasource.username=dissipate
+      - -Dquarkus.datasource.password=dissipate
+      - -Dquarkus.hibernate-orm.database.generation=update
+      - -Dquarkus.http.host=0.0.0.0
+      - quarkus:dev
     ports:
       - "8080:8080"
 
