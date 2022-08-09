@@ -18,7 +18,7 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.11.1.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
-        <postgres.driver.version></postgres.driver.version>
+        <postgres.driver.version>42.4.1</postgres.driver.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -40,6 +40,11 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-reactive-pg-client</artifactId>
+            <version>${quarkus.platform.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-grpc</artifactId>
             <version>${quarkus.platform.version}</version>
         </dependency>
         <dependency>
@@ -79,6 +84,13 @@
                             <goal>generate-code</goal>
                             <goal>generate-code-tests</goal>
                         </goals>
+                        <!--
+                        <configuration>
+                            <properties>
+                                <quarkus.generate-code.grpc.scan-for-imports>all</quarkus.generate-code.grpc.scan-for-imports>
+                            </properties>
+                        </configuration>
+                        -->
                     </execution>
                 </executions>
             </plugin>
@@ -117,7 +129,7 @@
                     <dependency>
                         <groupId>org.postgresql</groupId>
                         <artifactId>postgresql</artifactId>
-                        <version>42.4.1</version>
+                        <version>${postgres.driver.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
