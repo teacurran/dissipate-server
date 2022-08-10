@@ -14,7 +14,7 @@ import javax.ws.rs.Path;
 public class UserResource {
 
     @GET
-    public Uni<PanacheEntityBase> hello() {
+    public Uni<Handle> hello() {
         return Panache.withTransaction(() -> {
             Account account = new Account();
             account.email = "tea@grilledcheese.com";
