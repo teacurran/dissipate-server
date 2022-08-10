@@ -91,6 +91,7 @@ services:
       - flyway
     volumes:
       - ./api:/app
+      - ~/.config/gcloud:/tmp/.config/gcloud
     environment:
       SERVICE: local
       FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
@@ -99,6 +100,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
     command:
       - mvn
       - -Dquarkus.datasource.reactive.url=vertx-reactive:postgresql://main-db:5432/dissipate
