@@ -24,7 +24,7 @@
         <version.protoc>3.21.5</version.protoc>
         <version.os-maven-plugin>1.7.0</version.os-maven-plugin>
         <sonar.organization>appi</sonar.organization>
-        <sonar.projectKey>dissipate-api</sonar.projectKey>
+        <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
     </properties>
     <dependencyManagement>
         <dependencies>
