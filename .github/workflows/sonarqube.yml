@@ -2,7 +2,7 @@ name: SonarQube analyze
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
 
