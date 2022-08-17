@@ -4,15 +4,12 @@ import app.dissipate.constants.AuthenticationConstants;
 import app.dissipate.services.AuthenticationService;
 import com.google.common.base.Strings;
 import io.grpc.*;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 @ApplicationScoped
 public class GrpcAuthInterceptor implements ServerInterceptor {
-
-    private static final Logger LOG = Logger.getLogger(GrpcAuthInterceptor.class);
 
     @Inject
     AuthenticationService authenticationService;

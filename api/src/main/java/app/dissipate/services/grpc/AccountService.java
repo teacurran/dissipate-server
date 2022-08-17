@@ -1,5 +1,6 @@
-package app.dissipate.grpc;
+package app.dissipate.services.grpc;
 
+import app.dissipate.grpc.*;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;

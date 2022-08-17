@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class AccountTest {
+class AccountTest {
 
     @Test
     void testEmailConvertsToLower() {

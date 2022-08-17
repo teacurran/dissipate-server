@@ -1,8 +1,9 @@
-package app.dissipate.grpc;
+package app.dissipate.services.grpc;
 
+import app.dissipate.grpc.IAccountService;
+import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.services.AuthenticationService;
 import io.grpc.Metadata;
-import io.grpc.StatusRuntimeException;
 import io.quarkus.grpc.GrpcClient;
 import io.quarkus.grpc.GrpcClientUtils;
 import io.quarkus.test.junit.QuarkusTest;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeoutException;
 import static app.dissipate.constants.AuthenticationConstants.AUTH_HEADER_KEY;
 
 @QuarkusTest
-public class AccountServiceTest {
+class AccountServiceTest {
 
     @GrpcClient
     IAccountService client;
@@ -56,7 +57,7 @@ public class AccountServiceTest {
     void shouldThrowExceptionWithoutToken() {
         CompletableFuture<String> message = new CompletableFuture<>();
 
-        client.register(RegisterRequest.newBuilder().build()).onFailure().invoke(failure -> message.obtrudeException(failure))
+        client.register(RegisterRequest.newBuilder().build()).onFailure().invoke(message::obtrudeException)
                 .subscribe().with(reply -> message
                         .complete(reply.getAccount().getId())
                 );

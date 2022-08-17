@@ -1,6 +1,5 @@
 package app.dissipate.constants;
 
-import com.google.firebase.auth.FirebaseToken;
 import io.grpc.Context;
 import io.grpc.Metadata;
 
