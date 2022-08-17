@@ -7,9 +7,6 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 public class DefaultPanacheEntityTest {
 
-    /**
-     * Tests the toString() method of the DefaultPanacheEntity class.
-     */
     @Test
     public void testToString() {
         DefaultPanacheEntity entity = new SimpleEntity();
