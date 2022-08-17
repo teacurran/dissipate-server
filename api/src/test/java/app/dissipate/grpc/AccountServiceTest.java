@@ -5,10 +5,10 @@ import com.google.firebase.auth.FirebaseToken;
 import io.grpc.Metadata;
 import io.quarkus.grpc.GrpcClient;
 import io.quarkus.grpc.GrpcClientUtils;
-import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -27,11 +27,13 @@ public class AccountServiceTest {
     @GrpcClient
     IAccountService client;
 
-    @BeforeAll
-    public static void setup() {
-        AuthenticationService mockAuth = Mockito.mock(AuthenticationService.class);
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("sub", "test-uid");
+    @InjectMock
+    AuthenticationService mockAuth;
+
+    @BeforeEach
+    public void setup() {
+        //AuthenticationService mockAuth = Mockito.mock(AuthenticationService.class);
+
         Mockito.when(mockAuth.verifyIdToken("test-auth-token")).thenReturn("test-uid");
     }
 
@@ -48,7 +50,7 @@ public class AccountServiceTest {
                 .subscribe().with(reply -> message.complete(reply.getAccount().getId()));
         try {
             String msgValue = message.get(5, TimeUnit.SECONDS);
-            Assertions.assertEquals(msgValue,"Hello Quarkus");
+            Assertions.assertEquals(msgValue,"test-uid");
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
