@@ -1,12 +1,13 @@
 package app.dissipate.models;
 
+import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hibernate.annotations.ColumnTransformer;
 
 import javax.persistence.*;
 
 @Entity
-public class Handle extends DefaultPanacheEntity {
+public class Handle extends PanacheEntity {
     @ConfigProperty(name = "encryption.key")
     @Transient
     String key;
