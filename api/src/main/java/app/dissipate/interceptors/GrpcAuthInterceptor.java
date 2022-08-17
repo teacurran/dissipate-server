@@ -1,15 +1,8 @@
 package app.dissipate.interceptors;
 
-import app.dissipate.Main;
 import app.dissipate.constants.AuthenticationConstants;
 import app.dissipate.services.AuthenticationService;
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.base.Strings;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import io.grpc.*;
 import org.jboss.logging.Logger;
 
