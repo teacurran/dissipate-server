@@ -75,9 +75,16 @@
 #   accessed directly. (example: "foo.example.com,bar.example.com")
 #
 ###
-FROM amazoncorretto:17-alpine-jdk
+FROM amazoncorretto:18
 
-RUN apk add --update maven
+# RUN apk add --update maven make protobuf-dev
+
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive \
+    apt-get install --no-install-recommends --assume-yes \
+    protobuf-compiler \
+    maven \
+    make
 
 # Create a group and user
 # RUN addgroup -S appgroup && adduser -S appuser -G appgroup

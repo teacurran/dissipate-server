@@ -9,6 +9,7 @@ import javax.persistence.MappedSuperclass;
 
 @MappedSuperclass
 public abstract class DefaultPanacheEntity extends PanacheEntityBase {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
