@@ -22,7 +22,7 @@ public class UserResource {
 
             Handle handle = new Handle();
             handle.account = account;
-            handle.handle = "tea";
+            handle.name = "tea";
             handle.publicKey = "publicKey";
             handle.privateKey = "privateKey";
 

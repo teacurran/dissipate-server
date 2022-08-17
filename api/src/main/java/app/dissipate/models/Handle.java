@@ -1,6 +1,5 @@
 package app.dissipate.models;
 
-import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hibernate.annotations.ColumnTransformer;
 
@@ -12,7 +11,7 @@ public class Handle extends DefaultPanacheEntity {
     @Transient
     String key;
 
-    public String handle;
+    public String name;
     public String publicKey;
 
     @ColumnTransformer(

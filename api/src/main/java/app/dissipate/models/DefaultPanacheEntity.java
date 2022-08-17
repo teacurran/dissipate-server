@@ -14,9 +14,6 @@ public abstract class DefaultPanacheEntity extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
-    public DefaultPanacheEntity() {
-    }
-
     public String toString() {
         String var10000 = this.getClass().getSimpleName();
         return var10000 + "<" + this.id + ">";

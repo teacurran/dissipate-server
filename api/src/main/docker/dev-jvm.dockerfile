@@ -75,16 +75,18 @@
 #   accessed directly. (example: "foo.example.com,bar.example.com")
 #
 ###
-FROM amazoncorretto:18
+FROM maven:3.8.6-amazoncorretto-18
 
 # RUN apk add --update maven make protobuf-dev
 
-RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive \
-    apt-get install --no-install-recommends --assume-yes \
-    protobuf-compiler \
-    maven \
-    make
+#RUN yum -y update
+#RUN yum -y install wget
+#
+#RUN wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
+#RUN sed -i s/\$releasever/7/g /etc/yum.repos.d/epel-apache-maven.repo
+#RUN yum install -y apache-maven
+
+#RUN yum -y install protobuf.x86_64
 
 # Create a group and user
 # RUN addgroup -S appgroup && adduser -S appuser -G appgroup
@@ -105,7 +107,7 @@ RUN echo \
         <usePluginRegistry>false</usePluginRegistry> \
         <offline>false</offline> \
     </settings>" \
-    > /usr/share/java/maven-3/conf/settings.xml
+    > /usr/share/maven/conf/settings.xml
 
 # USER appuser
 WORKDIR /app

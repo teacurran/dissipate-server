@@ -13,4 +13,11 @@ public class AccountTest {
         account.email = "TEST@TeSt.com";
         Assertions.assertEquals("test@test.com", account.email);
     }
+
+    @Test
+    void testExplicitEmailSetterConvertsToLower() {
+        Account account = new Account();
+        account.setEmail("TEST@TeSt.com");
+        Assertions.assertEquals("test@test.com", account.email);
+    }
 }

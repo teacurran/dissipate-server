@@ -76,6 +76,7 @@ services:
     volumes:
       - ./api:/app
       - maven_target:/app/target
+      - maven_cache:/app/.m2
     command:
       - mvn
       - flyway:migrate
@@ -95,6 +96,7 @@ services:
       - ./api:/app
       - ~/.config/gcloud:/tmp/.config/gcloud
       - maven_target:/app/target
+      - maven_cache:/app/.m2
     environment:
       SERVICE: local
       FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
@@ -118,3 +120,4 @@ services:
 volumes:
   postgres_db: null
   maven_target: null
+  maven_cache: null

@@ -2,6 +2,7 @@ package app.dissipate.grpc;
 
 import app.dissipate.services.AuthenticationService;
 import io.grpc.Metadata;
+import io.grpc.StatusRuntimeException;
 import io.quarkus.grpc.GrpcClient;
 import io.quarkus.grpc.GrpcClientUtils;
 import io.quarkus.test.junit.QuarkusTest;
@@ -51,4 +52,16 @@ public class AccountServiceTest {
         }
     }
 
+    @Test
+    void shouldThrowExceptionWithoutToken() {
+        CompletableFuture<String> message = new CompletableFuture<>();
+
+        client.register(RegisterRequest.newBuilder().build()).onFailure().invoke(failure -> message.obtrudeException(failure))
+                .subscribe().with(reply -> message
+                        .complete(reply.getAccount().getId())
+                );
+
+        Assertions.assertThrows(ExecutionException.class, () ->
+                message.get(5, TimeUnit.SECONDS));
+    }
 }
