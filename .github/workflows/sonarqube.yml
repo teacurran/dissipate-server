@@ -26,16 +26,16 @@ jobs:
       - name: Cache dependencies
         uses: actions/cache@v2
         with:
-          path: ~/api/target
+          path: api/target
           key: mvn-${{ hashFiles('pom.xml') }}
           restore-keys: mvn-
 
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots package
-        working-directory: ~/api
+        working-directory: api
 
       - name: Build with Maven
         run: mvn clean verify sonar:sonar \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.host.url=https://sonarcloud.io            
-        working-directory: ~/api
+        working-directory: api
