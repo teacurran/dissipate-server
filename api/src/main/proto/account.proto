@@ -20,16 +20,17 @@ enum AccountStatus{
 }
 
 message Account {
-  google.protobuf.Timestamp created = 1;
-  google.protobuf.Timestamp last_login = 2;
-  Account status = 3;
+  string id = 1;
+  google.protobuf.Timestamp created = 2;
+  google.protobuf.Timestamp last_login = 3;
+  AccountStatus status = 4;
 }
 
 message Handle {
   string id = 1;
   string handle = 2;
   google.protobuf.Timestamp created = 3;
-  google.protobuf.Timestamp last_seen = 5;
+  google.protobuf.Timestamp last_seen = 4;
 }
 
 message CreateHandleRequest {
