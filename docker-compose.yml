@@ -46,15 +46,16 @@ services:
 #      - DS_LICENSE=accept
 
   firebase-emulator:
-    image: firebase-emulator
-    build:
-      context: ./firebase-emulator
-      dockerfile: ./Dockerfile
+    image: andreysenov/firebase-tools
     volumes:
-      - ./firebase-emulator/:/app/
+      - ./firebase-emulator/:/home/node
     ports:
       - "4000:4000"
       - "5001:5000"
+      - "8085:8085"
+      - "8080:8080"
+      - "9000:9000"
+      - "9005:9005"
       - "9099:9099"
       - "9199:9199"
     command: firebase emulators:start --project dissipate --import /app/data
