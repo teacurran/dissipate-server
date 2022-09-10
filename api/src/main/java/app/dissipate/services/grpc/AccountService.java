@@ -10,7 +10,7 @@ import static app.dissipate.constants.AuthenticationConstants.CONTEXT_FB_USER_KE
 
 @GrpcService
 @RegisterInterceptor(GrpcAuthInterceptor.class)
-public class AccountService implements IAccountService {
+public class AccountService implements IDissipateService {
 
     @Override
     public Uni<RegisterResponse> register(RegisterRequest request) {

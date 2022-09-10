@@ -1,14 +1,14 @@
 syntax = "proto3";
 
 option java_package = "app.dissipate.grpc";
-option java_outer_classname = "AccountProtos";
+option java_outer_classname = "DissipateProtos";
 option optimize_for = SPEED;
 option java_multiple_files = true;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-service IAccountService {
+service IDissipateService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
   rpc CreateHandle(CreateHandleRequest) returns (Handle) {}
 }

@@ -91,6 +91,7 @@ services:
       dockerfile: src/main/docker/dev-jvm.dockerfile
     depends_on:
       - main-db
+      - firebase-emulator
       - flyway
     volumes:
       - ./api:/app
