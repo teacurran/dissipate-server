@@ -1,15 +1,31 @@
 services:
-  main-db:
+  postgresql:
     image: postgis/postgis
     restart: always
     environment:
       POSTGRES_USER: dissipate
       POSTGRES_PASSWORD: dissipate
       POSTGRES_DB: dissipate
+    networks:
+      - dissipate-network
     volumes:
       - postgres_db:/var/lib/postgresql/data
     ports:
       - "5442:5432"
+
+  temporaldb:
+    image: postgres:${POSTGRESQL_VERSION}
+    restart: always
+    environment:
+      POSTGRES_USER: dissipate
+      POSTGRES_PASSWORD: dissipate
+      POSTGRES_DB: temporal
+    networks:
+      - dissipate-network
+    volumes:
+      - temporal_db:/var/lib/postgresql/data
+    ports:
+      - "5443:5432"
 
 # Cassandra
 #  dse_seed_node:
@@ -45,6 +61,62 @@ services:
 #    environment:
 #      - DS_LICENSE=accept
 
+  temporal:
+    image: temporalio/auto-setup:${TEMPORAL_VERSION}
+    depends_on:
+      - temporaldb
+    environment:
+      - TEMPORAL_ALLOW_NO_AUTH=true
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=dissipate
+      - POSTGRES_PWD=dissipate
+      - POSTGRES_SEEDS=postgresql
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+    networks:
+      - dissipate-network
+    ports:
+      - 7233:7233
+    volumes:
+      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+    labels:
+      kompose.volume.type: configMap
+  temporal-admin-tools:
+    image: temporalio/admin-tools:${TEMPORAL_VERSION}
+    container_name: temporal-admin-tools
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    networks:
+      - dissipate-network
+    stdin_open: true
+    tty: true
+  temporal-ui:
+    image: temporalio/ui:${TEMPORAL_UI_VERSION}
+    container_name: temporal-ui
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    networks:
+      - dissipate-network
+    ports:
+      - 8081:8080
+  temporal-web:
+    image: temporalio/web:${TEMPORAL_WEB_VERSION}
+    container_name: temporal-web
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_GRPC_ENDPOINT=temporal:7233
+      - TEMPORAL_PERMIT_WRITE_API=true
+    networks:
+      - dissipate-network
+    ports:
+      - 8088:8088
+
   firebase-emulator:
     image: andreysenov/firebase-tools
     volumes:
@@ -58,6 +130,8 @@ services:
       - "9099:9099"
       - "9199:9199"
     command: firebase emulators:start --project dissipate --import /app/data
+    networks:
+      - dissipate-network
 
 #  redis:
 #    image: "redis:alpine"
@@ -71,8 +145,10 @@ services:
     build:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
+    networks:
+      - dissipate-network
     depends_on:
-      - main-db
+      - postgresql
     volumes:
       - ./api:/app
       - maven_target:/app/target
@@ -80,7 +156,7 @@ services:
     command:
       - mvn
       - flyway:migrate
-      - -Dflyway.url=jdbc:postgresql://main-db:5432/dissipate
+      - -Dflyway.url=jdbc:postgresql://postgresql:5432/dissipate
       - -Dflyway.user=dissipate
       - -Dflyway.password=dissipate
 
@@ -90,9 +166,11 @@ services:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
     depends_on:
-      - main-db
+      - postgresql
       - firebase-emulator
       - flyway
+    networks:
+      - dissipate-network
     volumes:
       - ./api:/app
       - ~/.config/gcloud:/tmp/.config/gcloud
@@ -109,7 +187,7 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
     command:
       - mvn
-      - -Dquarkus.datasource.reactive.url=vertx-reactive:postgresql://main-db:5432/dissipate
+      - -Dquarkus.datasource.reactive.url=vertx-reactive:postgresql://postgresql:5432/dissipate
       - -Dquarkus.datasource.username=dissipate
       - -Dquarkus.datasource.password=dissipate
       - -Dquarkus.hibernate-orm.database.generation=update
@@ -122,3 +200,8 @@ volumes:
   postgres_db: null
   maven_target: null
   maven_cache: null
+  temporal_db: null
+
+networks:
+  dissipate-network:
+    name: dissipate-network
