@@ -169,6 +169,7 @@ services:
       - postgresql
       - firebase-emulator
       - flyway
+      - temporal
     networks:
       - dissipate-network
     volumes:
@@ -185,6 +186,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
+      quarkus.temporal.service.url=temporal:7233:
     command:
       - mvn
       - -Dquarkus.datasource.reactive.url=vertx-reactive:postgresql://postgresql:5432/dissipate
@@ -192,15 +194,16 @@ services:
       - -Dquarkus.datasource.password=dissipate
       - -Dquarkus.hibernate-orm.database.generation=update
       - -Dquarkus.http.host=0.0.0.0
+      - -Dquarkus.temporal.service.url=http://temporal:7233
       - quarkus:dev
     ports:
       - "8080:8080"
 
 volumes:
-  postgres_db: null
-  maven_target: null
-  maven_cache: null
-  temporal_db: null
+  postgres_db:
+  maven_target:
+  maven_cache:
+  temporal_db:
 
 networks:
   dissipate-network:
