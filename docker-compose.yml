@@ -186,16 +186,13 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
-      quarkus.temporal.service.url=temporal:7233:
-    command:
-      - mvn
-      - -Dquarkus.datasource.reactive.url=vertx-reactive:postgresql://postgresql:5432/dissipate
-      - -Dquarkus.datasource.username=dissipate
-      - -Dquarkus.datasource.password=dissipate
-      - -Dquarkus.hibernate-orm.database.generation=update
-      - -Dquarkus.http.host=0.0.0.0
-      - -Dquarkus.temporal.service.url=http://temporal:7233
-      - quarkus:dev
+      quarkus.datasource.reactive.url: vertx-reactive:postgresql://postgresql:5432/dissipate
+      quarkus.temporal.service.url: temporal:7233
+      quarkus.datasource.username: dissipate
+      quarkus.datasource.password: dissipate
+      quarkus.hibernate-orm.database.generation: update
+      quarkus.http.host: 0.0.0.0
+    command: mvn quarkus:dev
     ports:
       - "8080:8080"
 
