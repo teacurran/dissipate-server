@@ -3,13 +3,16 @@ PROJECT_NAME = $(notdir $(PWD))
 CMD_ARGUMENTS ?= $(cmd)
 .PHONY: clean build
 
+package:
+	cd api && mvn package -Dquarkus.temporal.service.url=temporal:7233 -Dmaven.test.skip=true
+
 build:
 	docker-compose down --remove-orphans
-	docker-compose build
+	COMPOSE_HTTP_TIMEOUT=2000 docker-compose build
 
 start:
 	docker-compose up -d postgresql temporaldb temporal temporal-admin-tools temporal-ui temporal-web firebase-emulator
-	docker-compose run api
+	docker-compose run --service-ports api
 
 stop:
 	docker-compose down

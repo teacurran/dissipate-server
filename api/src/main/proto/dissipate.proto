@@ -8,7 +8,7 @@ option java_multiple_files = true;
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-service IDissipateService {
+service DissipateService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
   rpc CreateHandle(CreateHandleRequest) returns (Handle) {}
 }

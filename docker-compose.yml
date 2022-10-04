@@ -68,10 +68,10 @@ services:
     environment:
       - TEMPORAL_ALLOW_NO_AUTH=true
       - DB=postgresql
+      - POSTGRES_SEEDS=temporaldb
       - DB_PORT=5432
       - POSTGRES_USER=dissipate
       - POSTGRES_PWD=dissipate
-      - POSTGRES_SEEDS=postgresql
       - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
     networks:
       - dissipate-network
@@ -129,7 +129,7 @@ services:
       - "9005:9005"
       - "9099:9099"
       - "9199:9199"
-    command: firebase emulators:start --project dissipate --import /app/data
+    command: firebase emulators:start --project dissipate --import /home/node/data
     networks:
       - dissipate-network
 
@@ -195,6 +195,7 @@ services:
     command: mvn quarkus:dev
     ports:
       - "8080:8080"
+      - "9299:9000"
 
 volumes:
   postgres_db:

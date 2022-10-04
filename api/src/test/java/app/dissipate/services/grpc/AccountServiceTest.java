@@ -1,6 +1,6 @@
 package app.dissipate.services.grpc;
 
-import app.dissipate.grpc.IDissipateService;
+import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.services.AuthenticationService;
 import io.grpc.Metadata;
@@ -24,7 +24,7 @@ import static app.dissipate.constants.AuthenticationConstants.AUTH_HEADER_KEY;
 class AccountServiceTest {
 
     @GrpcClient
-    IDissipateService client;
+    DissipateService client;
 
     @InjectMock
     AuthenticationService mockAuth;
@@ -41,7 +41,7 @@ class AccountServiceTest {
         Metadata extraHeaders = new Metadata();
         extraHeaders.put(AUTH_HEADER_KEY, "test-auth-token");
 
-        IDissipateService authedClient = GrpcClientUtils.attachHeaders(client, extraHeaders);
+        DissipateService authedClient = GrpcClientUtils.attachHeaders(client, extraHeaders);
 
         authedClient.register(RegisterRequest.newBuilder().build())
                 .subscribe().with(reply -> message.complete(reply.getAccount().getId()));

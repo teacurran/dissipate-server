@@ -5,15 +5,20 @@ import app.dissipate.interceptors.GrpcAuthInterceptor;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.smallrye.mutiny.Uni;
+import org.jboss.logging.Logger;
 
 import static app.dissipate.constants.AuthenticationConstants.CONTEXT_FB_USER_KEY;
 
 @GrpcService
 @RegisterInterceptor(GrpcAuthInterceptor.class)
-public class AccountService implements IDissipateService {
+public class AccountService implements DissipateService {
+
+    private static final Logger LOG = Logger.getLogger(AccountService.class);
 
     @Override
     public Uni<RegisterResponse> register(RegisterRequest request) {
+        LOG.info("Registering user: " + request);
+
         String token = CONTEXT_FB_USER_KEY.get();
 
         if (token == null) {
