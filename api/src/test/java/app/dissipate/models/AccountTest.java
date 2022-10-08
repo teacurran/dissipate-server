@@ -1,5 +1,6 @@
 package app.dissipate.models;
 
+import app.dissipate.data.models.Account;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package app.dissipate.models;
+package app.dissipate.data.models;
 
 public enum AccountStatus {
     ACTIVE,

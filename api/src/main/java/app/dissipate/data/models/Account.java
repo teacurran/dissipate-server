@@ -1,4 +1,4 @@
-package app.dissipate.models;
+package app.dissipate.data.models;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 
@@ -19,7 +19,7 @@ public class Account extends PanacheEntity {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    public List<Handle> handles = new ArrayList<>();
+    public List<Identity> identities = new ArrayList<>();
 
     public void setEmail(String email){
         this.email = email.toLowerCase();

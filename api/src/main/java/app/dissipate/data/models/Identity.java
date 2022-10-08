@@ -1,13 +1,15 @@
-package app.dissipate.models;
+package app.dissipate.data.models;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hibernate.annotations.ColumnTransformer;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-public class Handle extends PanacheEntity {
+public class Identity extends PanacheEntity {
     @ConfigProperty(name = "encryption.key")
     @Transient
     String key;
@@ -24,5 +26,18 @@ public class Handle extends PanacheEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     public Account account;
 
+    @OneToMany(
+            mappedBy = "identity",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    public List<Channel> channels = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "identity",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    public List<Channel> posts = new ArrayList<>();
 
 }

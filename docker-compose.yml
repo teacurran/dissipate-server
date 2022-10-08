@@ -192,7 +192,7 @@ services:
       quarkus.datasource.password: dissipate
       quarkus.hibernate-orm.database.generation: update
       quarkus.http.host: 0.0.0.0
-    command: mvn quarkus:dev
+    command: bash -c "mvn package && mvn quarkus:dev"
     ports:
       - "8080:8080"
       - "9299:9000"
