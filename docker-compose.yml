@@ -117,6 +117,30 @@ services:
     ports:
       - 8088:8088
 
+  # Jaeger
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+    networks:
+      - dissipate-network
+
+  # Collector
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "13133:13133" # Health_check extension
+      - "4317:4317"   # OTLP gRPC receiver
+    depends_on:
+      - jaeger-all-in-one
+    networks:
+      - dissipate-network
+
   firebase-emulator:
     image: andreysenov/firebase-tools
     volumes:
@@ -192,6 +216,7 @@ services:
       quarkus.datasource.password: dissipate
       quarkus.hibernate-orm.database.generation: update
       quarkus.http.host: 0.0.0.0
+      quarkus.opentelemetry.tracer.exporter.otlp.endpoint: http://otel-collector:4317
     command: bash -c "mvn package && mvn quarkus:dev"
     ports:
       - "8080:8080"
