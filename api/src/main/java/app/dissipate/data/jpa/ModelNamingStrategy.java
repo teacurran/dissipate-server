@@ -1,4 +1,4 @@
-package app.dissipate.data.config;
+package app.dissipate.data.jpa;
 
 import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
 import org.hibernate.boot.model.naming.Identifier;
