@@ -1,33 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>app.dissipate</groupId>
     <artifactId>dissipate-api</artifactId>
     <version>1.0-SNAPSHOT</version>
-
     <properties>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <failsafe.useModulePath>false</failsafe.useModulePath>
         <maven.compiler.release>11</maven.compiler.release>
+        <postgres.driver.version>42.4.1</postgres.driver.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.13.0.Final</quarkus.platform.version>
+        <sonar.organization>appi</sonar.organization>
+        <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
-        <postgres.driver.version>42.4.1</postgres.driver.version>
-
         <version.grpc>1.48.1</version.grpc>
         <version.kotlin>1.7.10</version.kotlin>
         <version.os-maven-plugin>1.7.0</version.os-maven-plugin>
         <version.protobuf-maven-plugin>0.6.1</version.protobuf-maven-plugin>
         <version.protoc>3.21.5</version.protoc>
-
-        <sonar.organization>appi</sonar.organization>
-        <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -80,7 +76,10 @@
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-jdbc</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-jdbc-postgresql</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
@@ -93,19 +92,6 @@
             <version>${quarkus.platform.version}</version>
             <scope>test</scope>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-kotlin</artifactId>
-            <version>${quarkus.platform.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${version.kotlin}</version>
-        </dependency>
-        -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
@@ -123,6 +109,13 @@
         </dependency>
     </dependencies>
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${version.os-maven-plugin}</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
@@ -133,18 +126,8 @@
                     <execution>
                         <goals>
                             <goal>build</goal>
-                            <!-- using grpc generation
-                            <goal>generate-code</goal>
-                            -->
                             <goal>generate-code-tests</goal>
                         </goals>
-                        <!--
-                        <configuration>
-                            <properties>
-                                <quarkus.generate-code.grpc.scan-for-imports>all</quarkus.generate-code.grpc.scan-for-imports>
-                            </properties>
-                        </configuration>
-                        -->
                     </execution>
                 </executions>
             </plugin>
@@ -155,7 +138,6 @@
                     <compilerArgs>
                         <arg>-parameters</arg>
                     </compilerArgs>
-
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.quarkus</groupId>
@@ -191,20 +173,6 @@
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>${version.protobuf-maven-plugin}</version>
-                <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${version.protoc}:exe:${os.detected.classifier}</protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${version.grpc}:exe:${os.detected.classifier}</pluginArtifact>
-                    <protocPlugins>
-                        <protocPlugin>
-                            <id>quarkus-grpc-protoc-plugin</id>
-                            <groupId>io.quarkus</groupId>
-                            <artifactId>quarkus-grpc-protoc-plugin</artifactId>
-                            <version>2.11.2.Final</version>
-                            <mainClass>io.quarkus.grpc.protoc.plugin.MutinyGrpcGenerator</mainClass>
-                        </protocPlugin>
-                    </protocPlugins>
-                </configuration>
                 <executions>
                     <execution>
                         <id>compile</id>
@@ -221,46 +189,23 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <!--
-            <plugin>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <version>${version.kotlin}</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
-                    <compilerPlugins>
-                        <plugin>all-open</plugin>
-                    </compilerPlugins>
-
-                    <pluginOptions>
-                        <! - - Each annotation is placed on its own line - - >
-                        <option>all-open:annotation=javax.ws.rs.Path</option>
-                    </pluginOptions>
+                    <protocArtifact>com.google.protobuf:protoc:${version.protoc}:exe:${os.detected.classifier}
+                    </protocArtifact>
+                    <pluginId>grpc-java</pluginId>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${version.grpc}:exe:${os.detected.classifier}
+                    </pluginArtifact>
+                    <protocPlugins>
+                        <protocPlugin>
+                            <id>quarkus-grpc-protoc-plugin</id>
+                            <groupId>io.quarkus</groupId>
+                            <artifactId>quarkus-grpc-protoc-plugin</artifactId>
+                            <version>2.11.2.Final</version>
+                            <mainClass>io.quarkus.grpc.protoc.plugin.MutinyGrpcGenerator</mainClass>
+                        </protocPlugin>
+                    </protocPlugins>
                 </configuration>
-
-                <dependencies>
-                    <dependency>
-                        <groupId>org.jetbrains.kotlin</groupId>
-                        <artifactId>kotlin-maven-allopen</artifactId>
-                        <version>${version.kotlin}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
-            -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
@@ -272,13 +217,6 @@
                 <version>0.8.8</version>
             </plugin>
         </plugins>
-        <extensions>
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-                <version>${version.os-maven-plugin}</version>
-            </extension>
-        </extensions>
     </build>
     <profiles>
         <profile>
@@ -301,8 +239,11 @@
                                 </goals>
                                 <configuration>
                                     <systemPropertyVariables>
-                                        <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
-                                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                                        <native.image.path>
+                                            ${project.build.directory}/${project.build.finalName}-runner
+                                        </native.image.path>
+                                        <java.util.logging.manager>org.jboss.logmanager.LogManager
+                                        </java.util.logging.manager>
                                         <maven.home>${maven.home}</maven.home>
                                     </systemPropertyVariables>
                                 </configuration>

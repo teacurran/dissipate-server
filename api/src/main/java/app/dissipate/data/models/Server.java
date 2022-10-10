@@ -1,6 +1,6 @@
 package app.dissipate.data.models;
 
-import app.dissipate.data.models.dto.MaxDto;
+import app.dissipate.data.models.dto.MaxIntDto;
 import io.smallrye.mutiny.Uni;
 
 import javax.persistence.Column;
@@ -12,17 +12,17 @@ public class Server extends DefaultPanacheEntityWithTimestamps {
 
     public int instanceNumber;
 
-    private LocalDateTime seen;
+    public LocalDateTime seen;
 
-    @Column(nullable = true)
-    private LocalDateTime shutdown;
+    @Column(nullable = false, columnDefinition="BOOLEAN DEFAULT false")
+    public boolean isShutdown;
 
-    public static Uni<MaxDto> findMaxInstanceId() {
-        return find("select max(instanceId)").project(MaxDto.class).firstResult();
+    public static Uni<MaxIntDto> findMaxInstanceId() {
+        return find("select coalesce(max(instanceNumber), 0) as maxValue from Server").project(MaxIntDto.class).firstResult();
     }
 
     public static Uni<Server> findFirstUnusedServer() {
-        return find("shutdown IS NULL").firstResult();
+        return find("isShutdown=true").firstResult();
     }
 
 }

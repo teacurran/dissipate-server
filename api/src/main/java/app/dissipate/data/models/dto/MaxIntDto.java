@@ -3,10 +3,10 @@ package app.dissipate.data.models.dto;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
-public class MaxDto {
-    public final long max;
+public class MaxIntDto {
+    public final int maxValue;
 
-    public MaxDto(long max) {
-        this.max = max;
+    public MaxIntDto(int maxValue) {
+        this.maxValue = maxValue;
     }
 }
