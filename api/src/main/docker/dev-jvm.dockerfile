@@ -112,26 +112,27 @@ RUN echo \
 # USER appuser
 WORKDIR /app
 
-RUN chown 1001 /app \
-    && chmod "g+rwX" /app \
-    && chown 1001:root /app
-
-USER 1001
-
-COPY ./pom.xml ./
-
-RUN mkdir target
-RUN mvn install
-
+COPY ./pom.xml /app/
 # COPY ./.env /usr/src/app/
-COPY ./src ./src/
-RUN mvn package
+COPY ./src /app/src/
+RUN mvn quarkus:build -Dquarkus.temporal.service.url=localhost:7233
+
+#
+#RUN chown 1001 /app \
+#    && chmod "g+rwX" /app \
+#    && chown 1001:root /app
+#USER 1001
+#
+#
+#RUN mkdir target
 
 # We make four distinct layers so if there are application changes the library layers can be re-used
 # COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
 # COPY --chown=185 target/quarkus-app/*.jar /deployments/
 # COPY --chown=185 target/quarkus-app/app/ /deployments/app/
 # COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
+
+# ENTRYPOINT "mvn-entrypoint.sh"
 
 EXPOSE 8080
 # USER 185

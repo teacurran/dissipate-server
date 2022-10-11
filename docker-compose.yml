@@ -190,7 +190,7 @@ services:
       - ./api:/app
       - ~/.config/gcloud:/tmp/.config/gcloud
       - maven_target:/app/target
-      - maven_cache:/root/.m2
+      - maven_cache:/app/.m2
     environment:
       SERVICE: local
       FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
@@ -207,15 +207,15 @@ services:
       quarkus.hibernate-orm.database.generation: update
       quarkus.http.host: 0.0.0.0
       quarkus.opentelemetry.tracer.exporter.otlp.endpoint: http://jaeger:4317
-    command: bash -c "mvn package -DskipTests=true && mvn quarkus:dev -DskipTests=true"
+    command: mvn quarkus:dev
     ports:
       - "8080:8080"
       - "9299:9000"
 
 volumes:
   postgres_db:
-  maven_target:
   maven_cache:
+  maven_target:
   temporal_db:
 
 networks:
