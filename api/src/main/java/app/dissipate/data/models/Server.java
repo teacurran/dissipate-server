@@ -25,4 +25,8 @@ public class Server extends DefaultPanacheEntityWithTimestamps {
         return find("isShutdown=true").firstResult();
     }
 
+    public static Uni<Server> byId(Long id) {
+        return findById(id);
+    }
+
 }

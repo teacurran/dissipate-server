@@ -40,7 +40,10 @@ public class ServerInstance {
     }
 
     public void onStop(@Observes ShutdownEvent event) {
-        server.isShutdown = true;
-        server.persistAndFlush().await().atMost(DEFAULT_DB_WAIT);
+        if (server != null) {
+            server = Server.byId(server.id).await().atMost(DEFAULT_DB_WAIT);
+            server.isShutdown = true;
+            server.persistAndFlush().await().atMost(DEFAULT_DB_WAIT);
+        }
     }
 }
