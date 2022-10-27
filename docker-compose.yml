@@ -207,8 +207,9 @@ services:
       quarkus.hibernate-orm.database.generation: update
       quarkus.http.host: 0.0.0.0
       quarkus.opentelemetry.tracer.exporter.otlp.endpoint: http://jaeger:4317
-    command: mvn quarkus:dev
+    command: mvn quarkus:dev -Ddebug=true -DdebugHost=0.0.0.0
     ports:
+      - "5005:5005"
       - "8080:8080"
       - "9299:9000"
 
