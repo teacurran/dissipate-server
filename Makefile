@@ -4,7 +4,7 @@ CMD_ARGUMENTS ?= $(cmd)
 .PHONY: clean build
 
 package:
-	cd api && mvn package -Dquarkus.temporal.service.url=temporal:7233 -Dmaven.test.skip=true
+	cd api && mvn package -Dquarkus.temporal.service.url=temporal:7233
 
 build:
 	docker-compose down --remove-orphans
@@ -19,6 +19,9 @@ stop:
 
 test:
 	@make test-api
+
+flyway:
+	cd api && mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/dissipate -Dflyway.user=tea -Dflyway.password=
 
 test-api:
 	docker-compose -f docker-compose.yml -f docker-compose.test.yml up --exit-code-from api-integration-test api-integration-test

@@ -13,7 +13,7 @@ services:
     ports:
       - "5442:5432"
 
-  temporaldb:
+  temporal-db:
     image: postgres:${POSTGRESQL_VERSION}
     restart: always
     environment:
@@ -64,11 +64,11 @@ services:
   temporal:
     image: temporalio/auto-setup:${TEMPORAL_VERSION}
     depends_on:
-      - temporaldb
+      - temporal-db
     environment:
       - TEMPORAL_ALLOW_NO_AUTH=true
       - DB=postgresql
-      - POSTGRES_SEEDS=temporaldb
+      - POSTGRES_SEEDS=temporal-db
       - DB_PORT=5432
       - POSTGRES_USER=dissipate
       - POSTGRES_PWD=dissipate
