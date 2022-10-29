@@ -189,8 +189,9 @@ services:
     volumes:
       - ./api:/app
       - ~/.config/gcloud:/tmp/.config/gcloud
-      - maven_target:/app/target
       - maven_cache:/app/.m2
+      # use virtual volume if having issues with native binaries
+      # - maven_target:/app/target
     environment:
       SERVICE: local
       FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
