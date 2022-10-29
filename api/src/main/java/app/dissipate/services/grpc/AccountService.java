@@ -2,6 +2,9 @@ package app.dissipate.services.grpc;
 
 import app.dissipate.grpc.*;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.Span;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.smallrye.mutiny.Uni;
@@ -17,6 +20,9 @@ public class AccountService implements DissipateService {
 
     @Override
     public Uni<RegisterResponse> register(RegisterRequest request) {
+
+        Span.current().addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
+
         LOG.info("Registering user: " + request);
 
         String token = CONTEXT_FB_USER_KEY.get();

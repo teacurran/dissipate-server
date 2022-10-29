@@ -4,6 +4,7 @@ import app.dissipate.constants.AuthenticationConstants;
 import app.dissipate.services.AuthenticationService;
 import com.google.common.base.Strings;
 import io.grpc.*;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -15,6 +16,7 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
     AuthenticationService authenticationService;
 
     @Override
+    @WithSpan("grpc-auth-interceptor")
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> serverCallHandler) {
         String token = metadata.get(AuthenticationConstants.AUTH_HEADER_KEY);
         Context context = Context.current();
