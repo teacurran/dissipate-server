@@ -1,7 +1,11 @@
 package app.dissipate;
 
 import app.dissipate.workflows.CrawlDomainWorkflow;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.Span;
 import io.quarkus.temporal.runtime.builder.WorkflowBuilder;
+import io.temporal.api.common.v1.WorkflowExecution;
 import io.temporal.client.WorkflowClient;
 
 import javax.inject.Inject;
@@ -20,7 +24,8 @@ public class GreetingResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String hello() {
         CrawlDomainWorkflow cdw = workflowBuilder.build(CrawlDomainWorkflow.class, "crawl-domain");
-        WorkflowClient.execute(cdw::crawlDomain, "https://mastodon.social/");
+        WorkflowExecution we = WorkflowClient.start(cdw::crawlDomain, "https://mastodon.social/");
+        Span.current().addEvent("Started Workflow", Attributes.of(AttributeKey.stringKey("workflow-id"), we.getWorkflowId()));
 
         return "Hello from dissipate!";
     }

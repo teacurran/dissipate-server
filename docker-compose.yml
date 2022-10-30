@@ -104,18 +104,6 @@ services:
       - dissipate-network
     ports:
       - 8081:8080
-  temporal-web:
-    image: temporalio/web:${TEMPORAL_WEB_VERSION}
-    container_name: temporal-web
-    depends_on:
-      - temporal
-    environment:
-      - TEMPORAL_GRPC_ENDPOINT=temporal:7233
-      - TEMPORAL_PERMIT_WRITE_API=true
-    networks:
-      - dissipate-network
-    ports:
-      - 8088:8088
 
   # Jaeger
   jaeger:
