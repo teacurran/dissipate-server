@@ -24,8 +24,13 @@ public class GreetingResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String hello() {
         CrawlDomainWorkflow cdw = workflowBuilder.build(CrawlDomainWorkflow.class, "crawl-domain");
+        //cdw.crawlDomain("dissipate.app");
+
         WorkflowExecution we = WorkflowClient.start(cdw::crawlDomain, "https://mastodon.social/");
-        Span.current().addEvent("Started Workflow", Attributes.of(AttributeKey.stringKey("workflow-id"), we.getWorkflowId()));
+        Span.current().addEvent("Started Workflow", Attributes.of(
+                AttributeKey.stringKey("workflow-id"), we.getWorkflowId(),
+                AttributeKey.stringKey("run-id"), we.getRunId()
+        ));
 
         return "Hello from dissipate!";
     }
