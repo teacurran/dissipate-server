@@ -17,7 +17,13 @@ steps:
       'firebase-emulator',
       'integration-tests'
     ]
-    env: [ 'COMPOSE_HTTP_TIMEOUT=400' ]
+    env: [
+      'COMPOSE_HTTP_TIMEOUT=400'.
+      'TEMPORAL_VERSION=1.17.5',
+      'TEMPORAL_UI_VERSION=2.5.1',
+      'TEMPORAL_WEB_VERSION=1.15.0',
+      'POSTGRESQL_VERSION=13'
+    ]
 
   - name: 'docker/compose:1.29.2'
     id: "sonar scan"
@@ -30,7 +36,13 @@ steps:
       'firebase-emulator',
       'sonar-scanner'
     ]
-    env: [ 'COMPOSE_HTTP_TIMEOUT=400' ]
+    env: [
+      'COMPOSE_HTTP_TIMEOUT=400'.
+      'TEMPORAL_VERSION=1.17.5',
+      'TEMPORAL_UI_VERSION=2.5.1',
+      'TEMPORAL_WEB_VERSION=1.15.0',
+      'POSTGRESQL_VERSION=13'
+    ]
     secretEnv: ['SONAR_TOKEN']
 
 timeout: 5000s
