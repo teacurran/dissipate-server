@@ -8,6 +8,7 @@ steps:
 
   - name: "maven:3.8.6-amazoncorretto-18"
     id: "maven build"
+    dir: "api"
     entrypoint: mvn
     args:
       [
@@ -18,6 +19,7 @@ steps:
 
   - name: "maven:3.8.6-amazoncorretto-18"
     id: "maven build"
+    dir: "api"
     entrypoint: mvn
     args:
       [
