@@ -7,7 +7,7 @@ steps:
       - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/dissipate-api:latest || exit 0
 
   - name: "maven:3.8.6-amazoncorretto-18"
-    id: "maven build"
+    id: "mvn package"
     dir: "api"
     entrypoint: mvn
     args:
@@ -18,7 +18,7 @@ steps:
       ]
 
   - name: "maven:3.8.6-amazoncorretto-18"
-    id: "maven build"
+    id: "mvn sonar"
     dir: "api"
     entrypoint: mvn
     args:
