@@ -10,6 +10,7 @@ steps:
     id: "tests in docker-compose"
     args: [
       'up',
+      '--network=cloudbuild',
       '--exit-code-from', 'integration-tests',
       'postgresql',
       'temporal-db',
@@ -29,6 +30,7 @@ steps:
     id: "sonar scan"
     args: [
       'up',
+      '--network=cloudbuild',
       '--exit-code-from', 'sonar-scanner',
       'postgresql',
       'temporal-db',
