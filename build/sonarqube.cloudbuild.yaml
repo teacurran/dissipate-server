@@ -24,7 +24,8 @@ steps:
       'TEMPORAL_VERSION=1.17.5',
       'TEMPORAL_UI_VERSION=2.5.1',
       'TEMPORAL_WEB_VERSION=1.15.0',
-      'POSTGRESQL_VERSION=13'
+      'POSTGRESQL_VERSION=13',
+      'GOOGLE_APPLICATION_CREDENTIALS=/tmp/.config/gcloud/application_default_credentials.json'
     ]
 
   - name: 'docker/compose:1.29.2'
@@ -46,7 +47,8 @@ steps:
       'TEMPORAL_VERSION=1.17.5',
       'TEMPORAL_UI_VERSION=2.5.1',
       'TEMPORAL_WEB_VERSION=1.15.0',
-      'POSTGRESQL_VERSION=13'
+      'POSTGRESQL_VERSION=13',
+      'GOOGLE_APPLICATION_CREDENTIALS=/tmp/.config/gcloud/application_default_credentials.json'
     ]
     secretEnv: ['SONAR_TOKEN']
 
