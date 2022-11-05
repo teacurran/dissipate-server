@@ -216,8 +216,8 @@ services:
     command:
       - mvn
       - sonar:sonar
-      - -Dsonar.login=${SONAR_TOKEN:""}
-      - -Dsonar.host.url="https://sonarcloud.io
+      - -Dsonar.login=${SONAR_TOKEN}
+      - -Dsonar.host.url=https://sonarcloud.io
 
 volumes:
   postgres_db:

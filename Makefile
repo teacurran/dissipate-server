@@ -26,6 +26,9 @@ flyway:
 test:
 	docker-compose up --exit-code-from integration-tests postgresql temporal-db temporal firebase-emulator integration-tests
 
+sonar:
+	docker-compose up --exit-code-from sonar-scanner postgresql temporal-db temporal firebase-emulator sonar-scanner
+
 rebuild:
 	docker-compose build --no-cache
 
