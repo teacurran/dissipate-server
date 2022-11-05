@@ -10,8 +10,6 @@ x-api-base: &api-base
     - firebase-emulator
     - flyway
     - temporal
-  networks:
-    - dissipate-network
   volumes:
     - ./api:/app
     - ~/.config/gcloud:/tmp/.config/gcloud
@@ -48,8 +46,6 @@ services:
       POSTGRES_USER: dissipate
       POSTGRES_PASSWORD: dissipate
       POSTGRES_DB: dissipate
-    networks:
-      - dissipate-network
     volumes:
       - postgres_db:/var/lib/postgresql/data
     ports:
@@ -62,8 +58,6 @@ services:
       POSTGRES_USER: dissipate
       POSTGRES_PASSWORD: dissipate
       POSTGRES_DB: temporal
-    networks:
-      - dissipate-network
     volumes:
       - temporal_db:/var/lib/postgresql/data
     ports:
@@ -115,8 +109,6 @@ services:
       - POSTGRES_USER=dissipate
       - POSTGRES_PWD=dissipate
       - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
-    networks:
-      - dissipate-network
     ports:
       - 7233:7233
     volumes:
@@ -130,8 +122,6 @@ services:
       - temporal
     environment:
       - TEMPORAL_CLI_ADDRESS=temporal:7233
-    networks:
-      - dissipate-network
     stdin_open: true
     tty: true
   temporal-ui:
@@ -142,8 +132,6 @@ services:
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_CORS_ORIGINS=http://localhost:3000
-    networks:
-      - dissipate-network
     ports:
       - 8081:8080
 
@@ -158,8 +146,6 @@ services:
       - "4317:4317"
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
-    networks:
-      - dissipate-network
 
   firebase-emulator:
     image: andreysenov/firebase-tools
@@ -174,8 +160,6 @@ services:
       - "9099:9099"
       - "9199:9199"
     command: firebase emulators:start --project dissipate --import /home/node/data
-    networks:
-      - dissipate-network
 
 #  redis:
 #    image: "redis:alpine"
@@ -189,8 +173,6 @@ services:
     build:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
-    networks:
-      - dissipate-network
     depends_on:
       - postgresql
     volumes:
@@ -225,6 +207,3 @@ volumes:
   maven_target:
   temporal_db:
 
-networks:
-  dissipate-network:
-    name: dissipate-network

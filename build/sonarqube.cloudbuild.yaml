@@ -9,8 +9,9 @@ steps:
   - name: 'docker/compose:1.29.2'
     id: "tests in docker-compose"
     args: [
+      '-f', 'docker-compose.yml',
+      '-f', 'docker-compose.cloudbuild.yml',
       'up',
-      '--network=cloudbuild',
       '--exit-code-from', 'integration-tests',
       'postgresql',
       'temporal-db',
@@ -30,6 +31,8 @@ steps:
     id: "sonar scan"
     args: [
       'up',
+      '-f', 'docker-compose.yml',
+      '-f', 'docker-compose.cloudbuild.yml',
       '--network=cloudbuild',
       '--exit-code-from', 'sonar-scanner',
       'postgresql',
