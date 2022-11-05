@@ -26,9 +26,10 @@ steps:
         'clean',
         'verify',
         'sonar:sonar',
-        '-Dsonar.login=${{ secrets.SONAR_TOKEN }}',
+        '-Dsonar.login=$$SONAR_TOKEN',
         '-Dsonar.host.url="https://sonarcloud.io"',
       ]
+    secretEnv: ['SONAR_TOKEN']
 
 timeout: 5000s
 
