@@ -14,7 +14,7 @@ steps:
       [
         '--batch-mode',
         '--update-snapshots',
-        'quarkus:go-offline'
+        'quarkus:go-offline',
         'package'
       ]
 
