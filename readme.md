@@ -17,3 +17,9 @@ building native:
 ```
 DOCKER_BUILDKIT=0 docker build -f src/main/docker/Dockerfile.native -t dissipate-api-native:latest .
 ```
+
+
+
+```
+gcloud projects add-iam-policy-binding 510014216261 --member='serviceAccount:510014216261@cloudbuild.gserviceaccount.com' --role='roles/secretmanager.secretAccessor'
+```
