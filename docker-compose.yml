@@ -1,3 +1,45 @@
+version: "3.9"
+
+x-api-base: &api-base
+  image: api-server
+  build:
+    context: ./api
+    dockerfile: src/main/docker/dev-jvm.dockerfile
+  depends_on:
+    - postgresql
+    - firebase-emulator
+    - flyway
+    - temporal
+  networks:
+    - dissipate-network
+  volumes:
+    - ./api:/app
+    - ~/.config/gcloud:/tmp/.config/gcloud
+    - maven_cache:/app/.m2
+    # use virtual volume if having issues with native binaries
+    # - maven_target:/app/target
+  environment:
+    SERVICE: local
+    FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
+    FIREBASE_STORAGE_EMULATOR_HOST: "firebase-emulator:9199"
+    GCLOUD_PROJECT: "dissipate"
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
+    GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
+    quarkus.datasource.reactive.url: vertx-reactive:postgresql://postgresql:5432/dissipate
+    quarkus.temporal.service.url: temporal:7233
+    quarkus.datasource.username: dissipate
+    quarkus.datasource.password: dissipate
+    quarkus.hibernate-orm.database.generation: update
+    quarkus.http.host: 0.0.0.0
+    quarkus.opentelemetry.tracer.exporter.otlp.endpoint: http://jaeger:4317
+  command: mvn quarkus:dev -Ddebug=true -DdebugHost=0.0.0.0
+  ports:
+    - "5005:5005"
+    - "8080:8080"
+    - "9299:9000"
+
 services:
   postgresql:
     image: postgis/postgis
@@ -163,44 +205,19 @@ services:
       - -Dflyway.password=dissipate
 
   api:
-    image: api-server
-    build:
-      context: ./api
-      dockerfile: src/main/docker/dev-jvm.dockerfile
-    depends_on:
-      - postgresql
-      - firebase-emulator
-      - flyway
-      - temporal
-    networks:
-      - dissipate-network
-    volumes:
-      - ./api:/app
-      - ~/.config/gcloud:/tmp/.config/gcloud
-      - maven_cache:/app/.m2
-      # use virtual volume if having issues with native binaries
-      # - maven_target:/app/target
-    environment:
-      SERVICE: local
-      FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
-      FIREBASE_STORAGE_EMULATOR_HOST: "firebase-emulator:9199"
-      GCLOUD_PROJECT: "dissipate"
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
-      GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
-      quarkus.datasource.reactive.url: vertx-reactive:postgresql://postgresql:5432/dissipate
-      quarkus.temporal.service.url: temporal:7233
-      quarkus.datasource.username: dissipate
-      quarkus.datasource.password: dissipate
-      quarkus.hibernate-orm.database.generation: update
-      quarkus.http.host: 0.0.0.0
-      quarkus.opentelemetry.tracer.exporter.otlp.endpoint: http://jaeger:4317
-    command: mvn quarkus:dev -Ddebug=true -DdebugHost=0.0.0.0
-    ports:
-      - "5005:5005"
-      - "8080:8080"
-      - "9299:9000"
+    <<: *api-base
+
+  integration-tests:
+    <<: *api-base
+    command: mvn verify
+
+  sonar-scanner:
+    <<: *api-base
+    command:
+      - mvn
+      - sonar:sonar
+      - -Dsonar.login=${SONAR_TOKEN:""}
+      - -Dsonar.host.url="https://sonarcloud.io
 
 volumes:
   postgres_db:

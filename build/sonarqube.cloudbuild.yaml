@@ -6,29 +6,31 @@ steps:
       - -c
       - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/dissipate-api:latest || exit 0
 
-  - name: "maven:3.8.6-amazoncorretto-18"
-    id: "mvn package"
-    dir: "api"
-    entrypoint: mvn
-    args:
-      [
-        '--batch-mode',
-        '--update-snapshots',
-        'quarkus:go-offline',
-        'package'
-      ]
+  - name: 'docker/compose:1.29.2'
+    id: "tests in docker-compose"
+    args: [
+      'up',
+      '--exit-code-from', 'integration-tests',
+      'postgresql',
+      'temporal-db',
+      'temporal',
+      'firebase-emulator',
+      'integration-tests'
+    ]
+    env: [ 'COMPOSE_HTTP_TIMEOUT=400' ]
 
-  - name: "maven:3.8.6-amazoncorretto-18"
-    id: "mvn sonar"
-    dir: "api"
-    entrypoint: mvn
-    args:
-      [
-        'verify',
-        'sonar:sonar',
-        '-Dsonar.login=$$SONAR_TOKEN',
-        '-Dsonar.host.url="https://sonarcloud.io"',
-      ]
+  - name: 'docker/compose:1.29.2'
+    id: "sonar scan"
+    args: [
+      'up',
+      '--exit-code-from', 'sonar-scanner',
+      'postgresql',
+      'temporal-db',
+      'temporal',
+      'firebase-emulator',
+      'sonar-scanner'
+    ]
+    env: [ 'COMPOSE_HTTP_TIMEOUT=400', 'SONAR_TOKEN=$$SONAR_TOKEN}' ]
     secretEnv: ['SONAR_TOKEN']
 
 timeout: 5000s

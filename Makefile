@@ -23,8 +23,8 @@ test:
 flyway:
 	cd api && mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/dissipate -Dflyway.user=tea -Dflyway.password=
 
-test-api:
-	docker-compose -f docker-compose.yml -f docker-compose.test.yml up --exit-code-from api-integration-test api-integration-test
+test:
+	docker-compose up --exit-code-from integration-tests postgresql temporal-db temporal firebase-emulator integration-tests
 
 rebuild:
 	docker-compose build --no-cache
