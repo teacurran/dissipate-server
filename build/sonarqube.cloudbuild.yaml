@@ -40,7 +40,8 @@ images:
   - "${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/dissipate-api:latest"
 availableSecrets:
   secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/SONAR_TOKEN/versions/1
+    # - versionName: projects/$PROJECT_ID/secrets/SONAR_TOKEN/versions/1
+    - versionName: projects/510014216261/secrets/SONAR_TOKEN/versions/1
       env: 'SONAR_TOKEN'
 substitutions:
   _ARTIFACT_REPO: us-central1-docker.pkg.dev
