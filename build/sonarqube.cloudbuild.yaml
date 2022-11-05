@@ -14,6 +14,7 @@ steps:
       [
         '--batch-mode',
         '--update-snapshots',
+        'quarkus:go-offline'
         'package'
       ]
 
@@ -23,7 +24,6 @@ steps:
     entrypoint: mvn
     args:
       [
-        'clean',
         'verify',
         'sonar:sonar',
         '-Dsonar.login=$$SONAR_TOKEN',
