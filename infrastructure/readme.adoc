@@ -1,0 +1,12 @@
+## notes for initial setup
+
+You must import the project first inside the environment you want to setup, for example `google-dev`:
+
+```
+terraform init
+terraform import module.dissipate.google_project.project dissipate
+```
+
+Then run `terraform plan` to see what changes will be made
+
+Then run `terraform apply` to apply the changes.

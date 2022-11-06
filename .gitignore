@@ -71,3 +71,6 @@ node_modules/
 .DS_Store
 gffft-auth-b0debe95266a.json
 /firebase-emulator/.config/
+/infrastructure/terraform/production/terraform.tfstate.backup
+/infrastructure/terraform/production/.terraform.lock.hcl
+/infrastructure/terraform/production/terraform.tfstate
