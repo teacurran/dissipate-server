@@ -1,4 +1,3 @@
 networks:
   default:
-    external:
-      name: cloudbuild
+    name: cloudbuild
