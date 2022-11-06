@@ -15,6 +15,7 @@ steps:
     secretEnv: ['CLOUDBUILD_SERVICE_ACCOUNT']
 
   - name: "gcr.io/cloud-builders/docker"
+    id: "build-sonar-scanner"
     waitFor: ['pull-cache-sonar-scanner']
     args:
       [
@@ -23,7 +24,8 @@ steps:
         "${_ARTIFACT_REPO}/$PROJECT_ID/sonar-scanner:compose",
         "-t",
         "${_ARTIFACT_REPO}/$PROJECT_ID/sonar-scanner:compose",
-        "./api/src/main/docker/dev-jvm.dockerfile",
+        "-f", "./api/src/main/docker/dev-jvm.dockerfile",
+        "."
       ]
 
   - name: 'gcr.io/cloud-builders/docker'
