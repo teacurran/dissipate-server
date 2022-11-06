@@ -1,17 +1,10 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
-    id: 'pull cache - firebase-emulator'
+    id: 'pull-cache-sonar-scanner'
     entrypoint: "bash"
     args:
       - -c
-      - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/firebase-emulator:compose || exit 0
-
-  - name: "gcr.io/cloud-builders/docker"
-    id: 'pull cache - sonar-scanner'
-    entrypoint: "bash"
-    args:
-      - -c
-      - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/sonar-scanner:compose || exit 0
+      - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/sonar-scanner:compose || exit 0
 
   - name: 'bash'
     id: 'generate-credentials'
@@ -20,6 +13,18 @@ steps:
       - |
         echo $$CLOUDBUILD_SERVICE_ACCOUNT > ./api/cloudbuild_credentials.json
     secretEnv: ['CLOUDBUILD_SERVICE_ACCOUNT']
+
+  - name: "gcr.io/cloud-builders/docker"
+    waitFor: ['pull-cache-sonar-scanner']
+    args:
+      [
+        "build",
+        "--cache-from",
+        "${_ARTIFACT_REPO}/$PROJECT_ID/sonar-scanner:compose",
+        "-t",
+        "${_ARTIFACT_REPO}/$PROJECT_ID/sonar-scanner:compose",
+        "./api/src/main/docker/dev-jvm.dockerfile",
+      ]
 
   - name: 'gcr.io/cloud-builders/docker'
     id: "docker-compose-setup"
@@ -90,10 +95,8 @@ timeout: 5000s
 options:
   machineType: 'E2_HIGHCPU_8'
 
-images: ['${_ARTIFACT_REPO}/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA']
-#images:
-#  - "${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/firebase-emulator:compose"
-#  - "${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/sonar-scanner:compose"
+images:
+  - "${_ARTIFACT_REPO}/$PROJECT_ID/sonar-scanner:compose"
 
 availableSecrets:
   secretManager:
