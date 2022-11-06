@@ -197,6 +197,7 @@ services:
     <<: *api-base
     command:
       - mvn
+      - verify
       - sonar:sonar
       - -Dsonar.login=${SONAR_TOKEN}
       - -Dsonar.host.url=https://sonarcloud.io

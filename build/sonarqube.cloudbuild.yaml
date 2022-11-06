@@ -35,7 +35,6 @@ steps:
       '-f', 'docker-compose.cloudbuild.yml',
       '-e', 'GOOGLE_APPLICATION_CREDENTIALS=/tmp/.config/gcloud/application_default_credentials.json',
       'run',
-      'integration-tests',
       'sonar-scanner'
     ]
     env: [
