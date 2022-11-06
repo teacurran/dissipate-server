@@ -8,7 +8,7 @@ steps:
 
   - name: 'bash'
     id: 'generate-credentials'
-    args: ['echo $CLOUDBUILD_SERVICE_ACCOUNT > ./api/cloudbuild_credentials.json']
+    args: ['echo $$CLOUDBUILD_SERVICE_ACCOUNT > ./api/cloudbuild_credentials.json']
     secretEnv: ['CLOUDBUILD_SERVICE_ACCOUNT']
 
   - name: 'gcr.io/cloud-builders/docker'
