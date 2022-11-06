@@ -27,3 +27,14 @@ resource "google_project" "project" {
   }
 }
 
+resource "google_artifact_registry_repository" "dissipate-maven" {
+  location      = var.region
+  repository_id = "dissipate-maven"
+  format        = "MAVEN"
+}
+
+resource "google_artifact_registry_repository" "dissipate-docker" {
+  location      = var.region
+  repository_id = "dissipate-docker"
+  format        = "DOCKER"
+}

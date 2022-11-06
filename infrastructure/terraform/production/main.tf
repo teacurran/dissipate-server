@@ -1,5 +1,5 @@
 provider "google" {
-  project     = "gweb-restor-staging"
+  project     = "dissipate"
   region      = "us-central1"
 }
 
