@@ -6,9 +6,10 @@ steps:
       - -c
       - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/dissipate-api:latest || exit 0
 
-  - name: 'docker/compose:1.29.2'
+  - name: 'gcr.io/cloud-builders/docker'
     id: "docker-compose-setup"
     args: [
+      'compose',
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
       'up',
@@ -26,11 +27,12 @@ steps:
       'POSTGRESQL_VERSION=13'
     ]
 
-  - name: 'docker/compose:1.29.2'
+  - name: 'gcr.io/cloud-builders/docker'
     id: "integration-tests"
     waitFor:
       - "docker-compose-setup"
     args: [
+      'compose',
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
       'run',
