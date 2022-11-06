@@ -11,8 +11,8 @@ steps:
     args: [
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
-      '-d',
       'up',
+      '-d',
       'postgresql',
       'temporal-db',
       'temporal',
