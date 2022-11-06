@@ -63,7 +63,11 @@ steps:
     args: [
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
-      'down'
+      'stop'
+      'postgresql',
+      'temporal-db',
+      'temporal',
+      'firebase-emulator',
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',
