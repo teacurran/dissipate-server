@@ -15,7 +15,7 @@ steps:
     secretEnv: ['CLOUDBUILD_SERVICE_ACCOUNT']
 
   - name: 'bash'
-    id: 'generate-credentials'
+    id: 'print-credentials'
     args:
       - -c
       - |
