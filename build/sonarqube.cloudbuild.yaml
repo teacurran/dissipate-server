@@ -11,6 +11,7 @@ steps:
     args: [
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
+      '-d',
       'up',
       'postgresql',
       'temporal-db',
@@ -25,9 +26,8 @@ steps:
       'POSTGRESQL_VERSION=13'
     ]
 
-
   - name: 'docker/compose:1.29.2'
-    id: "tests in docker-compose"
+    id: "integration-tests"
     waitFor:
       - "docker-compose-setup"
     args: [
@@ -37,6 +37,24 @@ steps:
       'run',
       'integration-tests',
       'sonar-scanner'
+    ]
+    env: [
+      'COMPOSE_HTTP_TIMEOUT=400',
+      'TEMPORAL_VERSION=1.17.5',
+      'TEMPORAL_UI_VERSION=2.5.1',
+      'TEMPORAL_WEB_VERSION=1.15.0',
+      'POSTGRESQL_VERSION=13'
+    ]
+    secretEnv: ['SONAR_TOKEN']
+
+  - name: 'docker/compose:1.29.2'
+    id: "tests in docker-compose"
+    waitFor:
+      - "integration-tests"
+    args: [
+      '-f', 'docker-compose.yml',
+      '-f', 'docker-compose.cloudbuild.yml',
+      'down'
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',
