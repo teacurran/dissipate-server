@@ -14,6 +14,13 @@ steps:
         echo $$CLOUDBUILD_SERVICE_ACCOUNT > ./api/cloudbuild_credentials.json
     secretEnv: ['CLOUDBUILD_SERVICE_ACCOUNT']
 
+  - name: 'bash'
+    id: 'generate-credentials'
+    args:
+      - -c
+      - |
+        cat ./api/cloudbuild_credentials.json
+
   - name: 'gcr.io/cloud-builders/docker'
     id: "docker-compose-setup"
     args: [
