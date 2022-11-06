@@ -6,6 +6,11 @@ steps:
       - -c
       - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/dissipate-api:latest || exit 0
 
+  - name: 'bash'
+    id: 'generate-credentials'
+    args: ['echo $CLOUDBUILD_SERVICE_ACCOUNT > ./api/cloudbuild_credentials.json']
+    secretEnv: ['CLOUDBUILD_SERVICE_ACCOUNT']
+
   - name: 'gcr.io/cloud-builders/docker'
     id: "docker-compose-setup"
     args: [
@@ -36,7 +41,7 @@ steps:
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
       'run',
-      '-e', 'GOOGLE_APPLICATION_CREDENTIALS=/tmp/.config/gcloud/application_default_credentials.json',
+      '-e', 'GOOGLE_APPLICATION_CREDENTIALS=/app/cloudbuild_credentials.json',
       'sonar-scanner'
     ]
     env: [
@@ -49,7 +54,7 @@ steps:
     secretEnv: ['SONAR_TOKEN']
 
   - name: 'docker/compose:1.29.2'
-    id: "tests in docker-compose"
+    id: "shut down docker-compose"
     waitFor:
       - "integration-tests"
     args: [
@@ -78,6 +83,9 @@ availableSecrets:
     # - versionName: projects/$PROJECT_ID/secrets/SONAR_TOKEN/versions/1
     - versionName: projects/510014216261/secrets/SONAR_TOKEN/versions/1
       env: 'SONAR_TOKEN'
+    - versionName: projects/510014216261/secrets/cloudbuild-service-account/versions/1
+      env: 'CLOUDBUILD_SERVICE_ACCOUNT'
+
 substitutions:
   _ARTIFACT_REPO: us-central1-docker.pkg.dev
 
