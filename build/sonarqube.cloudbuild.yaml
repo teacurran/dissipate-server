@@ -63,7 +63,7 @@ steps:
     args: [
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
-      'stop'
+      'stop',
       'postgresql',
       'temporal-db',
       'temporal',
