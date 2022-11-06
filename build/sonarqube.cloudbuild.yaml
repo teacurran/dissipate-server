@@ -109,5 +109,5 @@ availableSecrets:
       env: 'CLOUDBUILD_SERVICE_ACCOUNT'
 
 substitutions:
-  _ARTIFACT_REPO: gcr.io
+  _ARTIFACT_REPO: us-central1-docker.pkg.dev
 
