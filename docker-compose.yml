@@ -200,7 +200,7 @@ services:
       - sonar:sonar
       - -Dsonar.login=${SONAR_TOKEN}
       - -Dsonar.host.url=https://sonarcloud.io
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/cloudbuild_credentials.json
+      - -DGOOGLE_APPLICATION_CREDENTIALS=/app/cloudbuild_credentials.json
 
 volumes:
   postgres_db:
