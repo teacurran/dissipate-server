@@ -7,18 +7,15 @@ steps:
       - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/dissipate/dissipate-api:latest || exit 0
 
   - name: 'docker/compose:1.29.2'
-    id: "tests in docker-compose"
+    id: "docker-compose-setup"
     args: [
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
-      '-e', 'GOOGLE_APPLICATION_CREDENTIALS=/tmp/.config/gcloud/application_default_credentials.json',
       'up',
-      '--exit-code-from', 'integration-tests',
       'postgresql',
       'temporal-db',
       'temporal',
       'firebase-emulator',
-      'integration-tests'
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',
@@ -28,18 +25,17 @@ steps:
       'POSTGRESQL_VERSION=13'
     ]
 
+
   - name: 'docker/compose:1.29.2'
-    id: "sonar scan"
+    id: "tests in docker-compose"
+    waitFor:
+      - "docker-compose-setup"
     args: [
-      '-e', 'GOOGLE_APPLICATION_CREDENTIALS=/tmp/.config/gcloud/application_default_credentials.json',
-      'up',
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
-      '--exit-code-from', 'sonar-scanner',
-      'postgresql',
-      'temporal-db',
-      'temporal',
-      'firebase-emulator',
+      '-e', 'GOOGLE_APPLICATION_CREDENTIALS=/tmp/.config/gcloud/application_default_credentials.json',
+      'run',
+      'integration-tests',
       'sonar-scanner'
     ]
     env: [
