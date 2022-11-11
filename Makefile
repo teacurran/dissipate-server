@@ -11,7 +11,7 @@ build:
 	COMPOSE_HTTP_TIMEOUT=2000 docker-compose build
 
 start:
-	docker-compose up -d postgresql temporal-db temporal temporal-admin-tools temporal-ui firebase-emulator
+	docker-compose up -d postgresql temporal-db temporal temporal-admin-tools temporal-ui firebase-emulator jaeger
 	docker-compose run --service-ports api
 
 stop:

@@ -16,6 +16,7 @@ public class GreetingResourceTest {
           .then()
              .statusCode(200)
              .body(is("Hello from dissipate!"));
+
     }
 
 }
