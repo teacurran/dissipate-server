@@ -7,6 +7,7 @@ import io.quarkus.runtime.StartupEvent;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Produces;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -16,6 +17,11 @@ public class ServerInstance {
     Duration DEFAULT_DB_WAIT = Duration.ofSeconds(10);
 
     Server server;
+
+    @Produces
+    public Server getServer() {
+        return server;
+    }
 
     public void onStart(@Observes StartupEvent event) {
         MaxIntDto maxIntDto = Server.findMaxInstanceId().await().atMost(DEFAULT_DB_WAIT);

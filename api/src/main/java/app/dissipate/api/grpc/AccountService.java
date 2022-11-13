@@ -1,9 +1,10 @@
 package app.dissipate.api.grpc;
 
 import app.dissipate.data.models.Account;
-import app.dissipate.data.models.AccountStatusEnum;
+import app.dissipate.data.models.Account.AccountStatus;
 import app.dissipate.grpc.*;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
+import com.google.firebase.auth.FirebaseToken;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
@@ -14,6 +15,7 @@ import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
 import static app.dissipate.constants.AuthenticationConstants.CONTEXT_FB_USER_KEY;
+import static app.dissipate.constants.AuthenticationConstants.CONTEXT_UID_KEY;
 
 @GrpcService
 @RegisterInterceptor(GrpcAuthInterceptor.class)
@@ -28,25 +30,23 @@ public class AccountService implements DissipateService {
 
         LOG.info("Registering user: " + request);
 
-        String token = CONTEXT_FB_USER_KEY.get();
+        FirebaseToken token = CONTEXT_FB_USER_KEY.get();
+        String uid = CONTEXT_UID_KEY.get();
 
-        if (token == null) {
+        if (uid == null) {
             return Uni.createFrom().nullItem();
         }
 
         return Panache.withTransaction(() -> {
             Account account = new Account();
-            account.status = AccountStatusEnum.ACTIVE;
-            account.srcId =
+            account.status = AccountStatus.ACTIVE;
+            account.srcId = uid;
+            account.email = token.getEmail();
 
-            account.persist().chain(
-        }
-
-        return Uni.createFrom().item(RegisterResponse.newBuilder()
-                .setId(token)
-                .build());
-
-        //return null;
+            return account.persist().replaceWith(Uni.createFrom().item(RegisterResponse.newBuilder()
+                    .setId(uid)
+                    .build()));
+        });
     }
 
     @Override

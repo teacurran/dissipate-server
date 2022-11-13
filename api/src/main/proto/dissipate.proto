@@ -10,7 +10,7 @@ import "google/protobuf/timestamp.proto";
 
 service DissipateService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
-  rpc CreateHandle(CreateHandleRequest) returns (CreateHandleRequest) {}
+  rpc CreateHandle(CreateHandleRequest) returns (CreateHandleResponse) {}
 }
 
 enum AccountStatus {
