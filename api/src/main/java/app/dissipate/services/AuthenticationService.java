@@ -1,5 +1,6 @@
 package app.dissipate.services;
 
+import app.dissipate.beans.FirebaseTokenVO;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
@@ -16,7 +17,7 @@ import javax.enterprise.context.ApplicationScoped;
 public class AuthenticationService {
 
     @WithSpan("verify-id-token")
-    public FirebaseToken verifyIdToken(String idToken) {
+    public FirebaseTokenVO verifyIdToken(String idToken) {
         try {
             FirebaseToken fbToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
             String uid = fbToken.getUid();
@@ -25,7 +26,7 @@ public class AuthenticationService {
             // span event is working, I'm not sure if baggage is. look into it.
             Baggage.current().toBuilder().put(SemanticAttributes.ENDUSER_ID.getKey(), uid).build().storeInContext(Context.current()).makeCurrent();
 
-            return fbToken;
+            return new FirebaseTokenVO(fbToken);
         } catch (FirebaseAuthException e) {
             throw new RuntimeException(e);
         }

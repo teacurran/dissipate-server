@@ -1,9 +1,9 @@
 package app.dissipate.interceptors;
 
+import app.dissipate.beans.FirebaseTokenVO;
 import app.dissipate.constants.AuthenticationConstants;
 import app.dissipate.services.AuthenticationService;
 import com.google.common.base.Strings;
-import com.google.firebase.auth.FirebaseToken;
 import io.grpc.*;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 
@@ -24,7 +24,7 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
         boolean mustClose = false;
         try {
             if (!Strings.isNullOrEmpty(token)) {
-                FirebaseToken fbToken = authenticationService.verifyIdToken(token);
+                FirebaseTokenVO fbToken = authenticationService.verifyIdToken(token);
                 context = context.withValue(AuthenticationConstants.CONTEXT_FB_USER_KEY, fbToken);
                 context = context.withValue(AuthenticationConstants.CONTEXT_UID_KEY, fbToken.getUid());
 

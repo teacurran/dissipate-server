@@ -1,5 +1,6 @@
 package app.dissipate.services.grpc;
 
+import app.dissipate.beans.FirebaseTokenVO;
 import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.services.AuthenticationService;
@@ -31,7 +32,9 @@ class AccountServiceTest {
 
     @BeforeEach
     public void setup() {
-        Mockito.when(mockAuth.verifyIdToken("test-auth-token")).thenReturn("test-uid");
+        FirebaseTokenVO token = new FirebaseTokenVO();
+        token.setUid("test-uid");
+        Mockito.when(mockAuth.verifyIdToken("test-auth-token")).thenReturn(token);
     }
 
     @Test
@@ -44,7 +47,7 @@ class AccountServiceTest {
         DissipateService authedClient = GrpcClientUtils.attachHeaders(client, extraHeaders);
 
         authedClient.register(RegisterRequest.newBuilder().build())
-                .subscribe().with(reply -> message.complete(reply.getAccount().getId()));
+                .subscribe().with(reply -> message.complete(reply.getId()));
         try {
             String msgValue = message.get(5, TimeUnit.SECONDS);
             Assertions.assertEquals("test-uid", msgValue);
@@ -59,7 +62,7 @@ class AccountServiceTest {
 
         client.register(RegisterRequest.newBuilder().build()).onFailure().invoke(message::obtrudeException)
                 .subscribe().with(reply -> message
-                        .complete(reply.getAccount().getId())
+                        .complete(reply.getId())
                 );
 
         Assertions.assertThrows(ExecutionException.class, () ->

@@ -2,6 +2,7 @@ package app.dissipate.data.models;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
+import io.smallrye.mutiny.Uni;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.GenericGenerators;
 
@@ -13,8 +14,6 @@ import java.util.List;
 @Entity
 public class Account extends PanacheEntityBase {
     @Id
-    @GenericGenerator(name = "account_id", strategy = "app.dissipate.data.jpa.SnowflakeIdGenerator")
-    @GeneratedValue(generator = "account_id")
     public BigInteger id;
 
     @Column(unique = true)
@@ -29,6 +28,10 @@ public class Account extends PanacheEntityBase {
             orphanRemoval = true
     )
     public List<Identity> identities = new ArrayList<>();
+
+    public static Uni<Account> findBySrcId(String srcId) {
+        return find("srcId", srcId).firstResult();
+    }
 
     public void setEmail(String email){
         this.email = email.toLowerCase();
