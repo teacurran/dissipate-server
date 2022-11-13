@@ -1,7 +1,7 @@
 package app.dissipate;
 
 import app.dissipate.data.models.Account;
-import app.dissipate.data.models.AccountStatus;
+import app.dissipate.data.models.AccountStatusEnum;
 import app.dissipate.data.models.Identity;
 import io.quarkus.hibernate.reactive.panache.Panache;
 import io.smallrye.mutiny.Uni;
@@ -17,7 +17,7 @@ public class UserResource {
         return Panache.withTransaction(() -> {
             Account account = new Account();
             account.email = "tea@grilledcheese.com";
-            account.status = AccountStatus.ACTIVE;
+            account.status = AccountStatusEnum.ACTIVE;
 
             Identity identity = new Identity();
             identity.account = account;

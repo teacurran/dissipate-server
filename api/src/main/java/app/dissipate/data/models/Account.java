@@ -12,7 +12,7 @@ public class Account extends PanacheEntity {
     public String srcId;
     public String email;
     public String phone;
-    public AccountStatus status;
+    public AccountStatusEnum status;
 
     @OneToMany(
             mappedBy = "account",

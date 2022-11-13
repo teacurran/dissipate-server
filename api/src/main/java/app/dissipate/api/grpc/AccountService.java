@@ -1,5 +1,7 @@
-package app.dissipate.services.grpc;
+package app.dissipate.api.grpc;
 
+import app.dissipate.data.models.Account;
+import app.dissipate.data.models.AccountStatusEnum;
 import app.dissipate.grpc.*;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
 import io.opentelemetry.api.common.AttributeKey;
@@ -7,6 +9,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
+import io.quarkus.hibernate.reactive.panache.Panache;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
@@ -31,21 +34,23 @@ public class AccountService implements DissipateService {
             return Uni.createFrom().nullItem();
         }
 
+        return Panache.withTransaction(() -> {
+            Account account = new Account();
+            account.status = AccountStatusEnum.ACTIVE;
+            account.srcId =
+
+            account.persist().chain(
+        }
+
         return Uni.createFrom().item(RegisterResponse.newBuilder()
-                .setAccount(Account.newBuilder().setId(token))
+                .setId(token)
                 .build());
 
-//        return Panache.withTransaction(() -> {
-//            Account account = new Account();
-//            account.status = AccountStatus.ACTIVE;
-//
-//            account.persist().chain(
-//        }
         //return null;
     }
 
     @Override
-    public Uni<Handle> createHandle(CreateHandleRequest request) {
+    public Uni<CreateHandleResponse> createHandle(CreateHandleRequest request) {
         return null;
     }
 }
