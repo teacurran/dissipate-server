@@ -12,11 +12,12 @@ import io.opentelemetry.api.trace.Span;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.Panache;
-import io.quarkus.hibernate.reactive.panache.common.runtime.ReactiveTransactional;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
 import javax.inject.Inject;
+
+import java.time.LocalDateTime;
 
 import static app.dissipate.constants.AuthenticationConstants.CONTEXT_FB_USER_KEY;
 import static app.dissipate.constants.AuthenticationConstants.CONTEXT_UID_KEY;
@@ -35,38 +36,35 @@ public class AccountService implements DissipateService {
 
         Span.current().addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
-        LOG.info("Registering user: " + request);
-
         FirebaseTokenVO token = CONTEXT_FB_USER_KEY.get();
         String uid = CONTEXT_UID_KEY.get();
 
         if (uid == null) {
-            LOG.info("uid is null");
+            Span.current().addEvent("uid is null");
             return Uni.createFrom().nullItem();
         }
 
-        return Panache.withTransaction(() -> Account.findBySrcId(uid)
-                .onItem().ifNotNull().transform(account -> {
-                    LOG.info("Account already exists: " + account.id);
+        return Panache.withTransaction(() -> Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
+            Span.current().addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+            account.email = token.getEmail();
+            account.status = AccountStatus.ACTIVE;
+            account.updatedAt = LocalDateTime.now();
 
-                    return account;
-                }).onItem().ifNull().switchTo(() -> {
-                    LOG.info("creating account with srcId: " + uid);
-                    Account account = new Account();
-                    account.id = snowflakeIdGenerator.generate(Account.class.getName());
-                    account.email = token.getEmail();
-                    account.status = AccountStatus.ACTIVE;
-                    account.srcId = uid;
-                    LOG.info("snowflake id assigned: " + account.id);
-                    return account.persistAndFlush();
-                }).onItem().transform(account -> {
-                    LOG.info("Account created: " + uid);
-                    RegisterResponse response = RegisterResponse.newBuilder()
-                            .setId(uid)
-                            .build();
-                    return response;
-                })
-        );
+            return account.persistAndFlush();
+        }).onItem().ifNull().switchTo(() -> {
+            LOG.info("creating account with srcId: " + uid);
+            Account account = new Account();
+            account.id = snowflakeIdGenerator.generate(Account.class.getName());
+            account.email = token.getEmail();
+            account.status = AccountStatus.ACTIVE;
+            account.srcId = uid;
+            LOG.info("snowflake id assigned: " + account.id);
+            return account.persistAndFlush();
+        }).onItem().transform(account -> {
+            LOG.info("Account created: " + uid);
+            RegisterResponse response = RegisterResponse.newBuilder().setId(uid).build();
+            return response;
+        }));
     }
 
     @Override

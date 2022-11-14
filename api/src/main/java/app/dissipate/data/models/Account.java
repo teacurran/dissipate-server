@@ -2,8 +2,11 @@ package app.dissipate.data.models;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.smallrye.mutiny.Uni;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,8 +28,20 @@ public class Account extends PanacheEntityBase {
     )
     public List<Identity> identities = new ArrayList<>();
 
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    public LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    public LocalDateTime updatedAt;
+
     public static Uni<Account> findBySrcId(String srcId) {
         return find("srcId", srcId).firstResult();
+    }
+
+    @Override
+    public Uni<Account> persist() {
+        return super.persist();
     }
 
     @Override
