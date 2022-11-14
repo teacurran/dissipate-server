@@ -1,20 +1,16 @@
 package app.dissipate.data.models;
 
-import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.smallrye.mutiny.Uni;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.GenericGenerators;
 
 import javax.persistence.*;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 public class Account extends PanacheEntityBase {
     @Id
-    public BigInteger id;
+    public Long id;
 
     @Column(unique = true)
     public String srcId;
@@ -31,6 +27,11 @@ public class Account extends PanacheEntityBase {
 
     public static Uni<Account> findBySrcId(String srcId) {
         return find("srcId", srcId).firstResult();
+    }
+
+    @Override
+    public Uni<Account> persistAndFlush() {
+        return super.persistAndFlush();
     }
 
     public void setEmail(String email){

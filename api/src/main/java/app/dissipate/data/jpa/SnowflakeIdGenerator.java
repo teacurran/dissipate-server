@@ -7,7 +7,6 @@ import org.hibernate.HibernateException;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.math.BigInteger;
 import java.util.Hashtable;
 
 @ApplicationScoped
@@ -18,7 +17,7 @@ public class SnowflakeIdGenerator {
 
     Hashtable<String, Snowflake> snowflakes = new Hashtable<>();
 
-    public BigInteger generate(String idName) throws HibernateException {
+    public Long generate(String idName) throws HibernateException {
         Snowflake snowflake;
         if (snowflakes.containsKey(idName)) {
             snowflake = snowflakes.get(idName);
@@ -26,6 +25,6 @@ public class SnowflakeIdGenerator {
             snowflake = new Snowflake(serverInstance.getServer().instanceNumber, ApplicationConstants.APP_EPOCH);
             snowflakes.put(idName, snowflake);
         }
-        return BigInteger.valueOf(snowflake.nextId());
+        return snowflake.nextId();
     }
 }

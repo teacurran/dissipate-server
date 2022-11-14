@@ -10,6 +10,9 @@ public class AccountStatusConverter implements AttributeConverter<AccountStatus,
 
     @Override
     public Integer convertToDatabaseColumn(AccountStatus type) {
+        if (type == null) {
+            return 0;
+        }
         return type.getValue();
     }
 

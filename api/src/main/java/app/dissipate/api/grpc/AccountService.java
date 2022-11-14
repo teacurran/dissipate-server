@@ -12,6 +12,7 @@ import io.opentelemetry.api.trace.Span;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.Panache;
+import io.quarkus.hibernate.reactive.panache.common.runtime.ReactiveTransactional;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
@@ -46,22 +47,26 @@ public class AccountService implements DissipateService {
 
         return Panache.withTransaction(() -> Account.findBySrcId(uid)
                 .onItem().ifNotNull().transform(account -> {
-                    LOG.info("Account already exists: " + account);
+                    LOG.info("Account already exists: " + account.id);
 
-                    return Uni.createFrom().item(account);
-                }).onItem().ifNull().continueWith(() -> {
+                    return account;
+                }).onItem().ifNull().switchTo(() -> {
                     LOG.info("creating account with srcId: " + uid);
                     Account account = new Account();
                     account.id = snowflakeIdGenerator.generate(Account.class.getName());
                     account.email = token.getEmail();
                     account.status = AccountStatus.ACTIVE;
                     account.srcId = uid;
-                    return account.persist();
+                    LOG.info("snowflake id assigned: " + account.id);
+                    return account.persistAndFlush();
                 }).onItem().transform(account -> {
                     LOG.info("Account created: " + uid);
-                    return RegisterResponse.newBuilder().setId(uid).build();
-                }));
-
+                    RegisterResponse response = RegisterResponse.newBuilder()
+                            .setId(uid)
+                            .build();
+                    return response;
+                })
+        );
     }
 
     @Override
