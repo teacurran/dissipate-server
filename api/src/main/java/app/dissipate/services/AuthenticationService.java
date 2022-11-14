@@ -12,14 +12,18 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 @ApplicationScoped
 public class AuthenticationService {
 
+    @Inject
+    FirebaseAuth firebaseAuth;
+
     @WithSpan("verify-id-token")
     public FirebaseTokenVO verifyIdToken(String idToken) {
         try {
-            FirebaseToken fbToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            FirebaseToken fbToken = firebaseAuth.verifyIdToken(idToken);
             String uid = fbToken.getUid();
 
             Span.current().addEvent("Verified Firebase Token", Attributes.of(SemanticAttributes.ENDUSER_ID, uid));

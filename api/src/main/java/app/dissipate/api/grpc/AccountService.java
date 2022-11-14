@@ -27,8 +27,6 @@ import static app.dissipate.constants.AuthenticationConstants.CONTEXT_UID_KEY;
 @RegisterInterceptor(GrpcAuthInterceptor.class)
 public class AccountService implements DissipateService {
 
-    private static final Logger LOG = Logger.getLogger(AccountService.class);
-
     @Inject
     SnowflakeIdGenerator snowflakeIdGenerator;
 
@@ -48,7 +46,7 @@ public class AccountService implements DissipateService {
         }
 
         return Panache.withTransaction(() -> Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
-            currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+            //currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             account.email = token.getEmail();
             account.status = AccountStatus.ACTIVE;
             account.updatedAt = LocalDateTime.now();
@@ -63,7 +61,7 @@ public class AccountService implements DissipateService {
             currentSpan.addEvent("new account", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             return account.persistAndFlush();
         }).onItem().transform(account -> {
-            currentSpan.addEvent("account created", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+            //currentSpan.addEvent("account created", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             RegisterResponse response = RegisterResponse.newBuilder().setId(uid).build();
             return response;
         }));
