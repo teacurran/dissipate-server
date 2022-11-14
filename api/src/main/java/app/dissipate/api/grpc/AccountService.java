@@ -9,6 +9,7 @@ import app.dissipate.interceptors.GrpcAuthInterceptor;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.Panache;
@@ -32,36 +33,37 @@ public class AccountService implements DissipateService {
     SnowflakeIdGenerator snowflakeIdGenerator;
 
     @Override
+    @WithSpan("register")
     public Uni<RegisterResponse> register(RegisterRequest request) {
 
-        Span.current().addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
+        Span currentSpan = Span.current();
+        currentSpan.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
         FirebaseTokenVO token = CONTEXT_FB_USER_KEY.get();
         String uid = CONTEXT_UID_KEY.get();
 
         if (uid == null) {
-            Span.current().addEvent("uid is null");
+            currentSpan.addEvent("uid is null");
             return Uni.createFrom().nullItem();
         }
 
         return Panache.withTransaction(() -> Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
-            Span.current().addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+            currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             account.email = token.getEmail();
             account.status = AccountStatus.ACTIVE;
             account.updatedAt = LocalDateTime.now();
 
             return account.persistAndFlush();
         }).onItem().ifNull().switchTo(() -> {
-            LOG.info("creating account with srcId: " + uid);
             Account account = new Account();
             account.id = snowflakeIdGenerator.generate(Account.class.getName());
             account.email = token.getEmail();
             account.status = AccountStatus.ACTIVE;
             account.srcId = uid;
-            LOG.info("snowflake id assigned: " + account.id);
+            currentSpan.addEvent("new account", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             return account.persistAndFlush();
         }).onItem().transform(account -> {
-            LOG.info("Account created: " + uid);
+            currentSpan.addEvent("account created", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             RegisterResponse response = RegisterResponse.newBuilder().setId(uid).build();
             return response;
         }));
