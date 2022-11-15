@@ -2,6 +2,7 @@ package app.dissipate.services;
 
 import app.dissipate.data.models.Server;
 import app.dissipate.data.models.dto.MaxIntDto;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 
@@ -23,6 +24,7 @@ public class ServerInstance {
         return server;
     }
 
+    @WithSpan("ServerInstance.onStart")
     public void onStart(@Observes StartupEvent event) {
         MaxIntDto maxIntDto = Server.findMaxInstanceId().await().atMost(DEFAULT_DB_WAIT);
         if (maxIntDto == null) {
@@ -45,6 +47,7 @@ public class ServerInstance {
         server.persistAndFlush().await().atMost(DEFAULT_DB_WAIT);
     }
 
+    @WithSpan("ServerInstance.onStop")
     public void onStop(@Observes ShutdownEvent event) {
         if (server != null) {
             server = Server.byId(server.id).await().atMost(DEFAULT_DB_WAIT);

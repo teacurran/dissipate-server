@@ -9,6 +9,7 @@ import app.dissipate.interceptors.GrpcAuthInterceptor;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.Panache;
@@ -31,6 +32,7 @@ public class AccountService implements DissipateService {
     SnowflakeIdGenerator snowflakeIdGenerator;
 
     @Override
+    @WithSpan("register")
     public Uni<RegisterResponse> register(RegisterRequest request) {
 
         Span currentSpan = Span.current();
