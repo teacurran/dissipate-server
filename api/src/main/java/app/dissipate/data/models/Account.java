@@ -50,7 +50,7 @@ public class Account extends PanacheEntityBase {
     }
 
     public void setEmail(String email){
-        this.email = email.toLowerCase();
+        this.email = email == null ? null : email.toLowerCase();
     }
 
     public enum AccountStatus {
