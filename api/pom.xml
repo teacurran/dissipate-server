@@ -10,15 +10,17 @@
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <failsafe.useModulePath>false</failsafe.useModulePath>
         <maven.compiler.release>11</maven.compiler.release>
-        <postgres.driver.version>42.4.1</postgres.driver.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.14.0.Final</quarkus.platform.version>
+
         <sonar.organization>appi</sonar.organization>
         <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+
+        <version.postgres.driver>42.4.1</version.postgres.driver>
+        <version.quarkus>2.14.0.Final</version.quarkus>
         <version.grpc>1.48.1</version.grpc>
         <version.kotlin>1.7.10</version.kotlin>
         <version.os-maven-plugin>1.7.0</version.os-maven-plugin>
@@ -26,6 +28,17 @@
         <version.protoc>3.21.5</version.protoc>
     </properties>
     <repositories>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <repository>
             <id>artifact-registry</id>
             <url>artifactregistry://us-central1-maven.pkg.dev/dissipate/dissipate-maven</url>
@@ -52,7 +65,7 @@
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>
-                <version>${quarkus.platform.version}</version>
+                <version>${version.quarkus}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -67,55 +80,58 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-reactive-panache</artifactId>
-            <version>${quarkus.platform.version}</version>
+            <version>${version.quarkus}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-reactive-pg-client</artifactId>
-            <version>${quarkus.platform.version}</version>
+            <version>${version.quarkus}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-grpc</artifactId>
-            <version>${quarkus.platform.version}</version>
+            <version>${version.quarkus}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
-            <version>${quarkus.platform.version}</version>
+            <version>${version.quarkus}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
-            <version>${quarkus.platform.version}</version>
+            <version>${version.quarkus}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-opentelemetry-exporter-otlp</artifactId>
-            <version>${quarkus.platform.version}</version>
+            <version>${version.quarkus}</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-jdbc</artifactId>
+            <version>1.18.0-alpha</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
+            <version>1.18.0-alpha</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-postgresql</artifactId>
+            <version>${version.quarkus}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
-            <version>${quarkus.platform.version}</version>
+            <version>${version.quarkus}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-mockito</artifactId>
-            <version>${quarkus.platform.version}</version>
+            <version>${version.quarkus}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -161,7 +177,7 @@
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.platform.version}</version>
+                <version>${version.quarkus}</version>
                 <extensions>true</extensions>
                 <executions>
                     <execution>
@@ -184,7 +200,7 @@
                         <path>
                             <groupId>io.quarkus</groupId>
                             <artifactId>quarkus-panache-common</artifactId>
-                            <version>${quarkus.platform.version}</version>
+                            <version>${version.quarkus}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
@@ -207,7 +223,7 @@
                     <dependency>
                         <groupId>org.postgresql</groupId>
                         <artifactId>postgresql</artifactId>
-                        <version>${postgres.driver.version}</version>
+                        <version>${version.postgres.driver}</version>
                     </dependency>
                 </dependencies>
             </plugin>
