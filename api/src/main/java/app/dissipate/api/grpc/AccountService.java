@@ -49,7 +49,7 @@ public class AccountService implements DissipateService {
 
         return Panache.withTransaction(() -> Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
             LOG.debugv("account exists: {0}", account.id);
-            currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+            Span.current().addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             account.email = token.getEmail();
             account.status = AccountStatus.ACTIVE;
             account.updatedAt = LocalDateTime.now();
@@ -62,7 +62,7 @@ public class AccountService implements DissipateService {
             account.status = AccountStatus.ACTIVE;
             account.srcId = uid;
             LOG.debugv("new account: {0}", account.id);
-            //currentSpan.addEvent("new account", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+            Span.current().addEvent("new account", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             return account.persistAndFlush();
         }).onItem().transform(account -> {
             LOG.debugv("using account: {0}", account.id);
