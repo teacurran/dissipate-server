@@ -59,7 +59,7 @@ public class Account extends PanacheEntityBase {
         SUSPENDED(3),
         BANNED(4);
 
-        private int value;
+        private final int value;
         private AccountStatus(int value) {
             this.value = value;
         }

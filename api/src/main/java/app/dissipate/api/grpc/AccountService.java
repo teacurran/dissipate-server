@@ -9,10 +9,11 @@ import app.dissipate.interceptors.GrpcAuthInterceptor;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.Panache;
+import io.quarkus.opentelemetry.runtime.tracing.intrumentation.grpc.GrpcTracingServerInterceptor;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
@@ -31,8 +32,10 @@ public class AccountService implements DissipateService {
     @Inject
     SnowflakeIdGenerator snowflakeIdGenerator;
 
+    @Inject
+    Tracer tracer;
+
     @Override
-    @WithSpan("register")
     public Uni<RegisterResponse> register(RegisterRequest request) {
 
         Span currentSpan = Span.current();
@@ -49,7 +52,7 @@ public class AccountService implements DissipateService {
 
         return Panache.withTransaction(() -> Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
             LOG.debugv("account exists: {0}", account.id);
-            Span.current().addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+            currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             account.email = token.getEmail();
             account.status = AccountStatus.ACTIVE;
             account.updatedAt = LocalDateTime.now();
@@ -62,7 +65,7 @@ public class AccountService implements DissipateService {
             account.status = AccountStatus.ACTIVE;
             account.srcId = uid;
             LOG.debugv("new account: {0}", account.id);
-            Span.current().addEvent("new account", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+            currentSpan.addEvent("new account", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             return account.persistAndFlush();
         }).onItem().transform(account -> {
             LOG.debugv("using account: {0}", account.id);
