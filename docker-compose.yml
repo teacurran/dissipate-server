@@ -33,12 +33,26 @@ x-api-base: &api-base
     quarkus.http.host: 0.0.0.0
     quarkus.opentelemetry.tracer.exporter.otlp.endpoint: http://jaeger:4317
   command: mvn quarkus:dev -Ddebug=true -DdebugHost=0.0.0.0
-  ports:
-    - "5005:5005"
-    - "8080:8080"
-    - "9299:9000"
+
+x-kafka-base: &kafka-base
+  image: "wurstmeister/kafka:2.13-2.8.1"
+  depends_on:
+    - zookeeper
+
+x-kafka-env: &kafka-env
+  KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+  KAFKA_CREATE_TOPICS: "posts:3:1"
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
 
 services:
+  api:
+    <<: *api-base
+    ports:
+      - "5005:5005"
+      - "8080:8080"
+      - "9299:9000"
+
   postgresql:
     image: postgis/postgis
     restart: always
@@ -186,12 +200,39 @@ services:
       - -Dflyway.user=dissipate
       - -Dflyway.password=dissipate
 
-  api:
-    <<: *api-base
-
   integration-tests:
     <<: *api-base
     command: mvn verify
+
+  kafka-server1:
+    <<: *kafka-base
+    ports:
+      - '29092:29092'
+    environment:
+      <<: *kafka-env
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka-server1:9092,OUTSIDE://localhost:29092
+      KAFKA_LISTENERS: INSIDE://kafka-server1:9092,OUTSIDE://kafka-server1:29092
+
+  kafka-cat-internal:
+    image: confluentinc/cp-kafkacat
+    entrypoint: "kafkacat"
+    command: "-b kafka-server1:9092 -L -v"
+    profiles: ["development"]
+
+  kafka-cat-external:
+    image: confluentinc/cp-kafkacat
+    entrypoint: "kafkacat"
+    command: "-b host.docker.internal:29092 -L -d all"
+    profiles: ["development"]
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - '8080:8080'
+    environment:
+      KAFKA_CLUSTERS_0_NAME: dclocal-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-server1:9092
+    profiles: ["development"]
 
   sonar-scanner:
     <<: *api-base
@@ -202,6 +243,13 @@ services:
       - -Dsonar.login=${SONAR_TOKEN}
       - -Dsonar.host.url=https://sonarcloud.io
       - -DGOOGLE_APPLICATION_CREDENTIALS=/app/cloudbuild_credentials.json
+
+  zookeeper:
+    image: 'wurstmeister/zookeeper:latest'
+    ports:
+      - '22181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
 
 volumes:
   postgres_db:
