@@ -80,11 +80,13 @@ services:
 # Cassandra
   dse_seed_node:
     image: "datastax/dse-server:${DATASTAX_VERSION}"
+    depends_on:
+      - dse_opscenter
+    links:
+      - dse_opscenter
     environment:
       - DS_LICENSE=accept
     # Allow DSE to lock memory with mlock
-    links:
-      - dse_opscenter
     cap_add:
       - IPC_LOCK
     ulimits:
@@ -94,12 +96,11 @@ services:
     image: "datastax/dse-server:${DATASTAX_VERSION}"
     depends_on:
       - dse_seed_node
+    links:
+      - dse_opscenter
     environment:
       - DS_LICENSE=accept
       - SEEDS=dse_seed_node
-    links:
-      - dse_seed_node
-      - dse_opscenter
     # Allow DSE to lock memory with mlock
     cap_add:
       - IPC_LOCK
@@ -107,7 +108,7 @@ services:
       memlock: -1
 
   dse_opscenter:
-    image: "datastax/dse-opscenter:6.8.20"
+    image: "datastax/dse-opscenter:6.8.20-1"
     ports:
       - 8888:8888
     environment:
@@ -256,12 +257,12 @@ services:
       - -Dsonar.host.url=https://sonarcloud.io
       - -DGOOGLE_APPLICATION_CREDENTIALS=/app/cloudbuild_credentials.json
 
-  zookeeper:
-    image: 'wurstmeister/zookeeper:latest'
-    ports:
-      - '22181:2181'
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+#  zookeeper:
+#    image: 'wurstmeister/zookeeper:latest'
+#    ports:
+#      - '22181:2181'
+#    environment:
+#      - ALLOW_ANONYMOUS_LOGIN=yes
 
 volumes:
   postgres_db:
