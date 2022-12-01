@@ -13,6 +13,9 @@ public interface UrlDao {
     @Update
     Uni<Void> updateAsync(Url url);
 
+    @Update
+    void update(Url url);
+
     @Select
     MutinyMappedReactiveResultSet<Url> findAll();
 

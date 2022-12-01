@@ -86,7 +86,7 @@ services:
       - ~/apps/cassandra:/var/lib/cassandra
     environment:
       - CASSANDRA_CLUSTER_NAME=dissipate
-      - CASSANDRA_DC=dclocal
+      - CASSANDRA_DC=datacenter1
 
   temporal:
     image: temporalio/auto-setup:${TEMPORAL_VERSION}
