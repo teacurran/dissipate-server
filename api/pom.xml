@@ -243,6 +243,11 @@
                             <artifactId>quarkus-panache-common</artifactId>
                             <version>${version.quarkus}</version>
                         </path>
+                        <path>
+                            <groupId>com.datastax.oss.quarkus</groupId>
+                            <artifactId>cassandra-quarkus-mapper-processor</artifactId>
+                            <version>${version.cassandra.quarkus}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>

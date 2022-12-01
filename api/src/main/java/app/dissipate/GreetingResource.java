@@ -1,5 +1,7 @@
 package app.dissipate;
 
+import app.dissipate.data.cassandra.dao.UrlDao;
+import app.dissipate.data.cassandra.models.Url;
 import app.dissipate.workflows.CrawlDomainWorkflow;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -20,9 +22,15 @@ public class GreetingResource {
     @Inject
     WorkflowBuilder workflowBuilder;
 
+    @Inject
+    UrlDao urlDao;
+
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String hello() {
+        Url url = new Url("https://mastodon.social/");
+        urlDao.updateAsync(url);
+
         CrawlDomainWorkflow cdw = workflowBuilder.build(CrawlDomainWorkflow.class, "crawl-domain");
         //cdw.crawlDomain("dissipate.app");
 

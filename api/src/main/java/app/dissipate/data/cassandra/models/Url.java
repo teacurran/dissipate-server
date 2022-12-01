@@ -3,19 +3,26 @@ package app.dissipate.data.cassandra.models;
 import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
-import java.time.LocalDate;
+import java.time.Instant;
 
 @Entity
 public class Url {
+
+    public Url() {
+    }
+
+    public Url(String url) {
+        this.url = url;
+    }
 
     @PartitionKey
     String url;
 
     String domain;
 
-    LocalDate dateCreated;
+    Instant dateCreated;
 
-    LocalDate dateLastCrawled;
+    Instant dateLastCrawled;
 
     String body;
 
@@ -27,11 +34,11 @@ public class Url {
         this.url = url;
     }
 
-    public LocalDate getDateCreated() {
+    public Instant getDateCreated() {
         return dateCreated;
     }
 
-    public void setDateCreated(LocalDate dateCreated) {
+    public void setDateCreated(Instant dateCreated) {
         this.dateCreated = dateCreated;
     }
 
@@ -43,11 +50,11 @@ public class Url {
         this.domain = domain;
     }
 
-    public LocalDate getDateLastCrawled() {
+    public Instant getDateLastCrawled() {
         return dateLastCrawled;
     }
 
-    public void setDateLastCrawled(LocalDate dateLastCrawled) {
+    public void setDateLastCrawled(Instant dateLastCrawled) {
         this.dateLastCrawled = dateLastCrawled;
     }
 
