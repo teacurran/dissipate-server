@@ -19,6 +19,7 @@
         <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
 
+        <version.cassandra.quarkus>1.1.2</version.cassandra.quarkus>
         <version.postgres.driver>42.4.1</version.postgres.driver>
         <version.quarkus>2.14.0.Final</version.quarkus>
         <version.grpc>1.48.1</version.grpc>
@@ -69,9 +70,38 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.datastax.oss.quarkus</groupId>
+                <artifactId>cassandra-quarkus-bom</artifactId>
+                <version>${version.cassandra.quarkus}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>com.datastax.oss.quarkus</groupId>
+            <artifactId>cassandra-quarkus-client</artifactId>
+            <version>${version.cassandra.quarkus}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-mapper-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-metrics-micrometer</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.google.firebase</groupId>
             <artifactId>firebase-admin</artifactId>
@@ -140,6 +170,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.datastax.oss.quarkus</groupId>
+            <artifactId>cassandra-quarkus-test-framework</artifactId>
+            <version>${version.cassandra.quarkus}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.sellware.quarkus-temporal</groupId>
             <artifactId>temporal-client</artifactId>
             <version>2.1.0</version>
@@ -158,6 +194,11 @@
             <groupId>com.callicoder</groupId>
             <artifactId>snowflake</artifactId>
             <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
