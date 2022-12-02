@@ -12,7 +12,6 @@
         <maven.compiler.release>11</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
 
         <sonar.organization>appi</sonar.organization>
@@ -21,7 +20,7 @@
 
         <version.cassandra.quarkus>1.1.2</version.cassandra.quarkus>
         <version.postgres.driver>42.4.1</version.postgres.driver>
-        <version.quarkus>2.14.0.Final</version.quarkus>
+        <version.quarkus>2.14.2.Final</version.quarkus>
         <version.grpc>1.48.1</version.grpc>
         <version.kotlin>1.7.10</version.kotlin>
         <version.os-maven-plugin>1.7.0</version.os-maven-plugin>
@@ -65,7 +64,7 @@
         <dependencies>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
-                <artifactId>${quarkus.platform.artifact-id}</artifactId>
+                <artifactId>quarkus-bom</artifactId>
                 <version>${version.quarkus}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -138,6 +137,14 @@
             <version>${version.quarkus}</version>
         </dependency>
         <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-reactive-messaging-rabbitmq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-health</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-jdbc</artifactId>
             <version>1.18.0-alpha</version>
@@ -175,6 +182,7 @@
             <version>${version.cassandra.quarkus}</version>
             <scope>test</scope>
         </dependency>
+        <!--
         <dependency>
             <groupId>com.sellware.quarkus-temporal</groupId>
             <artifactId>temporal-client</artifactId>
@@ -185,6 +193,7 @@
             <artifactId>temporal-client-deployment</artifactId>
             <version>2.1.0</version>
         </dependency>
+        -->
         <dependency>
             <groupId>net.java.dev.inflector</groupId>
             <artifactId>inflector</artifactId>
@@ -199,10 +208,6 @@
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-smallrye-health</artifactId>
         </dependency>
     </dependencies>
     <build>

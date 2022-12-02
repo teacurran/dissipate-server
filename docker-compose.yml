@@ -6,10 +6,12 @@ x-api-base: &api-base
     context: ./api
     dockerfile: src/main/docker/dev-jvm.dockerfile
   depends_on:
+    - cassandra
     - postgresql
     - firebase-emulator
     - flyway
     - temporal
+    - rabbitmq
   volumes:
     - ./api:/app
     - ~/.config/gcloud:/tmp/.config/gcloud
@@ -219,7 +221,10 @@ services:
       - 15672:15672
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq/
-      - rabbitmq_data:/var/log/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: dissipate
+      RABBITMQ_DEFAULT_PASS: dissipate
 
   sonar-scanner:
     <<: *api-base
