@@ -4,14 +4,14 @@ CMD_ARGUMENTS ?= $(cmd)
 .PHONY: clean build
 
 package:
-	cd api && mvn package -Dquarkus.temporal.service.url=temporal:7233
+	cd api && mvn package
 
 build:
 	docker-compose down --remove-orphans
 	COMPOSE_HTTP_TIMEOUT=2000 docker-compose build
 
 start:
-	docker-compose up -d postgresql temporal-db temporal temporal-admin-tools temporal-ui firebase-emulator jaeger
+	docker-compose up -d postgresql firebase-emulator jaeger
 	docker-compose run --service-ports api
 
 stop:
@@ -24,10 +24,10 @@ flyway:
 	cd api && mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/dissipate -Dflyway.user=tea -Dflyway.password=
 
 test:
-	docker-compose up --exit-code-from integration-tests postgresql temporal-db temporal firebase-emulator integration-tests
+	docker-compose up --exit-code-from integration-tests postgresql firebase-emulator integration-tests
 
 sonar:
-	docker-compose up --exit-code-from sonar-scanner postgresql temporal-db temporal firebase-emulator sonar-scanner
+	docker-compose up --exit-code-from sonar-scanner postgresql firebase-emulator sonar-scanner
 
 rebuild:
 	docker-compose build --no-cache

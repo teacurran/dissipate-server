@@ -37,15 +37,10 @@ steps:
       'up',
       '-d',
       'postgresql',
-      'temporal-db',
-      'temporal',
       'firebase-emulator',
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',
-      'TEMPORAL_VERSION=1.17.5',
-      'TEMPORAL_UI_VERSION=2.5.1',
-      'TEMPORAL_WEB_VERSION=1.15.0',
       'POSTGRESQL_VERSION=13'
     ]
 
@@ -63,9 +58,6 @@ steps:
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',
-      'TEMPORAL_VERSION=1.17.5',
-      'TEMPORAL_UI_VERSION=2.5.1',
-      'TEMPORAL_WEB_VERSION=1.15.0',
       'POSTGRESQL_VERSION=13'
     ]
     secretEnv: ['SONAR_TOKEN']
@@ -79,15 +71,10 @@ steps:
       '-f', 'docker-compose.cloudbuild.yml',
       'stop',
       'postgresql',
-      'temporal-db',
-      'temporal',
       'firebase-emulator',
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',
-      'TEMPORAL_VERSION=1.17.5',
-      'TEMPORAL_UI_VERSION=2.5.1',
-      'TEMPORAL_WEB_VERSION=1.15.0',
       'POSTGRESQL_VERSION=13'
     ]
     secretEnv: ['SONAR_TOKEN']

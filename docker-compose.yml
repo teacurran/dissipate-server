@@ -10,7 +10,6 @@ x-api-base: &api-base
     - postgresql
     - firebase-emulator
     - flyway
-    - temporal
     - rabbitmq
   volumes:
     - ./api:/app
@@ -28,7 +27,6 @@ x-api-base: &api-base
     REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
     GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
     quarkus.datasource.reactive.url: vertx-reactive:postgresql://postgresql:5432/dissipate
-    quarkus.temporal.service.url: temporal:7233
     quarkus.datasource.username: dissipate
     quarkus.datasource.password: dissipate
     quarkus.hibernate-orm.database.generation: update
@@ -67,18 +65,6 @@ services:
     ports:
       - "5442:5432"
 
-  temporal-db:
-    image: postgres:${POSTGRESQL_VERSION}
-    restart: always
-    environment:
-      POSTGRES_USER: dissipate
-      POSTGRES_PASSWORD: dissipate
-      POSTGRES_DB: temporal
-    volumes:
-      - temporal_db:/var/lib/postgresql/data
-    ports:
-      - "5443:5432"
-
 # Cassandra
   cassandra:
     image: cassandra:4.1
@@ -89,44 +75,6 @@ services:
     environment:
       - CASSANDRA_CLUSTER_NAME=dissipate
       - CASSANDRA_DC=datacenter1
-
-  temporal:
-    image: temporalio/auto-setup:${TEMPORAL_VERSION}
-    depends_on:
-      - temporal-db
-    environment:
-      - TEMPORAL_ALLOW_NO_AUTH=true
-      - DB=postgresql
-      - POSTGRES_SEEDS=temporal-db
-      - DB_PORT=5432
-      - POSTGRES_USER=dissipate
-      - POSTGRES_PWD=dissipate
-      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
-    ports:
-      - 7233:7233
-    volumes:
-      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
-    labels:
-      kompose.volume.type: configMap
-  temporal-admin-tools:
-    image: temporalio/admin-tools:${TEMPORAL_VERSION}
-    container_name: temporal-admin-tools
-    depends_on:
-      - temporal
-    environment:
-      - TEMPORAL_CLI_ADDRESS=temporal:7233
-    stdin_open: true
-    tty: true
-  temporal-ui:
-    image: temporalio/ui:${TEMPORAL_UI_VERSION}
-    container_name: temporal-ui
-    depends_on:
-      - temporal
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
-    ports:
-      - 8081:8080
 
   # Jaeger
   jaeger:
@@ -250,5 +198,4 @@ volumes:
   maven_target:
   rabbitmq_data:
   rabbitmq_logs:
-  temporal_db:
 

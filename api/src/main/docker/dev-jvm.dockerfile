@@ -115,7 +115,6 @@ WORKDIR /app
 # COPY ./pom.xml /app/
 # # COPY ./.env /usr/src/app/
 # COPY ./src /app/src/
-# RUN mvn quarkus:build -Dquarkus.temporal.service.url=localhost:7233
 
 #
 #RUN chown 1001 /app \
