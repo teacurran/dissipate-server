@@ -6,6 +6,7 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.smallrye.common.annotation.Blocking;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -40,6 +41,7 @@ public class UrlService {
     @Incoming("url-created-in")
     @Blocking
     @Transactional
+    @WithSpan
     public void urlAdded(Object message) {
 
         System.out.println("here0");
@@ -48,9 +50,9 @@ public class UrlService {
                 .startSpan()
                 .end();
         System.out.println("here1" + Span.current().toString());
-//        Span.current().addEvent("processing url", Attributes.of(
-//                AttributeKey.stringKey("url"), message.toString()
-//        ));
+        Span.current().addEvent("processing url", Attributes.of(
+                AttributeKey.stringKey("url"), message.toString()
+        ));
         System.out.println("here2");
 
     }
