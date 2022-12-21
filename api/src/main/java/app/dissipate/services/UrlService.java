@@ -8,7 +8,6 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.smallrye.common.annotation.Blocking;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -49,18 +48,14 @@ public class UrlService {
     }
 
     public void processMesasage(Object message) {
-        System.out.println("here0");
-        Span span = tracer.spanBuilder("url-added")
+        Span span = tracer.spanBuilder("process-message")
                 .setAttribute(AttributeKey.stringKey("url"), message.toString())
                 .setParent(Context.current().with(Span.current()))
                 .setSpanKind(SpanKind.INTERNAL)
                 .startSpan();
-        System.out.println("here1: " + Span.current().toString());
         span.addEvent("processing url", Attributes.of(
                 AttributeKey.stringKey("url"), message.toString()
         ));
-        System.out.println("here2");
-
         span.end();
     }
 }
