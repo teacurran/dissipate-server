@@ -18,7 +18,7 @@
         <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
 
-        <version.cassandra.quarkus>1.1.2</version.cassandra.quarkus>
+        <version.cassandra.quarkus>1.1.3</version.cassandra.quarkus>
         <version.postgres.driver>42.4.1</version.postgres.driver>
         <version.quarkus>2.15.0.Final</version.quarkus>
         <version.grpc>1.48.1</version.grpc>
