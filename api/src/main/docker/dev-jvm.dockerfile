@@ -75,7 +75,9 @@
 #   accessed directly. (example: "foo.example.com,bar.example.com")
 #
 ###
-FROM maven:3.8.6-amazoncorretto-18
+
+# debian needed for protoc to work. it isn't compiled for alpine.
+FROM maven:3.9-amazoncorretto-19-debian
 
 # RUN apk add --update maven make protobuf-dev
 
