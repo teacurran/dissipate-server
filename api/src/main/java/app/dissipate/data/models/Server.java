@@ -3,8 +3,8 @@ package app.dissipate.data.models;
 import app.dissipate.data.models.dto.MaxIntDto;
 import io.smallrye.mutiny.Uni;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import java.time.LocalDateTime;
 
 @Entity

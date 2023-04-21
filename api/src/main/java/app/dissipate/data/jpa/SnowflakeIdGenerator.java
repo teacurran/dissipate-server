@@ -5,8 +5,8 @@ import app.dissipate.services.ServerInstance;
 import com.callicoder.snowflake.Snowflake;
 import org.hibernate.HibernateException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.Hashtable;
 
 @ApplicationScoped

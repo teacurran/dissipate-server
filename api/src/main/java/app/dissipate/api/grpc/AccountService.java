@@ -17,7 +17,7 @@ import io.quarkus.opentelemetry.runtime.tracing.intrumentation.grpc.GrpcTracingS
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.time.LocalDateTime;
 
 import static app.dissipate.constants.AuthenticationConstants.CONTEXT_FB_USER_KEY;

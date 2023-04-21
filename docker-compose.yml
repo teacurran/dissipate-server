@@ -11,10 +11,11 @@ x-api-base: &api-base
     - firebase-emulator
     - flyway
     - rabbitmq
+    - jaeger
   volumes:
     - ./api:/app
     - ~/.config/gcloud:/tmp/.config/gcloud
-    - maven_cache:/app/.m2
+    # - maven_cache:/app/.m2
     # use virtual volume if having issues with native binaries
     # - maven_target:/app/target
   environment:
@@ -26,13 +27,17 @@ x-api-base: &api-base
     REDIS_PORT: 6379
     REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
     GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
-    quarkus.datasource.reactive.url: vertx-reactive:postgresql://postgresql:5432/dissipate
-    quarkus.datasource.username: dissipate
-    quarkus.datasource.password: dissipate
-    quarkus.hibernate-orm.database.generation: update
-    quarkus.http.host: 0.0.0.0
-    quarkus.opentelemetry.tracer.exporter.otlp.endpoint: http://jaeger:4317
-  command: mvn quarkus:dev -Ddebug=true -DdebugHost=0.0.0.0
+    QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://postgresql:5432/dissipate
+    QUARKUS_DATASOURCE_USERNAME: dissipate
+    QUARKUS_DATASOURCE_PASSWORD: dissipate
+    QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
+    QUARKUS_HTTP_HOST: 0.0.0.0
+    QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+  command:
+    mvn
+    quarkus:dev
+    -Ddebug=true
+    -DdebugHost=0.0.0.0
 
 x-kafka-base: &kafka-base
   image: "wurstmeister/kafka:2.13-2.8.1"
@@ -87,6 +92,7 @@ services:
       - "4317:4317"
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
+      LOG_LEVEL: debug
 
   firebase-emulator:
     image: andreysenov/firebase-tools

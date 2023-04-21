@@ -4,7 +4,7 @@ import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hibernate.annotations.ColumnTransformer;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
