@@ -100,11 +100,11 @@
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-metrics-micrometer</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.google.firebase</groupId>-->
-<!--            <artifactId>firebase-admin</artifactId>-->
-<!--            <version>9.1.1</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.1.1</version>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-reactive-panache</artifactId>
