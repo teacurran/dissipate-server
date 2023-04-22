@@ -32,7 +32,7 @@ x-api-base: &api-base
     QUARKUS_DATASOURCE_PASSWORD: dissipate
     QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
     QUARKUS_HTTP_HOST: 0.0.0.0
-    QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
   command:
     mvn
     quarkus:dev
@@ -52,7 +52,43 @@ x-kafka-env: &kafka-env
 
 services:
   api:
-    <<: *api-base
+    image: api-server
+    build:
+      context: ./api
+      dockerfile: src/main/docker/dev-jvm.dockerfile
+    depends_on:
+      - cassandra
+      - postgresql
+      - firebase-emulator
+      - flyway
+      - rabbitmq
+      - jaeger
+    volumes:
+      - ./api:/app
+      - ~/.config/gcloud:/tmp/.config/gcloud
+      # - maven_cache:/app/.m2
+      # use virtual volume if having issues with native binaries
+      # - maven_target:/app/target
+    environment:
+      SERVICE: local
+      FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
+      FIREBASE_STORAGE_EMULATOR_HOST: "firebase-emulator:9199"
+      GCLOUD_PROJECT: "dissipate"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
+      QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://postgresql:5432/dissipate
+      QUARKUS_DATASOURCE_USERNAME: dissipate
+      QUARKUS_DATASOURCE_PASSWORD: dissipate
+      QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
+      QUARKUS_HTTP_HOST: 0.0.0.0
+      QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
+    command:
+      mvn
+      quarkus:dev
+      -Ddebug=true
+      -DdebugHost=0.0.0.0
     ports:
       - "5005:5005"
       - "8080:8080"

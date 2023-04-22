@@ -28,7 +28,7 @@ public class FirebaseService {
         return FirebaseAuth.getInstance();
     }
 
-    @WithSpan("get-firebase-app")
+    //@WithSpan("get-firebase-app")
     public static FirebaseApp getFirebaseApp() {
         if (firebaseApp == null) {
             try {
