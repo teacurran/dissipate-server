@@ -37,21 +37,23 @@ public class AccountService implements DissipateService {
 
     @Override
     public Uni<RegisterResponse> register(RegisterRequest request) {
+        LOG.info("register()");
 
         Span currentSpan = Span.current();
         currentSpan.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
         FirebaseTokenVO token = CONTEXT_FB_USER_KEY.get();
         String uid = CONTEXT_UID_KEY.get();
-        LOG.debugv("register user with uid: {0}", uid);
+        LOG.infov("register user with uid: {0}", uid);
 
         if (uid == null) {
+            LOG.info("uid is null");
             currentSpan.addEvent("uid is null");
             return Uni.createFrom().nullItem();
         }
 
         return Panache.withTransaction(() -> Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
-            LOG.debugv("account exists: {0}", account.id);
+            LOG.infov("account exists: {0}", account.id);
             currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
             account.email = token.getEmail();
             account.status = AccountStatus.ACTIVE;
@@ -70,8 +72,7 @@ public class AccountService implements DissipateService {
         }).onItem().transform(account -> {
             LOG.debugv("using account: {0}", account.id);
             //currentSpan.addEvent("account created", Attributes.of(AttributeKey.longKey("account.id"), account.id));
-            RegisterResponse response = RegisterResponse.newBuilder().setId(uid).build();
-            return response;
+            return RegisterResponse.newBuilder().setId(uid).build();
         }));
     }
 

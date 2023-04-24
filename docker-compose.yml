@@ -89,6 +89,7 @@ services:
       quarkus:dev
       -Ddebug=true
       -DdebugHost=0.0.0.0
+      -P development
     ports:
       - "5005:5005"
       - "8080:8080"
