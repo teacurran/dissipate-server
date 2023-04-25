@@ -13,18 +13,17 @@ import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.Panache;
-import io.quarkus.opentelemetry.runtime.tracing.intrumentation.grpc.GrpcTracingServerInterceptor;
+import io.quarkus.hibernate.reactive.panache.common.WithSession;
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
+import io.quarkus.security.identity.CurrentIdentityAssociation;
+import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
 import jakarta.inject.Inject;
 import java.time.LocalDateTime;
 
-import static app.dissipate.constants.AuthenticationConstants.CONTEXT_FB_USER_KEY;
-import static app.dissipate.constants.AuthenticationConstants.CONTEXT_UID_KEY;
-
 @GrpcService
-@RegisterInterceptor(GrpcAuthInterceptor.class)
 public class AccountService implements DissipateService {
 
     private static final Logger LOG = Logger.getLogger(AccountService.class);
@@ -33,17 +32,25 @@ public class AccountService implements DissipateService {
     SnowflakeIdGenerator snowflakeIdGenerator;
 
     @Inject
+    CurrentIdentityAssociation identityAssociation;
+
+    @Inject
     Tracer tracer;
 
+
     @Override
+    @WithSession
+    @WithTransaction
     public Uni<RegisterResponse> register(RegisterRequest request) {
         LOG.info("register()");
-
         Span currentSpan = Span.current();
         currentSpan.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
-        FirebaseTokenVO token = CONTEXT_FB_USER_KEY.get();
-        String uid = CONTEXT_UID_KEY.get();
+        SecurityIdentity si = identityAssociation.getIdentity();
+        FirebaseTokenVO token = si.getAttribute("fb_token");
+
+        //FirebaseTokenVO token = CONTEXT_FB_USER_KEY.get();
+        String uid = token.getUid();
         LOG.infov("register user with uid: {0}", uid);
 
         if (uid == null) {
@@ -51,7 +58,6 @@ public class AccountService implements DissipateService {
             currentSpan.addEvent("uid is null");
             return Uni.createFrom().nullItem();
         }
-
         return Panache.withTransaction(() -> Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
             LOG.infov("account exists: {0}", account.id);
             currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
@@ -77,7 +83,8 @@ public class AccountService implements DissipateService {
     }
 
     @Override
+    @WithSession
     public Uni<CreateHandleResponse> createHandle(CreateHandleRequest request) {
-        return null;
+        return Uni.createFrom().item(CreateHandleResponse.newBuilder().setHandle(request.getHandle()).build());
     }
 }

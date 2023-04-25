@@ -2,6 +2,7 @@ package app.dissipate.services.grpc;
 
 import app.dissipate.beans.FirebaseTokenVO;
 import app.dissipate.grpc.DissipateService;
+import app.dissipate.grpc.DissipateServiceClient;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.services.AuthenticationService;
 import io.grpc.Metadata;
@@ -24,7 +25,7 @@ import static app.dissipate.constants.AuthenticationConstants.AUTH_HEADER_KEY;
 @QuarkusTest
 class AccountServiceTest {
 
-    @GrpcClient
+    @GrpcClient("dissipate")
     DissipateService client;
 
     @InjectMock

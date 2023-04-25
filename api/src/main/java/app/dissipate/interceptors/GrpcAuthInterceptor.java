@@ -21,24 +21,23 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> serverCallHandler) {
         String token = metadata.get(AuthenticationConstants.AUTH_HEADER_KEY);
         Context context = Context.current();
-//        boolean mustClose = false;
+        boolean mustClose = false;
         try {
             if (!Strings.isNullOrEmpty(token)) {
                 FirebaseTokenVO fbToken = authenticationService.verifyIdToken(token);
                 context = context.withValue(AuthenticationConstants.CONTEXT_FB_USER_KEY, fbToken);
                 context = context.withValue(AuthenticationConstants.CONTEXT_UID_KEY, fbToken.getUid());
 
-                serverCall.close(Status.UNAUTHENTICATED.withDescription("Auth Token Required"), metadata);
                 return Contexts.interceptCall(context, serverCall, metadata, serverCallHandler);
             } else {
-//                mustClose = true;
+                mustClose = true;
+                serverCall.close(Status.UNAUTHENTICATED.withDescription("Auth Token Required"), metadata);
                 return new ServerCall.Listener<>() {
                 };
             }
         } finally {
-//            if (mustClose) {
-//                //serverCall.close(Status.UNAUTHENTICATED.withDescription("Auth Token Required"), metadata);
-//            }
+            if (mustClose) {
+            }
         }
     }
 }
