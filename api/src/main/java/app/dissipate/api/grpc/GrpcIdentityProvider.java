@@ -3,6 +3,7 @@ package app.dissipate.api.grpc;
 import app.dissipate.beans.FirebaseTokenVO;
 import app.dissipate.constants.AuthenticationConstants;
 import app.dissipate.services.AuthenticationService;
+import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.credential.Credential;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
@@ -45,7 +46,7 @@ public class GrpcIdentityProvider implements IdentityProvider<GrpcAuthentication
 
         if (fbToken == null) {
             //return Uni.createFrom().item(anonymous(context));
-            throw new RuntimeException("Invalid token");
+            throw new AuthenticationFailedException();
         }
         return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
                 .setPrincipal(fbToken::getUid)

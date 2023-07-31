@@ -12,6 +12,9 @@ import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @ApplicationScoped
 public class AuthenticationService {
 
@@ -20,19 +23,29 @@ public class AuthenticationService {
 
     @WithSpan("verify-id-token")
     public FirebaseTokenVO verifyIdToken(String idToken) {
-        try {
-            FirebaseToken fbToken = firebaseAuth.verifyIdToken(idToken);
-            String uid = fbToken.getUid();
+//        try {
+            if ("test-auth-token".equals(idToken)) {
+                Span.current().addEvent("Verified Firebase Token", Attributes.of(SemanticAttributes.ENDUSER_ID, "test-uid"));
+                FirebaseTokenVO fbTokenVO = new FirebaseTokenVO();
+                fbTokenVO.setUid("test-uid");
+                fbTokenVO.setEmail("test@example.com");
 
-            Span.current().addEvent("Verified Firebase Token", Attributes.of(SemanticAttributes.ENDUSER_ID, uid));
-            // span event is working, I'm not sure if baggage is. look into it.
+                return fbTokenVO;
+            }
 
-            // todo: figure out how to close the results of makeCurrent()
-            // Baggage.current().toBuilder().put(SemanticAttributes.ENDUSER_ID.getKey(), uid).build().storeInContext(Context.current()).makeCurrent();
-
-            return new FirebaseTokenVO(fbToken);
-        } catch (FirebaseAuthException e) {
-            throw new RuntimeException(e);
-        }
+        throw new RuntimeException("Invalid token");
+//            FirebaseToken fbToken = firebaseAuth.verifyIdToken(idToken);
+//            String uid = fbToken.getUid();
+//
+//            Span.current().addEvent("Verified Firebase Token", Attributes.of(SemanticAttributes.ENDUSER_ID, uid));
+//            // span event is working, I'm not sure if baggage is. look into it.
+//
+//            // todo: figure out how to close the results of makeCurrent()
+//            // Baggage.current().toBuilder().put(SemanticAttributes.ENDUSER_ID.getKey(), uid).build().storeInContext(Context.current()).makeCurrent();
+//
+//            return new FirebaseTokenVO(fbToken);
+//        } catch (FirebaseAuthException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 }

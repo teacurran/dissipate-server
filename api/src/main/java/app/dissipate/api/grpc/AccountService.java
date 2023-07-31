@@ -24,6 +24,7 @@ import jakarta.inject.Inject;
 import java.time.LocalDateTime;
 
 @GrpcService
+@RegisterInterceptor(GrpcAuthInterceptor.class)
 public class AccountService implements DissipateService {
 
     private static final Logger LOG = Logger.getLogger(AccountService.class);
