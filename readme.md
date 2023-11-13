@@ -1,5 +1,8 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=teacurran_dissipate-server&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=teacurran_dissipate-server)
 
+## prerequisites
+* [Google cloud SDK](https://cloud.google.com/sdk/docs/install)
+
 running in docker-compose:
 ```
 gcloud auth application-default login

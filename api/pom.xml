@@ -23,7 +23,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <sonar.organization>appi</sonar.organization>
     <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
-    <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+    <surefire-plugin.version>3.2.2</surefire-plugin.version>
     <version.cassandra.quarkus>1.2.0</version.cassandra.quarkus>
     <version.grpc>1.48.1</version.grpc>
     <version.kotlin>1.7.10</version.kotlin>
@@ -31,7 +31,7 @@
     <version.postgres.driver>42.4.1</version.postgres.driver>
     <version.protobuf-maven-plugin>0.6.1</version.protobuf-maven-plugin>
     <version.protoc>3.21.5</version.protoc>
-    <version.quarkus>3.2.0.Final</version.quarkus>
+    <version.quarkus>3.5.1</version.quarkus>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -361,4 +361,15 @@
       </dependencies>
     </profile>
   </profiles>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </reporting>
+
 </project>

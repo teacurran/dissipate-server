@@ -77,7 +77,7 @@
 ###
 
 # debian needed for protoc to work. it isn't compiled for alpine.
-FROM maven:3.9-amazoncorretto-19-debian
+FROM maven:3.9-amazoncorretto-21-debian
 
 # RUN apk add --update maven make protobuf-dev
 
