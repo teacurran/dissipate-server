@@ -5,7 +5,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 
 @MappedSuperclass
 public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBase {
@@ -16,10 +17,10 @@ public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBa
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     public String toString() {
         String var10000 = this.getClass().getSimpleName();

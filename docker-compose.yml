@@ -6,7 +6,6 @@ x-api-base: &api-base
     context: ./api
     dockerfile: src/main/docker/dev-jvm.dockerfile
   depends_on:
-    - cassandra
     - postgresql
     - firebase-emulator
     - flyway
@@ -57,7 +56,6 @@ services:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
     depends_on:
-      - cassandra
       - postgresql
       - firebase-emulator
       - flyway
@@ -84,7 +82,6 @@ services:
       QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
       QUARKUS_HTTP_HOST: 0.0.0.0
       QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
-      QUARKUS_CASSANDRA_CONTACT_POINTS: cassandra:9042
       RABBITMQ_HOST: rabbitmq
     command:
       mvn
@@ -109,17 +106,6 @@ services:
       - postgres_db:/var/lib/postgresql/data
     ports:
       - "5442:5432"
-
-# Cassandra
-  cassandra:
-    image: cassandra:4.1
-    ports:
-      - 9042:9042
-    volumes:
-      - ~/apps/cassandra:/var/lib/cassandra
-    environment:
-      - CASSANDRA_CLUSTER_NAME=dissipate
-      - CASSANDRA_DC=datacenter1
 
   # Jaeger
   jaeger:
@@ -238,7 +224,6 @@ services:
 #      - ALLOW_ANONYMOUS_LOGIN=yes
 
 volumes:
-  cassandra_data:
   postgres_db:
   maven_cache:
   maven_target:

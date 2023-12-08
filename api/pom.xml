@@ -31,7 +31,7 @@
     <version.postgres.driver>42.4.1</version.postgres.driver>
     <version.protobuf-maven-plugin>0.6.1</version.protobuf-maven-plugin>
     <version.protoc>3.21.5</version.protoc>
-    <version.quarkus>3.5.1</version.quarkus>
+    <version.quarkus>3.6.1</version.quarkus>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -43,13 +43,6 @@
         <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>com.datastax.oss.quarkus</groupId>
-        <artifactId>cassandra-quarkus-bom</artifactId>
-        <version>${version.cassandra.quarkus}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
         <version>${assertj.version}</version>
@@ -57,23 +50,6 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
-    <dependency>
-      <groupId>com.datastax.oss.quarkus</groupId>
-      <artifactId>cassandra-quarkus-client</artifactId>
-      <version>${version.cassandra.quarkus}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.datastax.oss</groupId>
-      <artifactId>java-driver-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.datastax.oss</groupId>
-      <artifactId>java-driver-mapper-runtime</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.datastax.oss</groupId>
-      <artifactId>java-driver-metrics-micrometer</artifactId>
-    </dependency>
     <dependency>
       <groupId>com.google.firebase</groupId>
       <artifactId>firebase-admin</artifactId>
@@ -245,11 +221,6 @@
               <groupId>io.quarkus</groupId>
               <artifactId>quarkus-panache-common</artifactId>
               <version>${version.quarkus}</version>
-            </path>
-            <path>
-              <groupId>com.datastax.oss.quarkus</groupId>
-              <artifactId>cassandra-quarkus-mapper-processor</artifactId>
-              <version>${version.cassandra.quarkus}</version>
             </path>
           </annotationProcessorPaths>
         </configuration>

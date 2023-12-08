@@ -2,8 +2,6 @@ package app.dissipate.services;
 
 import app.dissipate.beans.FirebaseTokenVO;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -11,9 +9,6 @@ import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @ApplicationScoped
 public class AuthenticationService {

@@ -1,14 +1,16 @@
 package app.dissipate.services;
 
-import app.dissipate.data.cassandra.dao.UrlDao;
-import app.dissipate.data.cassandra.models.Url;
+import app.dissipate.data.models.Url;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
+import io.quarkus.hibernate.reactive.panache.common.WithSession;
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -16,6 +18,8 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
+import java.time.Duration;
 import java.time.Instant;
 
 @ApplicationScoped
@@ -25,18 +29,17 @@ public class UrlService {
     Emitter<Url> urlCreatedEmitter;
 
     @Inject
-    UrlDao urlDao;
-
-    @Inject
     Tracer tracer;
 
-    public Url addUrl(final String value) {
-        Url url = new Url(value);
-        url.setDateCreated(Instant.now());
-        urlDao.update(url);
-        urlCreatedEmitter.send(url);
-
-        return url;
+    @WithSession
+    @WithTransaction
+    public Uni<Url> addUrl(final String value) {
+        Url url = new Url();
+        url.url = value;
+        return url.persistAndFlush().chain(() -> {
+            urlCreatedEmitter.send(url);
+            return Uni.createFrom().item(url);
+        });
     }
 
     @Incoming("url-created-in")
