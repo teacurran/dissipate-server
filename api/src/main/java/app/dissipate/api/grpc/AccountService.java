@@ -16,7 +16,6 @@ import io.quarkus.hibernate.reactive.panache.Panache;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
-import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
@@ -37,7 +36,6 @@ public class AccountService implements DissipateService {
 
     @Inject
     Tracer tracer;
-
 
     @Override
     @WithSession
@@ -70,7 +68,7 @@ public class AccountService implements DissipateService {
                 currentSpan.addEvent("uid is null");
                 return Uni.createFrom().nullItem();
             }
-            return Panache.withTransaction(() -> Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
+            return Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
                 LOG.infov("account exists: {0}", account.id);
                 currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
                 account.email = token.getEmail();
@@ -91,7 +89,7 @@ public class AccountService implements DissipateService {
                 LOG.debugv("using account: {0}", account.id);
                 //currentSpan.addEvent("account created", Attributes.of(AttributeKey.longKey("account.id"), account.id));
                 return RegisterResponse.newBuilder().setId(uid).build();
-            }));
+            });
         });
     }
 

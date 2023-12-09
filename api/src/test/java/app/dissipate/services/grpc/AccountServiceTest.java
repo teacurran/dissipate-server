@@ -2,14 +2,13 @@ package app.dissipate.services.grpc;
 
 import app.dissipate.beans.FirebaseTokenVO;
 import app.dissipate.grpc.DissipateService;
-import app.dissipate.grpc.DissipateServiceClient;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.services.AuthenticationService;
 import io.grpc.Metadata;
 import io.quarkus.grpc.GrpcClient;
 import io.quarkus.grpc.GrpcClientUtils;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
+import io.quarkus.test.InjectMock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,7 +60,8 @@ class AccountServiceTest {
     void shouldThrowExceptionWithoutToken() {
         CompletableFuture<String> message = new CompletableFuture<>();
 
-        client.register(RegisterRequest.newBuilder().build()).onFailure().invoke(message::obtrudeException)
+        client.register(RegisterRequest.newBuilder().build())
+                .onFailure().invoke(message::obtrudeException)
                 .subscribe().with(reply -> message
                         .complete(reply.getId())
                 );
