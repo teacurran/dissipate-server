@@ -1,27 +1,23 @@
 package app.dissipate.services;
 
-import app.dissipate.beans.FirebaseTokenVO;
-import com.google.firebase.auth.FirebaseAuth;
+import app.dissipate.beans.AuthTokenVO;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class AuthenticationService {
 
-    @Inject
-    FirebaseAuth firebaseAuth;
 
     @WithSpan("verify-id-token")
-    public FirebaseTokenVO verifyIdToken(String idToken) {
+    public AuthTokenVO verifyIdToken(String idToken) {
 //        try {
             if ("test-auth-token".equals(idToken)) {
                 Span.current().addEvent("Verified Firebase Token", Attributes.of(SemanticAttributes.ENDUSER_ID, "test-uid"));
-                FirebaseTokenVO fbTokenVO = new FirebaseTokenVO();
+                AuthTokenVO fbTokenVO = new AuthTokenVO();
                 fbTokenVO.setUid("test-uid");
                 fbTokenVO.setEmail("test@example.com");
 

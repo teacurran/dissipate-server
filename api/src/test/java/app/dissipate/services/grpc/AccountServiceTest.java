@@ -1,6 +1,6 @@
 package app.dissipate.services.grpc;
 
-import app.dissipate.beans.FirebaseTokenVO;
+import app.dissipate.beans.AuthTokenVO;
 import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.services.AuthenticationService;
@@ -32,7 +32,7 @@ class AccountServiceTest {
 
     @BeforeEach
     public void setup() {
-        FirebaseTokenVO token = new FirebaseTokenVO();
+        AuthTokenVO token = new AuthTokenVO();
         token.setUid("test-uid");
         Mockito.when(mockAuth.verifyIdToken("test-auth-token")).thenReturn(token);
     }

@@ -1,7 +1,6 @@
 package app.dissipate.api.grpc;
 
-import app.dissipate.beans.FirebaseTokenVO;
-import app.dissipate.constants.AuthenticationConstants;
+import app.dissipate.beans.AuthTokenVO;
 import app.dissipate.services.AuthenticationService;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.credential.Credential;
@@ -42,7 +41,7 @@ public class GrpcIdentityProvider implements IdentityProvider<GrpcAuthentication
     public Uni<SecurityIdentity> authenticate(GrpcAuthenticationRequest request, AuthenticationRequestContext context) {
         LOGGER.info("authenticate request:" + request);
 
-        FirebaseTokenVO fbToken = authenticationService.verifyIdToken(request.getToken().getToken());
+        AuthTokenVO fbToken = authenticationService.verifyIdToken(request.getToken().getToken());
 
         if (fbToken == null) {
             //return Uni.createFrom().item(anonymous(context));

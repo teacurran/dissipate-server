@@ -1,6 +1,6 @@
 package app.dissipate.api.grpc;
 
-import app.dissipate.beans.FirebaseTokenVO;
+import app.dissipate.beans.AuthTokenVO;
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.Account.AccountStatus;
@@ -56,7 +56,7 @@ public class AccountService implements DissipateService {
             LOG.infov("identity: {0}", identity.toString());
             currentSpan.addEvent("identity", Attributes.of(AttributeKey.stringKey("identity"), identity.toString()));
 
-            FirebaseTokenVO token = identity.getAttribute("fb_token");
+            AuthTokenVO token = identity.getAttribute("fb_token");
 
             //FirebaseTokenVO token = CONTEXT_FB_USER_KEY.get();
             String uid = token.getUid();

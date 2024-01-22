@@ -1,8 +1,6 @@
 package app.dissipate.beans;
 
-import com.google.firebase.auth.FirebaseToken;
-
-public class FirebaseTokenVO {
+public class AuthTokenVO {
     String uid;
     String tenantId;
     String issuer;
@@ -10,16 +8,7 @@ public class FirebaseTokenVO {
     boolean isEmailVerified;
     String email;
 
-    public FirebaseTokenVO() {
-    }
-
-    public FirebaseTokenVO(FirebaseToken fbToken) {
-        this.uid = fbToken.getUid();
-        this.tenantId = fbToken.getTenantId();
-        this.issuer = fbToken.getIssuer();
-        this.picture = fbToken.getPicture();
-        this.isEmailVerified = fbToken.isEmailVerified();
-        this.email = fbToken.getEmail();
+    public AuthTokenVO() {
     }
 
     public String getUid() {

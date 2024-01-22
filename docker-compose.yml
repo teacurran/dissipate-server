@@ -6,9 +6,9 @@ x-api-base: &api-base
     context: ./api
     dockerfile: src/main/docker/dev-jvm.dockerfile
   depends_on:
-    - postgresql
+    - main_db
     - firebase-emulator
-    - flyway
+    - main_db_migrations
     - rabbitmq
     - jaeger
   volumes:
@@ -56,9 +56,9 @@ services:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
     depends_on:
-      - postgresql
+      - main_db
       - firebase-emulator
-      - flyway
+      - main_db_migrations
       - rabbitmq
       - jaeger
     volumes:
@@ -95,7 +95,7 @@ services:
       - "8080:8080"
       - "9299:9000"
 
-  postgresql:
+  main_db:
     image: postgis/postgis
     restart: always
     environment:
@@ -103,9 +103,21 @@ services:
       POSTGRES_PASSWORD: dissipate
       POSTGRES_DB: dissipate
     volumes:
-      - postgres_db:/var/lib/postgresql/data
+      - main_db:/var/lib/postgresql/data
     ports:
-      - "5442:5432"
+      - "5433:5432"
+
+  iam_db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: dissipate_iam
+      POSTGRES_PASSWORD: dissipate_iam_pw
+      POSTGRES_DB: dissipate_iam
+    volumes:
+      - iam_db:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
 
   # Jaeger
   jaeger:
@@ -119,6 +131,46 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
       LOG_LEVEL: debug
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.4
+    environment:
+      KC_FEATURES: authorization,token-exchange,docker,impersonation,scripts,web-authn,client-policies,dynamic-scopes
+      KC_DB: postgres
+      KC_DB_PASSWORD: dissipate_iam_pw
+      KC_DB_SCHEMA: dissipate_iam
+      KC_DB_URL: jdbc:postgresql://iam_db:5432/dissipate_iam?ssl=allow
+      KC_DB_USERNAME: dissipate_iam
+      KC_HOSTNAME: keycloak.local
+      KC_HOSTNAME_STRICT: false
+      KC_HTTPS_CLIENT_AUTH: request
+      KC_HTTPS_KEY_STORE_FILE: /data/server.keystore
+      KC_HTTPS_KEY_STORE_PASSWORD: KEYSTOREPASSWORD
+      KC_HTTPS_PORT: 8443
+      KC_HTTPS_PROTOCOLS: TLSv1.3,TLSv1.2
+      KC_HTTPS_TRUST_STORE_FILE: /data/trust.keystore
+      KC_HTTPS_TRUST_STORE_PASSWORD: TRUSTSTOREPASSWORD
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: 8081
+      KC_METRICS_ENABLED: true
+      KC_PROXY: edge
+      KEYCLOAK_ADMIN: Admin
+      KEYCLOAK_ADMIN_PASSWORD: Admin
+      POSTGRES_DB: dissipate_iam
+      POSTGRES_PASSWORD: dissipate_iam_pw
+      POSTGRES_USER: dissipate_iam
+      PROXY_ADDRESS_FORWARDING: true
+    #DOCKER ENV KC_HTTPS_TRUST_STORE_FILE does not work
+    #WorkAround is to add the TrustStore to the start up (Using Trust Store For AD LDAPS Certificate, you may not need this at all)
+    entrypoint: /opt/keycloak/bin/kc.sh start --https-trust-store-file=${KC_HTTPS_TRUST_STORE_FILE} --https-trust-store-password=${KC_HTTPS_TRUST_STORE_PASSWORD}
+    #entrypoint: /opt/keycloak/bin/kc.sh start --auto-build
+    volumes:
+      - ./data:/data:rw
+    ports:
+      - 8081:8081
+      - 8443:8443
+    depends_on:
+      - iam_db
 
   firebase-emulator:
     image: andreysenov/firebase-tools
@@ -141,13 +193,13 @@ services:
 #      - '6379:6379'
 #    command: redis-server --save 20 1 --loglevel warning --requirepass 98puOInkjbO&YiubkBt8guhvjhvredrg
 
-  flyway:
+  main_db_migrations:
     image: api-server
     build:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
     depends_on:
-      - postgresql
+      - main_db
     volumes:
       - ./api:/app
       - maven_target:/app/target
@@ -155,7 +207,7 @@ services:
     command:
       - mvn
       - flyway:migrate
-      - -Dflyway.url=jdbc:postgresql://postgresql:5432/dissipate
+      - -Dflyway.url=jdbc:postgresql://main_db:5432/dissipate
       - -Dflyway.user=dissipate
       - -Dflyway.password=dissipate
 
@@ -215,6 +267,7 @@ services:
       - -Dsonar.login=${SONAR_TOKEN}
       - -Dsonar.host.url=https://sonarcloud.io
       - -DGOOGLE_APPLICATION_CREDENTIALS=/app/cloudbuild_credentials.json
+      - -e
 
 #  zookeeper:
 #    image: 'wurstmeister/zookeeper:latest'
@@ -224,7 +277,8 @@ services:
 #      - ALLOW_ANONYMOUS_LOGIN=yes
 
 volumes:
-  postgres_db:
+  main_db:
+  iam_db:
   maven_cache:
   maven_target:
   rabbitmq_data:
