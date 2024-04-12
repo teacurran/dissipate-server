@@ -5,6 +5,7 @@
   <groupId>app.dissipate</groupId>
   <artifactId>dissipate-api</artifactId>
   <version>1.0-SNAPSHOT</version>
+  <!--
   <distributionManagement>
     <repository>
       <id>artifact-registry</id>
@@ -15,15 +16,16 @@
       <url>artifactregistry://us-central1-maven.pkg.dev/dissipate/dissipate-maven</url>
     </snapshotRepository>
   </distributionManagement>
+  -->
   <properties>
-    <compiler-plugin.version>3.11.0</compiler-plugin.version>
+    <compiler-plugin.version>3.12.1</compiler-plugin.version>
     <failsafe.useModulePath>false</failsafe.useModulePath>
-    <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <sonar.organization>appi</sonar.organization>
     <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
-    <surefire-plugin.version>3.2.2</surefire-plugin.version>
+    <surefire-plugin.version>3.2.3</surefire-plugin.version>
     <version.cassandra.quarkus>1.2.0</version.cassandra.quarkus>
     <version.grpc>1.48.1</version.grpc>
     <version.kotlin>1.7.10</version.kotlin>
@@ -31,7 +33,7 @@
     <version.postgres.driver>42.4.1</version.postgres.driver>
     <version.protobuf-maven-plugin>0.6.1</version.protobuf-maven-plugin>
     <version.protoc>3.21.5</version.protoc>
-    <version.quarkus>3.6.1</version.quarkus>
+    <version.quarkus>3.9.3</version.quarkus>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -74,12 +76,12 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-resteasy-reactive</artifactId>
+      <artifactId>quarkus-rest</artifactId>
       <version>${version.quarkus}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
+      <artifactId>quarkus-rest-jackson</artifactId>
       <version>${version.quarkus}</version>
     </dependency>
     <dependency>
@@ -99,7 +101,7 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-smallrye-reactive-messaging-rabbitmq</artifactId>
+      <artifactId>quarkus-messaging-rabbitmq</artifactId>
       <version>${version.quarkus}</version>
     </dependency>
     <dependency>
@@ -171,6 +173,7 @@
       <name>Maven Central</name>
       <url>https://repo1.maven.org/maven2</url>
     </repository>
+    <!--
     <repository>
       <releases>
         <enabled>true</enabled>
@@ -181,6 +184,7 @@
       <id>artifact-registry</id>
       <url>artifactregistry://us-central1-maven.pkg.dev/dissipate/dissipate-maven</url>
     </repository>
+    -->
   </repositories>
   <build>
     <extensions>

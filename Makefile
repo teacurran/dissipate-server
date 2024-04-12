@@ -32,7 +32,7 @@ sonar:
 rebuild:
 	docker-compose build --no-cache
 
-rebuild-test:
+rebuild-test:gc
 	docker-compose -f docker-compose.yml -f docker-compose.test.yml build api-integration-test
 
 clean:
