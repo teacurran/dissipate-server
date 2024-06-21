@@ -147,11 +147,6 @@
       <artifactId>inflector</artifactId>
       <version>0.7.0</version>
     </dependency>
-    <dependency>
-      <groupId>com.callicoder</groupId>
-      <artifactId>snowflake</artifactId>
-      <version>1.0.1</version>
-    </dependency>
     <!-- using resteasy-reactive
     <dependency>
       <groupId>io.quarkus</groupId>
