@@ -6,9 +6,9 @@ x-api-base: &api-base
     context: ./api
     dockerfile: src/main/docker/dev-jvm.dockerfile
   depends_on:
-    - main_db
+    - main-db
     - firebase-emulator
-    - main_db_migrations
+    - main-db-migrations
     - rabbitmq
     - jaeger
   volumes:
@@ -56,9 +56,8 @@ services:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
     depends_on:
-      - main_db
-      - firebase-emulator
-      - main_db_migrations
+      - main-db
+      - main-db-migrations
       - rabbitmq
       - jaeger
     volumes:
@@ -69,14 +68,12 @@ services:
       # - maven_target:/app/target
     environment:
       SERVICE: local
-      FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
-      FIREBASE_STORAGE_EMULATOR_HOST: "firebase-emulator:9199"
       GCLOUD_PROJECT: "dissipate"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
-      QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://postgresql:5432/dissipate
+      QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://main-db:5432/dissipate
       QUARKUS_DATASOURCE_USERNAME: dissipate
       QUARKUS_DATASOURCE_PASSWORD: dissipate
       QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
@@ -95,7 +92,7 @@ services:
       - "8080:8080"
       - "9299:9000"
 
-  main_db:
+  main-db:
     image: postgis/postgis
     restart: always
     environment:
@@ -103,7 +100,7 @@ services:
       POSTGRES_PASSWORD: dissipate
       POSTGRES_DB: dissipate
     volumes:
-      - main_db:/var/lib/postgresql/data
+      - main-db:/var/lib/postgresql/data
     ports:
       - "5433:5432"
 
@@ -172,34 +169,20 @@ services:
     depends_on:
       - iam_db
 
-  firebase-emulator:
-    image: andreysenov/firebase-tools
-    volumes:
-      - ./firebase-emulator/:/home/node
-    ports:
-      - "4000:4000"
-      - "5001:5000"
-      - "8085:8085"
-      - "9000:9000"
-      - "9005:9005"
-      - "9099:9099"
-      - "9199:9199"
-    command: firebase emulators:start --project dissipate --import /home/node/data
-
-#  redis:
+  #  redis:
 #    image: "redis:alpine"
 #    restart: always
 #    ports:
 #      - '6379:6379'
 #    command: redis-server --save 20 1 --loglevel warning --requirepass 98puOInkjbO&YiubkBt8guhvjhvredrg
 
-  main_db_migrations:
+  main-db-migrations:
     image: api-server
     build:
       context: ./api
       dockerfile: src/main/docker/dev-jvm.dockerfile
     depends_on:
-      - main_db
+      - main-db
     volumes:
       - ./api:/app
       - maven_target:/app/target
@@ -207,7 +190,7 @@ services:
     command:
       - mvn
       - flyway:migrate
-      - -Dflyway.url=jdbc:postgresql://main_db:5432/dissipate
+      - -Dflyway.url=jdbc:postgresql://main-db:5432/dissipate
       - -Dflyway.user=dissipate
       - -Dflyway.password=dissipate
 
@@ -277,7 +260,7 @@ services:
 #      - ALLOW_ANONYMOUS_LOGIN=yes
 
 volumes:
-  main_db:
+  main-db:
   iam_db:
   maven_cache:
   maven_target:

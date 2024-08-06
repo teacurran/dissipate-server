@@ -26,3 +26,6 @@ DOCKER_BUILDKIT=0 docker build -f src/main/docker/Dockerfile.native -t dissipate
 ```
 gcloud projects add-iam-policy-binding 510014216261 --member='serviceAccount:510014216261@cloudbuild.gserviceaccount.com' --role='roles/secretmanager.secretAccessor'
 ```
+
+
+export GRAALVM_HOME=$HOME/.sdkman/candidates/java/24.ea.3-graal
