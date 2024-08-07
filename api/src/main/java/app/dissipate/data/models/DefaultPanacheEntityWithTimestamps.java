@@ -2,6 +2,7 @@ package app.dissipate.data.models;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.*;
@@ -9,6 +10,7 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @MappedSuperclass
+@SoftDelete
 public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBase {
 
     @Id

@@ -18,6 +18,7 @@ import org.hibernate.reactive.mutiny.Mutiny;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.CountDownLatch;
 
 @ApplicationScoped
 public class ServerInstance {
@@ -91,16 +92,26 @@ public class ServerInstance {
   }
 
   private void handleStop(Mutiny.SessionFactory factory) {
+    CountDownLatch latch = new CountDownLatch(1);
+
     // Start a new transaction
     factory.withTransaction(session ->
         // Find the server by ID
         Server.byId(server.id).call(s -> {
           s.isShutdown = true;
           return s.persistAndFlush();
-        })
+        }).onFailure().recoverWithNull()
       )
       // Subscribe to the Uni to trigger the action
-      .subscribe().with(v -> {
-      });
+      .subscribe().with(
+        success -> latch.countDown(),
+        failure -> latch.countDown()
+      );
+
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 }

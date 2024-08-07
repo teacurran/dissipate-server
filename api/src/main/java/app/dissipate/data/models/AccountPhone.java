@@ -16,5 +16,5 @@ public class AccountPhone extends DefaultPanacheEntityWithTimestamps {
 
     private Instant validated;
 
-    public boolean primary;
+    public boolean isPrimary;
 }

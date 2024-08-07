@@ -13,5 +13,6 @@ public class Organization extends DefaultPanacheEntityWithTimestamps {
     public String name;
 
     @OneToMany(mappedBy = "organization")
-    List<Account> accounts;
+    List<IdentityOrganization> accounts;
+
 }
