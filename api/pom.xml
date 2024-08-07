@@ -33,7 +33,7 @@
     <version.postgres.driver>42.4.1</version.postgres.driver>
     <version.protobuf-maven-plugin>0.6.1</version.protobuf-maven-plugin>
     <version.protoc>3.21.5</version.protoc>
-    <version.quarkus>3.11.0</version.quarkus>
+    <version.quarkus>3.12.2</version.quarkus>
   </properties>
   <dependencyManagement>
     <dependencies>
