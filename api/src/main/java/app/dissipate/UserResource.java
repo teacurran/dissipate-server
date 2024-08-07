@@ -16,7 +16,7 @@ public class UserResource {
     public Uni<Identity> hello() {
         return Panache.withTransaction(() -> {
             Account account = new Account();
-            account.email = "tea@grilledcheese.com";
+            // account.email = "tea@grilledcheese.com";
             account.status = AccountStatus.ACTIVE;
 
             Identity identity = new Identity();

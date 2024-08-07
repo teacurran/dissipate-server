@@ -12,15 +12,15 @@ import java.time.Instant;
 public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBase {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    @Column(columnDefinition = "CHAR(13)", length = 13)
+    public String id;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+    public Instant createdAt;
 
     @UpdateTimestamp
-    private Instant updatedAt;
+    public Instant updatedAt;
 
     public String toString() {
         String var10000 = this.getClass().getSimpleName();

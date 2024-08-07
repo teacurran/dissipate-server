@@ -7,7 +7,6 @@ x-api-base: &api-base
     dockerfile: src/main/docker/dev-jvm.dockerfile
   depends_on:
     - main-db
-    - firebase-emulator
     - main-db-migrations
     - rabbitmq
     - jaeger
@@ -19,8 +18,6 @@ x-api-base: &api-base
     # - maven_target:/app/target
   environment:
     SERVICE: local
-    FIREBASE_AUTH_EMULATOR_HOST: "firebase-emulator:9099"
-    FIREBASE_STORAGE_EMULATOR_HOST: "firebase-emulator:9199"
     GCLOUD_PROJECT: "dissipate"
     REDIS_HOST: redis
     REDIS_PORT: 6379
@@ -194,9 +191,9 @@ services:
       - -Dflyway.user=dissipate
       - -Dflyway.password=dissipate
 
-  integration-tests:
-    <<: *api-base
-    command: mvn verify
+#  integration-tests:
+#    <<: *api-base
+#    command: mvn verify
 
 #  kafka-server1:
 #    <<: *kafka-base

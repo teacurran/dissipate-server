@@ -1,82 +1,83 @@
 package app.dissipate.data.models;
 
-import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.smallrye.mutiny.Uni;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Account extends PanacheEntityBase {
-    @Id
-    public Long id;
+public class Account extends DefaultPanacheEntityWithTimestamps {
+  public AccountStatus status;
 
-    @Column(unique = true)
-    public String srcId;
-    public String email;
-    public String phone;
-    public AccountStatus status;
+  @OneToMany(
+    mappedBy = "account",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+  )
+  public List<AccountPhone> phones = new ArrayList<AccountPhone>();
 
-    @OneToMany(
-            mappedBy = "account",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    public List<Identity> identities = new ArrayList<>();
+  @OneToMany(
+    mappedBy = "account",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+  )
+  public List<AccountEmail> emails = new ArrayList<AccountEmail>();
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    public LocalDateTime createdAt;
+  @OneToMany(
+    mappedBy = "account",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+  )
+  public List<Identity> identities = new ArrayList<Identity>();
 
-    @UpdateTimestamp
-    public LocalDateTime updatedAt;
+  @ManyToOne(fetch = FetchType.EAGER)
+  public Organization organization;
 
-    public static Uni<Account> findBySrcId(String srcId) {
-        return find("srcId", srcId).firstResult();
+  public static Uni<Account> findBySrcId(String srcId) {
+    return find("srcId", srcId).firstResult();
+  }
+
+  @Override
+  public Uni<Account> persist() {
+    return super.persist();
+  }
+
+  @Override
+  public Uni<Account> persistAndFlush() {
+    return super.persistAndFlush();
+  }
+
+  public enum AccountStatus {
+    PENDING(1),
+    ACTIVE(2),
+    DISABLED(3),
+    SUSPENDED(4),
+    BANNED(5);
+
+    private final int value;
+
+    private AccountStatus(int value) {
+      this.value = value;
     }
 
-    @Override
-    public Uni<Account> persist() {
-        return super.persist();
-    }
-
-    @Override
-    public Uni<Account> persistAndFlush() {
-        return super.persistAndFlush();
-    }
-
-    public void setEmail(String email){
-        this.email = email == null ? null : email.toLowerCase();
-    }
-
-    public enum AccountStatus {
-        ACTIVE(1),
-        DISABLED(2),
-        SUSPENDED(3),
-        BANNED(4);
-
-        private final int value;
-        private AccountStatus(int value) {
-            this.value = value;
+    public static AccountStatus fromValue(int id) {
+      for (AccountStatus item : AccountStatus.values()) {
+        if (item.getValue() == id) {
+          return item;
         }
-
-        public static AccountStatus fromValue(int id) {
-            for (AccountStatus item : AccountStatus.values()) {
-                if (item.getValue() == id) {
-                    return item;
-                }
-            }
-            return null;
-        }
-
-        public int getValue() {
-            return value;
-        }
-
+      }
+      return null;
     }
+
+    public int getValue() {
+      return value;
+    }
+
+  }
 }
 

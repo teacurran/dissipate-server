@@ -22,7 +22,7 @@ public class SnowflakeIdGenerator {
 
     HashMap<String, Snowflake> snowflakes = new HashMap<>();
 
-    public Long generate(String idName) throws HibernateException {
+    public String generate(String idName) throws HibernateException {
         Snowflake snowflake;
         if (snowflakes.containsKey(idName)) {
             snowflake = snowflakes.get(idName);
@@ -30,7 +30,8 @@ public class SnowflakeIdGenerator {
             snowflake = new Snowflake(serverInstance.getServer().instanceNumber);
             snowflakes.put(idName, snowflake);
         }
-        return snowflake.nextId();
+        long newId = snowflake.nextId();
+        return Long.toString(newId, Character.MAX_RADIX);
     }
 
     static class Snowflake {

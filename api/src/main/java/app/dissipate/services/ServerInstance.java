@@ -1,11 +1,13 @@
 package app.dissipate.services;
 
 import app.dissipate.data.models.Server;
+import app.dissipate.data.models.dto.MaxIntDto;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle;
 import io.smallrye.common.vertx.VertxContext;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -20,81 +22,85 @@ import java.time.LocalDateTime;
 @ApplicationScoped
 public class ServerInstance {
 
-    Duration DEFAULT_DB_WAIT = Duration.ofSeconds(10);
+  Duration DEFAULT_DB_WAIT = Duration.ofSeconds(10);
 
-    Server server;
+  Server server;
 
-    @Produces
-    public Server getServer() {
-        return server;
+  @Produces
+  public Server getServer() {
+    return server;
+  }
+
+  @WithSpan("ServerInstance.onStart")
+  public void onStart(@Observes StartupEvent event, Vertx vertx, Mutiny.SessionFactory factory) {
+    // We need a duplicated vertx context for hibernate reactive
+    Context context = VertxContext.getOrCreateDuplicatedContext(vertx);
+    // Don't forget to mark the context safe
+    VertxContextSafetyToggle.setContextSafe(context, true);
+    // Run the logic on the context created above
+    context.runOnContext(new Handler<Void>() {
+      @Override
+      public void handle(Void event) {
+        // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active/propagated
+        factory.withTransaction(session ->
+            Server.findMaxInstanceId().call(maxIntDto -> {
+              if (maxIntDto == null || maxIntDto.maxValue < 1000) {
+                return createNewServer(maxIntDto);
+              } else {
+                return findFirstUnusedServer();
+              }
+            })
+          )
+          // We need to subscribe to the Uni to trigger the action
+          .subscribe().with(v -> {
+          });
+      }
+    });
+  }
+
+  private Uni<Server> createNewServer(MaxIntDto maxIntDto) {
+    server = new Server();
+    server.instanceNumber = maxIntDto == null ? 1 : maxIntDto.maxValue + 1;
+    server.seen = LocalDateTime.now();
+    server.isShutdown = false;
+    return server.persistAndFlush();
+  }
+
+  private Uni<Server> findFirstUnusedServer() {
+    return Server.findFirstUnusedServer().call(s -> {
+      if (s == null) {
+        return Uni.createFrom().failure(new RuntimeException("No server instance available"));
+      }
+      server = s;
+      server.seen = LocalDateTime.now();
+      server.isShutdown = false;
+      return server.persistAndFlush();
+    });
+  }
+
+  @WithSpan("ServerInstance.onStop")
+  public void onStop(@Observes ShutdownEvent event, Vertx vertx, Mutiny.SessionFactory factory) {
+    if (server != null) {
+      // Create a new Vertx context for Hibernate Reactive
+      Context context = VertxContext.getOrCreateDuplicatedContext(vertx);
+      // Mark the context as safe
+      VertxContextSafetyToggle.setContextSafe(context, true);
+      // Run the logic on the created context
+      context.runOnContext(v -> handleStop(factory));
     }
+  }
 
-    @WithSpan("ServerInstance.onStart")
-    public void onStart(@Observes StartupEvent event, Vertx vertx, Mutiny.SessionFactory factory) {
-        // We need a duplicated vertx context for hibernate reactive
-        Context context = VertxContext.getOrCreateDuplicatedContext(vertx);
-        // Don't forget to mark the context safe
-        VertxContextSafetyToggle.setContextSafe(context, true);
-        // Run the logic on the context created above
-        context.runOnContext(new Handler<Void>() {
-            @Override
-            public void handle(Void event) {
-                // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active/propagated
-                factory.withTransaction(session ->
-                    Server.findMaxInstanceId().call(maxIntDto -> {
-                        if (maxIntDto == null) {
-                            server = new Server();
-                            server.instanceNumber = 1;
-                            server.seen = LocalDateTime.now();
-                            server.isShutdown = false;
-                            return server.persistAndFlush();
-                        } else {
-                            if (maxIntDto.maxValue < 1000) {
-                                server = new Server();
-                                server.instanceNumber = maxIntDto.maxValue + 1;
-                                server.seen = LocalDateTime.now();
-                                server.isShutdown = false;
-                                return server.persistAndFlush();
-                            } else {
-                                return Server.findFirstUnusedServer().call(s -> {
-                                    if (s == null) {
-                                        throw new RuntimeException("No server instance available");
-                                    }
-                                    server = s;
-                                    server.seen = LocalDateTime.now();
-                                    server.isShutdown = false;
-                                    return server.persistAndFlush();
-                                });
-                            }
-                        }
-                    })
-                )
-                // We need to subscribe to the Uni to trigger the action
-                .subscribe().with(v -> {});
-            }
-        });
-    }
-
-    @WithSpan("ServerInstance.onStop")
-    public void onStop(@Observes ShutdownEvent event, Vertx vertx, Mutiny.SessionFactory factory) {
-        if (server != null) {
-            // We need a duplicated vertx context for hibernate reactive
-            Context context = VertxContext.getOrCreateDuplicatedContext(vertx);
-            // Don't forget to mark the context safe
-            VertxContextSafetyToggle.setContextSafe(context, true);
-            // Run the logic on the context created above
-            context.runOnContext(new Handler<Void>() {
-                @Override
-                public void handle(Void event) {
-                    // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active/propagated
-                    factory.withTransaction(session ->
-                        Server.byId(server.id).call(s -> {
-                            s.isShutdown = true;
-                            return s.persistAndFlush();
-                        })
-                    ).subscribe().with(v -> {});
-                }
-            });
-        }
-    }
+  private void handleStop(Mutiny.SessionFactory factory) {
+    // Start a new transaction
+    factory.withTransaction(session ->
+        // Find the server by ID
+        Server.byId(server.id).call(s -> {
+          s.isShutdown = true;
+          return s.persistAndFlush();
+        })
+      )
+      // Subscribe to the Uni to trigger the action
+      .subscribe().with(v -> {
+      });
+  }
 }

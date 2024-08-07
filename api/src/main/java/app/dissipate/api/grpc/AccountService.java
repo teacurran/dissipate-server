@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 
 import jakarta.inject.Inject;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @GrpcService
 @RegisterInterceptor(GrpcAuthInterceptor.class)
@@ -58,7 +59,7 @@ public class AccountService implements DissipateService {
 
             AuthTokenVO token = identity.getAttribute("fb_token");
 
-            //FirebaseTokenVO token = CONTEXT_FB_USER_KEY.get();
+            // FirebaseTokenVO token = CONTEXT_FB_USER_KEY.get();
             String uid = token.getUid();
 
             LOG.infov("register user with uid: {0}", uid);
@@ -70,25 +71,25 @@ public class AccountService implements DissipateService {
             }
             return Account.findBySrcId(uid).onItem().ifNotNull().transformToUni(account -> {
                 LOG.infov("account exists: {0}", account.id);
-                currentSpan.addEvent("account exists", Attributes.of(AttributeKey.longKey("account.id"), account.id));
-                account.email = token.getEmail();
+                currentSpan.addEvent("account exists", Attributes.of(AttributeKey.stringKey("account.id"), account.id));
+                //account.email = token.getEmail();
                 account.status = AccountStatus.ACTIVE;
-                account.updatedAt = LocalDateTime.now();
+                account.updatedAt = LocalDateTime.now().toInstant(ZoneOffset.MIN);
 
                 return account.persistAndFlush();
             }).onItem().ifNull().switchTo(() -> {
                 Account account = new Account();
                 account.id = snowflakeIdGenerator.generate(Account.class.getName());
-                account.email = token.getEmail();
+                //account.email = token.getEmail();
                 account.status = AccountStatus.ACTIVE;
-                account.srcId = uid;
+                //account.srcId = uid;
                 LOG.debugv("new account: {0}", account.id);
-                currentSpan.addEvent("new account", Attributes.of(AttributeKey.longKey("account.id"), account.id));
+                currentSpan.addEvent("new account", Attributes.of(AttributeKey.stringKey("account.id"), account.id));
                 return account.persistAndFlush();
             }).onItem().transform(account -> {
                 LOG.debugv("using account: {0}", account.id);
                 //currentSpan.addEvent("account created", Attributes.of(AttributeKey.longKey("account.id"), account.id));
-                return RegisterResponse.newBuilder().setId(uid).build();
+                return RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build();
             });
         });
     }

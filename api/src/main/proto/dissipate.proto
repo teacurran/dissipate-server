@@ -32,16 +32,17 @@ message CreateHandleResponse {
 }
 
 message RegisterRequest {
+  optional string email = 1;
+  optional string phone_number = 2;
+}
+
+enum RegisterResponseResult {
+  Error = 0;
+  EmailSent = 1;
+  PhoneSent = 2;
 }
 
 message RegisterResponse {
-  string id = 1;
-  google.protobuf.Timestamp created = 2;
-  google.protobuf.Timestamp last_login = 3;
-  AccountStatus status = 4;
+  RegisterResponseResult result = 1;
+  optional string error_message = 2;
 }
-
-message Url {
-
-}
-
