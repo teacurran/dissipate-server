@@ -19,6 +19,7 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import io.quarkus.scheduler.Scheduled;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static app.dissipate.data.models.Server.markAbandonedServersAsShutdown;
 
@@ -30,6 +31,9 @@ public class ServerInstance {
 
   @Inject
   Mutiny.SessionFactory factory;
+
+  @Inject
+  ZoneOffset zoneOffset;
 
   @Produces
   public Server getServer() {
@@ -61,7 +65,7 @@ public class ServerInstance {
           });
 
         factory.withTransaction(session -> {
-          Uni<Integer> result = markAbandonedServersAsShutdown();
+          Uni<Integer> result = markAbandonedServersAsShutdown(zoneOffset);
           if (result == null) {
             LOGGER.error("markAbandonedServersAsShutdown returned null.");
             return Uni.createFrom().failure(new NullPointerException("markAbandonedServersAsShutdown returned null."));
@@ -88,7 +92,7 @@ public class ServerInstance {
       if (server != null) {
         return Server.byId(server.id).onItem().call(s -> {
           if (s != null) {
-            s.seen = LocalDateTime.now();
+            s.seen = LocalDateTime.now().toInstant(zoneOffset);
             return s.persistAndFlush();
           }
           return null;
@@ -114,7 +118,8 @@ public class ServerInstance {
   private Uni<Server> createNewServer(MaxIntDto maxIntDto) {
     server = new Server();
     server.instanceNumber = maxIntDto == null ? 1 : maxIntDto.maxValue + 1;
-    server.seen = LocalDateTime.now();
+    server.launched = LocalDateTime.now().toInstant(zoneOffset);
+    server.seen = LocalDateTime.now().toInstant(zoneOffset);
     server.isShutdown = false;
     return server.persistAndFlush();
   }
@@ -125,7 +130,8 @@ public class ServerInstance {
         return Uni.createFrom().failure(new RuntimeException("No server instance available"));
       }
       server = s;
-      server.seen = LocalDateTime.now();
+      server.launched = LocalDateTime.now().toInstant(zoneOffset);
+      server.seen = LocalDateTime.now().toInstant(zoneOffset);
       server.isShutdown = false;
       return server.persistAndFlush();
     });
