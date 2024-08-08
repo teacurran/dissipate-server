@@ -57,7 +57,7 @@ public class Server extends PanacheEntityBase {
 
   public static Uni<Integer> markAbandonedServersAsShutdown() {
     return update("#" + QUERY_MARK_ABANDONED_SERVERS_AS_SHUTDOWN,
-      Parameters.with("seen", LocalDateTime.now().minusMinutes(30)));
+      Parameters.with("seen", LocalDateTime.now().minusDays(1)));
   }
 
   public static Uni<Server> findFirstUnusedServer() {

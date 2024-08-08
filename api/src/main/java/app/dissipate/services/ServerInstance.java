@@ -18,9 +18,7 @@ import jakarta.inject.Inject;
 import org.hibernate.reactive.mutiny.Mutiny;
 import io.quarkus.scheduler.Scheduled;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.logging.Logger;
 
 import static app.dissipate.data.models.Server.markAbandonedServersAsShutdown;
 
@@ -70,7 +68,7 @@ public class ServerInstance {
           }
           return result;
         }).subscribe().with(v -> {
-          LOGGER.info("Second transaction completed successfully.");
+          LOGGER.info("marked " + v + " servers as abandoned.");
         }, failure -> {
           LOGGER.error("Second transaction failed.", failure);
         });
@@ -79,6 +77,7 @@ public class ServerInstance {
   }
 
   @Scheduled(every = "30s")
+  @WithSpan("ServerInstance.heartbeat")
   Uni<Void> heartBeat() {
     Context context = Vertx.currentContext();
     // Don't forget to mark the context safe
