@@ -2,12 +2,14 @@ package app.dissipate.data.models;
 
 import app.dissipate.data.models.dto.MaxIntDto;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
+import io.quarkus.panache.common.Parameters;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -17,7 +19,15 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "servers")
+@NamedQuery(name = Server.QUERY_FIND_FIRST_UNUSED_SERVER,
+  query = "from Server where isShutdown=true")
+@NamedQuery(name = Server.QUERY_MARK_ABANDONED_SERVERS_AS_SHUTDOWN,
+  query = "update Server set isShutdown=true where seen < :seen")
 public class Server extends PanacheEntityBase {
+
+  public static final String QUERY_FIND_FIRST_UNUSED_SERVER = "Server.findFirstUnusedServer";
+
+  public static final String QUERY_MARK_ABANDONED_SERVERS_AS_SHUTDOWN = "Server.markAbandonedServersAsShutdown";
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,6 +53,11 @@ public class Server extends PanacheEntityBase {
 
   public static Uni<MaxIntDto> findMaxInstanceId() {
     return find("select coalesce(max(instanceNumber), 0) as maxValue from Server").project(MaxIntDto.class).firstResult();
+  }
+
+  public static Uni<Integer> markAbandonedServersAsShutdown() {
+    return update("#" + QUERY_MARK_ABANDONED_SERVERS_AS_SHUTDOWN,
+      Parameters.with("seen", LocalDateTime.now().minusMinutes(30)));
   }
 
   public static Uni<Server> findFirstUnusedServer() {

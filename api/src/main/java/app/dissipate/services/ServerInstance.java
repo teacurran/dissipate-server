@@ -14,18 +14,24 @@ import io.vertx.core.Vertx;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import org.hibernate.reactive.mutiny.Mutiny;
+import io.quarkus.scheduler.Scheduled;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.concurrent.CountDownLatch;
+import java.util.logging.Logger;
+
+import static app.dissipate.data.models.Server.markAbandonedServersAsShutdown;
 
 @ApplicationScoped
 public class ServerInstance {
-
-  Duration DEFAULT_DB_WAIT = Duration.ofSeconds(10);
+  private static final org.jboss.logging.Logger LOGGER = org.jboss.logging.Logger.getLogger(ServerInstance.class);
 
   Server server;
+
+  @Inject
+  Mutiny.SessionFactory factory;
 
   @Produces
   public Server getServer() {
@@ -55,8 +61,55 @@ public class ServerInstance {
           // We need to subscribe to the Uni to trigger the action
           .subscribe().with(v -> {
           });
+
+        factory.withTransaction(session -> {
+          Uni<Integer> result = markAbandonedServersAsShutdown();
+          if (result == null) {
+            LOGGER.error("markAbandonedServersAsShutdown returned null.");
+            return Uni.createFrom().failure(new NullPointerException("markAbandonedServersAsShutdown returned null."));
+          }
+          return result;
+        }).subscribe().with(v -> {
+          LOGGER.info("Second transaction completed successfully.");
+        }, failure -> {
+          LOGGER.error("Second transaction failed.", failure);
+        });
       }
     });
+  }
+
+  @Scheduled(every = "30s")
+  Uni<Void> heartBeat() {
+    Context context = Vertx.currentContext();
+    // Don't forget to mark the context safe
+    VertxContextSafetyToggle.setContextSafe(context, true);
+
+    // Run the logic on the context created above
+    context.runOnContext(event -> factory.withTransaction(session -> {
+      if (server != null) {
+        return Server.byId(server.id).onItem().call(s -> {
+          if (s != null) {
+            s.seen = LocalDateTime.now();
+            return s.persistAndFlush();
+          }
+          return null;
+        }).onFailure().transform(t -> {
+          // Log the error
+          LOGGER.error("Error occurred", t);
+          return null;
+        });
+      }
+      return null;
+    }).subscribe().with(v -> {
+    }));
+
+//    if (server != null) {
+//      Server.byId(server.id).onItem().ifNotNull().call(s -> {
+//        s.seen = LocalDateTime.now();
+//        return s.persistAndFlush();
+//      });
+//    }
+    return Uni.createFrom().nullItem();
   }
 
   private Uni<Server> createNewServer(MaxIntDto maxIntDto) {
@@ -92,26 +145,16 @@ public class ServerInstance {
   }
 
   private void handleStop(Mutiny.SessionFactory factory) {
-    CountDownLatch latch = new CountDownLatch(1);
-
     // Start a new transaction
     factory.withTransaction(session ->
         // Find the server by ID
         Server.byId(server.id).call(s -> {
           s.isShutdown = true;
           return s.persistAndFlush();
-        }).onFailure().recoverWithNull()
+        })
       )
       // Subscribe to the Uni to trigger the action
-      .subscribe().with(
-        success -> latch.countDown(),
-        failure -> latch.countDown()
-      );
-
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
+      .subscribe().with(v -> {
+      });
   }
 }
