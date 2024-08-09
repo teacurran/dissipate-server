@@ -39,13 +39,13 @@ public class Server extends PanacheEntityBase {
   public Long id;
 
   @CreationTimestamp
-  @Column(name = "created_at",
+  @Column(name = "created",
     nullable = false, updatable = false)
-  public Instant createdAt;
+  public Instant created;
 
   @UpdateTimestamp
-  @Column(name = "updated_at")
-  public Instant updatedAt;
+  @Column(name = "updated")
+  public Instant updated;
 
   @Column(name = "instance_number")
   public int instanceNumber;
