@@ -18,6 +18,7 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
@@ -44,51 +45,54 @@ public class AccountService implements DissipateService {
   public Uni<RegisterResponse> register(RegisterRequest request) {
     LOG.info("register()");
     Span currentSpan = Span.current();
-    currentSpan.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
     String email = request.getEmail().toLowerCase();
+    try (Scope scope = currentSpan.makeCurrent()) {
+      currentSpan.setAttribute("email", email);
+      currentSpan.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
-    return AccountEmail.findByEmailValidated(email)
-      .onItem()
-      .transformToUni(accountEmail -> {
-        if (accountEmail != null) {
-          LOG.infov("email already exists: {0}", email);
-          currentSpan.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
-          return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
-        } else {
-          Account account = new Account();
-          account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
-          account.status = AccountStatus.PENDING;
-          return account.persistAndFlush().onItem().transformToUni(a -> {
-            AccountEmail accountEmail2 = new AccountEmail();
-            accountEmail2.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
-            accountEmail2.account = a;
-            accountEmail2.email = email;
-            return accountEmail2.persistAndFlush().onItem().transformToUni(ae -> {
-              Session session = new Session();
-              session.account = account;
-              return session.persistAndFlush().onItem().transformToUni(s -> {
-                SessionValidation sessionValidation = new SessionValidation();
-                sessionValidation.session = s;
-                sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
-                sessionValidation.email = ae;
-                sessionValidation.token = StringUtil.generateRandomNumericString(6);
-                return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
-                  return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
+      return AccountEmail.findByEmailValidated(email)
+        .onItem()
+        .transformToUni(accountEmail -> {
+          if (accountEmail != null) {
+            LOG.infov("email already exists: {0}", email);
+            currentSpan.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
+            return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+          } else {
+            Account account = new Account();
+            account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
+            account.status = AccountStatus.PENDING;
+            return account.persistAndFlush().onItem().transformToUni(a -> {
+              AccountEmail accountEmail2 = new AccountEmail();
+              accountEmail2.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
+              accountEmail2.account = a;
+              accountEmail2.email = email;
+              return accountEmail2.persistAndFlush().onItem().transformToUni(ae -> {
+                Session session = new Session();
+                session.account = account;
+                return session.persistAndFlush().onItem().transformToUni(s -> {
+                  SessionValidation sessionValidation = new SessionValidation();
+                  sessionValidation.session = s;
+                  sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+                  sessionValidation.email = ae;
+                  sessionValidation.token = StringUtil.generateRandomNumericString(6);
+                  return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
+                    return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
+                  });
+                }).onFailure().call(t -> {
+                  LOG.error("error creating session", t);
+                  currentSpan.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+                  return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
                 });
-              }).onFailure().call(t -> {
-                LOG.error("error creating session", t);
-                currentSpan.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
-                return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
               });
             });
-          });
-        }
-      }).onFailure().call(t -> {
-        LOG.error("error registering user", t);
-        currentSpan.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
-        return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
-      });
+          }
+        }).onFailure().call(t -> {
+          LOG.error("error registering user", t);
+          currentSpan.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+          return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+        });
+    }
   }
 
   @Override

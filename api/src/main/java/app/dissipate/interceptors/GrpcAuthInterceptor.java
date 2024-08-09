@@ -3,15 +3,10 @@ package app.dissipate.interceptors;
 import io.grpc.*;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 
-import io.quarkus.security.identity.CurrentIdentityAssociation;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class GrpcAuthInterceptor implements ServerInterceptor {
-
-    @Inject
-    CurrentIdentityAssociation identityAssociation;
 
     @Override
     @WithSpan("grpc-auth-interceptor")
