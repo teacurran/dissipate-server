@@ -1,5 +1,6 @@
 package app.dissipate.data.models;
 
+import io.quarkus.panache.common.Parameters;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
@@ -22,6 +23,8 @@ AND deleted = false
 """)
 public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
 
+  public static final String ID_GENERATOR_KEY = "AccountEmail";
+
   public static final String QUERY_FIND_BY_EMAIL_VALIDATED = "AccountEmail.findByEmailValidated";
 
   @ManyToOne
@@ -38,6 +41,15 @@ public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
   }
 
   public static Uni<AccountEmail> findByEmailValidated(String email) {
-    return find(AccountEmail.QUERY_FIND_BY_EMAIL_VALIDATED, "email", email).firstResult();
+    return find("#" + AccountEmail.QUERY_FIND_BY_EMAIL_VALIDATED, Parameters.with("email", email)).firstResult();
   }
+
+  public Uni<AccountEmail> persist() {
+    return super.persist();
+  }
+
+  public Uni<AccountEmail> persistAndFlush() {
+    return super.persistAndFlush();
+  }
+
 }

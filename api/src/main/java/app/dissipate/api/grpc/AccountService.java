@@ -4,6 +4,8 @@ import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.Account.AccountStatus;
 import app.dissipate.data.models.AccountEmail;
+import app.dissipate.data.models.Session;
+import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.CreateHandleRequest;
 import app.dissipate.grpc.CreateHandleResponse;
 import app.dissipate.grpc.DissipateService;
@@ -11,6 +13,7 @@ import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.RegisterResponseResult;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
+import app.dissipate.utils.StringUtil;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
@@ -54,16 +57,37 @@ public class AccountService implements DissipateService {
           return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
         } else {
           Account account = new Account();
+          account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
           account.status = AccountStatus.PENDING;
           return account.persistAndFlush().onItem().transformToUni(a -> {
-            AccountEmail accountEmail1 = new AccountEmail();
-            accountEmail1.account = a;
-            accountEmail1.email = email;
-            return accountEmail1.persistAndFlush().onItem().transformToUni(ae -> {
-              return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
+            AccountEmail accountEmail2 = new AccountEmail();
+            accountEmail2.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
+            accountEmail2.account = a;
+            accountEmail2.email = email;
+            return accountEmail2.persistAndFlush().onItem().transformToUni(ae -> {
+              Session session = new Session();
+              session.account = account;
+              return session.persistAndFlush().onItem().transformToUni(s -> {
+                SessionValidation sessionValidation = new SessionValidation();
+                sessionValidation.session = s;
+                sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+                sessionValidation.email = ae;
+                sessionValidation.token = StringUtil.generateRandomNumericString(6);
+                return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
+                  return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
+                });
+              }).onFailure().call(t -> {
+                LOG.error("error creating session", t);
+                currentSpan.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+                return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+              });
             });
           });
         }
+      }).onFailure().call(t -> {
+        LOG.error("error registering user", t);
+        currentSpan.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+        return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
       });
   }
 

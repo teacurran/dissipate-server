@@ -1,11 +1,8 @@
 package app.dissipate.data.models;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import io.smallrye.mutiny.Uni;
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,6 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
+@Table(name = "sessions")
 public class Session  extends PanacheEntityBase {
 
   @Id
@@ -33,5 +31,13 @@ public class Session  extends PanacheEntityBase {
   public Instant updated;
 
   public Instant ended;
+
+  public Uni<Session> persist() {
+    return super.persist();
+  }
+
+  public Uni<Session> persistAndFlush() {
+    return super.persistAndFlush();
+  }
 
 }

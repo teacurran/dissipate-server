@@ -15,6 +15,9 @@ import java.util.List;
 @Entity
 @Table(name = "accounts")
 public class Account extends DefaultPanacheEntityWithTimestamps {
+
+  public static final String ID_GENERATOR_KEY = "Account";
+
   public AccountStatus status;
 
   @OneToMany(

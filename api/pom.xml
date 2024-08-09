@@ -151,6 +151,12 @@
       <artifactId>inflector</artifactId>
       <version>0.7.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk18on</artifactId>
+      <version>1.78.1</version>
+    </dependency>
+
     <!-- using resteasy-reactive
     <dependency>
       <groupId>io.quarkus</groupId>
