@@ -46,3 +46,7 @@ message RegisterResponse {
   RegisterResponseResult result = 1;
   optional string error_message = 2;
 }
+
+message SessionValidationProto {
+  string id = 1;
+}

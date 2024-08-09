@@ -13,11 +13,11 @@ import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.RegisterResponseResult;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
+import app.dissipate.services.MessagingService;
 import app.dissipate.utils.StringUtil;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
@@ -25,25 +25,27 @@ import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logging.Logger;
 
 @GrpcService
 @RegisterInterceptor(GrpcAuthInterceptor.class)
 public class AccountService implements DissipateService {
 
-  private static final Logger LOG = Logger.getLogger(AccountService.class);
+  private static final Logger LOGGER = Logger.getLogger(AccountService.class);
 
   @Inject
   SnowflakeIdGenerator snowflakeIdGenerator;
 
   @Inject
-  Tracer tracer;
+  MessagingService messagingService;
 
   @Override
   @WithSession
   @WithTransaction
   public Uni<RegisterResponse> register(RegisterRequest request) {
-    LOG.info("register()");
+    LOGGER.info("register()");
     Span currentSpan = Span.current();
 
     String email = request.getEmail().toLowerCase();
@@ -55,7 +57,7 @@ public class AccountService implements DissipateService {
         .onItem()
         .transformToUni(accountEmail -> {
           if (accountEmail != null) {
-            LOG.infov("email already exists: {0}", email);
+            LOGGER.infov("email already exists: {0}", email);
             currentSpan.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
             return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
           } else {
@@ -77,10 +79,11 @@ public class AccountService implements DissipateService {
                   sessionValidation.email = ae;
                   sessionValidation.token = StringUtil.generateRandomNumericString(6);
                   return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
+                    messagingService.startSessionValidation(sessionValidation);
                     return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
                   });
                 }).onFailure().call(t -> {
-                  LOG.error("error creating session", t);
+                  LOGGER.error("error creating session", t);
                   currentSpan.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
                   return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
                 });
@@ -88,7 +91,7 @@ public class AccountService implements DissipateService {
             });
           }
         }).onFailure().call(t -> {
-          LOG.error("error registering user", t);
+          LOGGER.error("error registering user", t);
           currentSpan.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
           return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
         });
