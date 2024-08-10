@@ -1,7 +1,7 @@
 package app.dissipate;
 
 import app.dissipate.data.models.Account;
-import app.dissipate.data.models.Account.AccountStatus;
+import app.dissipate.data.models.AccountStatus;
 import app.dissipate.data.models.Identity;
 import io.quarkus.hibernate.reactive.panache.Panache;
 import io.smallrye.mutiny.Uni;

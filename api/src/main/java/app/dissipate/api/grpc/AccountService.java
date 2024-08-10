@@ -2,7 +2,6 @@ package app.dissipate.api.grpc;
 
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.models.Account;
-import app.dissipate.data.models.Account.AccountStatus;
 import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
@@ -14,6 +13,7 @@ import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.RegisterResponseResult;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
 import app.dissipate.services.MessagingService;
+import app.dissipate.utils.EncryptionUtil;
 import app.dissipate.utils.StringUtil;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -25,8 +25,6 @@ import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logging.Logger;
 
 @GrpcService
@@ -40,6 +38,9 @@ public class AccountService implements DissipateService {
 
   @Inject
   MessagingService messagingService;
+
+  @Inject
+  EncryptionUtil encryptionUtil;
 
   @Override
   @WithSession
@@ -61,23 +62,20 @@ public class AccountService implements DissipateService {
             currentSpan.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
             return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
           } else {
-            Account account = new Account();
-            account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
-            account.status = AccountStatus.PENDING;
-            return account.persistAndFlush().onItem().transformToUni(a -> {
+            return Account.createNewAnonymousAccount(snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
               AccountEmail accountEmail2 = new AccountEmail();
               accountEmail2.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
               accountEmail2.account = a;
               accountEmail2.email = email;
               return accountEmail2.persistAndFlush().onItem().transformToUni(ae -> {
                 Session session = new Session();
-                session.account = account;
+                session.account = a;
                 return session.persistAndFlush().onItem().transformToUni(s -> {
                   SessionValidation sessionValidation = new SessionValidation();
                   sessionValidation.session = s;
                   sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
                   sessionValidation.email = ae;
-                  sessionValidation.token = StringUtil.generateRandomNumericString(6);
+                  sessionValidation.token = StringUtil.generateRandomString(6);
                   return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
                     messagingService.startSessionValidation(sessionValidation);
                     return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
