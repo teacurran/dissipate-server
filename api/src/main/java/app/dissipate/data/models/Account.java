@@ -7,8 +7,6 @@ import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -53,21 +51,21 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   @Override
   public <T extends PanacheEntityBase> Uni<T> persist() {
-    throw new RuntimeException("don't use, use persistAndFlushWithEncryption(EncryptionUtil encryptionUtil) instead");
+    throw new RuntimeException("don't use, use persistAndFlush(EncryptionUtil encryptionUtil) instead");
   }
 
   @Override
   public <T extends PanacheEntityBase> Uni<T> persistAndFlush() {
-    throw new RuntimeException("don't use, use persistAndFlushWithEncryption(EncryptionUtil encryptionUtil) instead");
+    throw new RuntimeException("don't use, use persistAndFlush(EncryptionUtil encryptionUtil) instead");
   }
 
-  public <T extends PanacheEntityBase> Uni<T> persistAndFlushWithEncryption(EncryptionUtil encryptionUtil) {
-    encryptFields(encryptionUtil);
+  public <T extends PanacheEntityBase> Uni<T> persistAndFlush(EncryptionUtil encryptionUtil) {
+    hashFields(encryptionUtil);
     return super.persistAndFlush();
   }
 
   @WithSpan
-  public void encryptFields(EncryptionUtil eu) {
+  public void hashFields(EncryptionUtil eu) {
     if (this.password != null) {
       byte[] saltBytes = null;
       if (this.passwordSalt == null) {
@@ -82,13 +80,6 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
     }
   }
 
-
-
-
-
-
-
-
   public static Uni<Account> findBySrcId(String srcId) {
     return find("srcId", srcId).firstResult();
   }
@@ -97,7 +88,7 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
     Account account = new Account();
     account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
     account.status = AccountStatus.PENDING;
-    return account.persistAndFlushWithEncryption(encryptionUtil);
+    return account.persistAndFlush(encryptionUtil);
   }
 }
 
