@@ -60,4 +60,6 @@ public class Identity extends PanacheEntity {
   )
   public List<Channel> posts = new ArrayList<>();
 
+  public String language;
+
 }

@@ -49,6 +49,8 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   )
   public List<Identity> identities = new ArrayList<Identity>();
 
+  String language;
+
   @Override
   public <T extends PanacheEntityBase> Uni<T> persist() {
     throw new RuntimeException("don't use, use persistAndFlush(EncryptionUtil encryptionUtil) instead");
