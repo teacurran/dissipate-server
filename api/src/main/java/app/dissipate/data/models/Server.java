@@ -25,7 +25,7 @@ import java.time.ZoneOffset;
 @NamedQuery(name = Server.QUERY_FIND_FIRST_UNUSED_SERVER,
   query = "from Server where isShutdown=true")
 @NamedQuery(name = Server.QUERY_MARK_ABANDONED_SERVERS_AS_SHUTDOWN,
-  query = "update Server set isShutdown=true where seen < :seen")
+  query = "update Server set isShutdown=true, status=:status where seen < :seen")
 public class Server extends PanacheEntityBase {
 
   public static final String QUERY_FIND_FIRST_UNUSED_SERVER = "Server.findFirstUnusedServer";
@@ -58,6 +58,14 @@ public class Server extends PanacheEntityBase {
     nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
   public boolean isShutdown;
 
+  public ServerStatus status;
+
+  public String hostname;
+
+  public Integer port;
+
+  public String token;
+
   public static Uni<MaxIntDto> findMaxInstanceId() {
     return find("select coalesce(max(instanceNumber), 0) as maxValue from Server").project(MaxIntDto.class).firstResult();
   }
@@ -66,7 +74,8 @@ public class Server extends PanacheEntityBase {
     Instant seenThreshold = LocalDateTime.now().toInstant(zoneOffset).minus(ABANDONED_SERVER_DURATION);
 
     return update("#" + QUERY_MARK_ABANDONED_SERVERS_AS_SHUTDOWN,
-      Parameters.with("seen", seenThreshold));
+      Parameters.with("status", ServerStatus.SHUTDOWN)
+        .and("seen", seenThreshold));
   }
 
   public static Uni<Server> findFirstUnusedServer() {

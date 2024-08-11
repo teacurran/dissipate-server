@@ -1,11 +1,13 @@
 package app.dissipate.services;
 
 import app.dissipate.data.models.Server;
+import app.dissipate.data.models.ServerStatus;
 import app.dissipate.data.models.dto.MaxIntDto;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle;
+import io.quarkus.vertx.http.runtime.HttpConfiguration;
 import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Context;
@@ -20,6 +22,7 @@ import io.quarkus.scheduler.Scheduled;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static app.dissipate.data.models.Server.markAbandonedServersAsShutdown;
 
@@ -34,6 +37,9 @@ public class ServerInstance {
 
   @Inject
   ZoneOffset zoneOffset;
+
+  @Inject
+  HttpConfiguration httpConfiguration;
 
   @Produces
   public Server getServer() {
@@ -120,7 +126,11 @@ public class ServerInstance {
     server.instanceNumber = maxIntDto == null ? 1 : maxIntDto.maxValue + 1;
     server.launched = LocalDateTime.now().toInstant(zoneOffset);
     server.seen = LocalDateTime.now().toInstant(zoneOffset);
+    server.status = ServerStatus.ACTIVE;
+    server.hostname = httpConfiguration.host;
+    server.port = httpConfiguration.port;
     server.isShutdown = false;
+    server.token = UUID.randomUUID().toString();
     return server.persistAndFlush();
   }
 
@@ -132,7 +142,11 @@ public class ServerInstance {
       server = s;
       server.launched = LocalDateTime.now().toInstant(zoneOffset);
       server.seen = LocalDateTime.now().toInstant(zoneOffset);
+      server.status = ServerStatus.ACTIVE;
+      server.hostname = httpConfiguration.host;
+      server.port = httpConfiguration.port;
       server.isShutdown = false;
+      server.token = UUID.randomUUID().toString();
       return server.persistAndFlush();
     });
   }
@@ -155,6 +169,7 @@ public class ServerInstance {
         // Find the server by ID
         Server.byId(server.id).call(s -> {
           s.isShutdown = true;
+          s.status = ServerStatus.SHUTDOWN;
           return s.persistAndFlush();
         })
       )

@@ -7,7 +7,7 @@ public enum AccountStatus {
   SUSPENDED,
   BANNED;
 
-  private AccountStatus() {
+  AccountStatus() {
   }
 
   public static AccountStatus fromValue(String id) {
