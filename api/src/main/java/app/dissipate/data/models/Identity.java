@@ -62,4 +62,17 @@ public class Identity extends PanacheEntity {
 
   public String language;
 
+  @OneToMany(
+    mappedBy = "identity",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+  )
+  List<IdentityFollow> following = new ArrayList<IdentityFollow>();
+
+  @OneToMany(
+    mappedBy = "identity2",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+  )
+  List<IdentityFollow> followers = new ArrayList<IdentityFollow>();
 }
