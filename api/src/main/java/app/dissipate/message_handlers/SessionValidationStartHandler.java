@@ -1,6 +1,5 @@
 package app.dissipate.message_handlers;
 
-import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.SessionValidationProto;
 import io.smallrye.common.annotation.Blocking;
 import jakarta.enterprise.context.ApplicationScoped;

@@ -4,7 +4,6 @@ import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Transient;
@@ -15,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Identity extends PanacheEntity {
+public class Identity extends DefaultPanacheEntityWithTimestamps {
   @ConfigProperty(name = "encryption.key")
   @Transient
   String key;
@@ -45,20 +44,6 @@ public class Identity extends PanacheEntity {
     orphanRemoval = true
   )
   public List<IdentityOrganization> membershipApprovals = new ArrayList<IdentityOrganization>();
-
-  @OneToMany(
-    mappedBy = "identity",
-    cascade = CascadeType.ALL,
-    orphanRemoval = true
-  )
-  public List<Channel> channels = new ArrayList<>();
-
-  @OneToMany(
-    mappedBy = "identity",
-    cascade = CascadeType.ALL,
-    orphanRemoval = true
-  )
-  public List<Channel> posts = new ArrayList<>();
 
   public String language;
 
