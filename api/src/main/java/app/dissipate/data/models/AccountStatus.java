@@ -9,8 +9,4 @@ public enum AccountStatus {
 
   AccountStatus() {
   }
-
-  public static AccountStatus fromValue(String id) {
-    return AccountStatus.valueOf(id);
-  }
 }

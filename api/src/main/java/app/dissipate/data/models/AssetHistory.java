@@ -13,5 +13,8 @@ public class AssetHistory extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   Identity actor;
 
+  @ManyToOne
+  Identity actor2;
+
   String action;
 }

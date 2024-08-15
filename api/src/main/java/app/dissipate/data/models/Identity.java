@@ -1,12 +1,7 @@
 package app.dissipate.data.models;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hibernate.annotations.ColumnTransformer;
 
@@ -14,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "identities")
 public class Identity extends DefaultPanacheEntityWithTimestamps {
   @ConfigProperty(name = "encryption.key")
   @Transient

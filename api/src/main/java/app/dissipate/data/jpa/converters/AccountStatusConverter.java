@@ -17,6 +17,6 @@ public class AccountStatusConverter implements AttributeConverter<AccountStatus,
 
   @Override
   public AccountStatus convertToEntityAttribute(String dbType) {
-    return AccountStatus.fromValue(dbType);
+    return AccountStatus.valueOf(dbType);
   }
 }
