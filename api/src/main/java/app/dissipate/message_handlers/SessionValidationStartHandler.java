@@ -3,11 +3,11 @@ package app.dissipate.message_handlers;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.SessionValidationProto;
 import com.google.protobuf.InvalidProtocolBufferException;
+import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.reactive.ReactiveMailer;
-import io.quarkus.vertx.SafeVertxContext;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -29,7 +29,6 @@ public class SessionValidationStartHandler {
   Mutiny.SessionFactory factory;
 
   @WithSpan("SessionValidationStartHandler.handleSessionValidation")
-  @SafeVertxContext
   @WithSession
   @Incoming("session-validation-start-in")
   public Uni<Void> handleSessionValidation(byte[] message) {
@@ -45,6 +44,7 @@ public class SessionValidationStartHandler {
         }
 
         if (sessionValidation.email != null) {
+          Span.current().setAttribute("email", sessionValidation.email.email);
           Mail m = new Mail();
           m.setFrom("admin@hallofjustice.net");
           m.setTo(List.of(sessionValidation.email.email));

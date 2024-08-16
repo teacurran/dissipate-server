@@ -3,6 +3,9 @@ package app.dissipate.api.grpc;
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
+import app.dissipate.data.models.DelayedJob;
+import app.dissipate.data.models.DelayedJobQueue;
+import app.dissipate.data.models.Server;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.CreateHandleRequest;
@@ -42,6 +45,9 @@ public class DissipateServiceImpl implements DissipateService {
   @Inject
   EncryptionUtil encryptionUtil;
 
+  @Inject
+  Server server;
+
   @Override
   @WithSession
   @WithTransaction
@@ -77,8 +83,17 @@ public class DissipateServiceImpl implements DissipateService {
                   sessionValidation.email = ae;
                   sessionValidation.token = StringUtil.generateRandomString(6);
                   return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
-                    messagingService.startSessionValidation(sessionValidation);
-                    return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
+                    DelayedJob delayedJob = new DelayedJob();
+                    delayedJob.id = snowflakeIdGenerator.generate(DelayedJob.ID_GENERATOR_KEY);
+                    delayedJob.actorId = sv.id;
+                    delayedJob.runAt = sv.created;
+                    delayedJob.queue = DelayedJobQueue.EMAIL_AUTH;
+                    delayedJob.priority = DelayedJobQueue.EMAIL_AUTH.getPriority();
+
+                    return delayedJob.persistAndFlush().onItem().transformToUni(dj -> {
+                      messagingService.startSessionValidation(sessionValidation);
+                      return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
+                    });
                   });
                 }).onFailure().call(t -> {
                   LOGGER.error("error creating session", t);
