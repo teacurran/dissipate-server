@@ -3,9 +3,9 @@ package app.dissipate.message_handlers;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.SessionValidationProto;
 import com.google.protobuf.InvalidProtocolBufferException;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.mailer.Mail;
-import io.quarkus.mailer.Mailer;
 import io.quarkus.mailer.reactive.ReactiveMailer;
 import io.quarkus.vertx.SafeVertxContext;
 import io.smallrye.mutiny.Uni;
@@ -28,11 +28,11 @@ public class SessionValidationStartHandler {
   @Inject
   Mutiny.SessionFactory factory;
 
+  @WithSpan("SessionValidationStartHandler.handleSessionValidation")
   @SafeVertxContext
   @WithSession
   @Incoming("session-validation-start-in")
   public Uni<Void> handleSessionValidation(byte[] message) {
-
     try {
       SessionValidationProto sv = SessionValidationProto.parseFrom(message);
       String id = sv.getId();
