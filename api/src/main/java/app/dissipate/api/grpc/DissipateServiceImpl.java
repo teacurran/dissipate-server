@@ -29,9 +29,9 @@ import org.jboss.logging.Logger;
 
 @GrpcService
 @RegisterInterceptor(GrpcAuthInterceptor.class)
-public class AccountService implements DissipateService {
+public class DissipateServiceImpl implements DissipateService {
 
-  private static final Logger LOGGER = Logger.getLogger(AccountService.class);
+  private static final Logger LOGGER = Logger.getLogger(DissipateServiceImpl.class);
 
   @Inject
   SnowflakeIdGenerator snowflakeIdGenerator;
@@ -50,6 +50,7 @@ public class AccountService implements DissipateService {
     Span currentSpan = Span.current();
 
     String email = request.getEmail().toLowerCase();
+
     try (Scope scope = currentSpan.makeCurrent()) {
       currentSpan.setAttribute("email", email);
       currentSpan.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
