@@ -19,9 +19,9 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
   public String publicKey;
 
   @ColumnTransformer(
-    read = "PGP_SYM_DECRYPT(privateKey, '${encryption.key}')",
+    read = "PGP_SYM_DECRYPT(private_key, '${encryption.key}')",
     write = "PGP_SYM_ENCRYPT(?, '${encryption.key}')")
-  @Column(columnDefinition = "bytea")
+  @Column(columnDefinition = "bytea", name = "private_key")
   public String privateKey;
 
   @ManyToOne

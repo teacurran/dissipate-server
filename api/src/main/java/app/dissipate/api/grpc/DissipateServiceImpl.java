@@ -46,7 +46,6 @@ public class DissipateServiceImpl implements DissipateService {
   @WithSession
   @WithTransaction
   public Uni<RegisterResponse> register(RegisterRequest request) {
-    LOGGER.info("register()");
     Span currentSpan = Span.current();
 
     String email = request.getEmail().toLowerCase();

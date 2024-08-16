@@ -15,8 +15,7 @@ public class MessagingService {
   Emitter<byte[]> sessionValidationEmitter;
 
   public void startSessionValidation(SessionValidation sessionValidation) {
-    //sessionValidationEmitter.send(sessionValidation);
-
+    // send protos over the wire
     SessionValidationProto sessionValidationProto = SessionValidationProto.newBuilder().setId(sessionValidation.id).build();
     sessionValidationEmitter.send(sessionValidationProto.toByteArray());
   }

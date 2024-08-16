@@ -16,11 +16,11 @@ import java.time.Instant;
 })
 @NamedQuery(name = AccountEmail.QUERY_FIND_BY_EMAIL_VALIDATED,
   query = """
-FROM AccountEmail
-WHERE email = :email
-AND validated != null
-AND deleted = false
-""")
+    FROM AccountEmail
+    WHERE email = :email
+    AND validated != null
+    AND deleted = false
+    """)
 public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
 
   public static final String ID_GENERATOR_KEY = "AccountEmail";
