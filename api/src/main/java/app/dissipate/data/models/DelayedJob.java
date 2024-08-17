@@ -4,6 +4,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -11,7 +12,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "delayed_jobs", indexes = {
-  @Index(name = "ix_delayed_jobs_queue_run_at", columnList = "queue,runAt"),
+  @Index(name = "ix_delayed_jobs_queue_run_at", columnList = "queue,runAt,completedAt"),
 })
 public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
 
@@ -26,6 +27,7 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
   @Column(columnDefinition = "CHAR(13)", length = 13)
   public String actorId;
 
+  @Column(columnDefinition = "TEXT")
   public String lastError;
 
   public Instant runAt;
@@ -33,6 +35,10 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
   public Instant lockedAt;
 
   public Instant failedAt;
+
+  public boolean complete = false;
+
+  public Instant completedAt;
 
   @ManyToOne
   public Server lockedBy;

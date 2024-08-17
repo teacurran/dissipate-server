@@ -85,7 +85,6 @@ public class DissipateServiceImpl implements DissipateService {
                   sessionValidation.token = StringUtil.generateRandomString(6);
                   return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
                     return delayedJobService.createDelayedJob(sv).onItem().transformToUni(dj -> {
-                      messagingService.startSessionValidation(sessionValidation);
                       return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
                     });
                   });
