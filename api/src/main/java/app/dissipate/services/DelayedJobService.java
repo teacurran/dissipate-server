@@ -10,6 +10,7 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.reactive.ReactiveMailer;
+import io.quarkus.scheduler.Scheduled;
 import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.eventbus.EventBus;
@@ -82,18 +83,10 @@ public class DelayedJobService {
       switch (dj.queue) {
         case EMAIL_AUTH:
           return handleEmailAuth(dj.actorId)
-            .onFailure().call(t -> {
-              LOGGER.error("Error completing delayed job: " + id, t);
-              dj.lastError = String.join("\n", Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).toArray(String[]::new));
-              dj.failedAt = Instant.now();
-              dj.attempts = dj.attempts + 1;
-              dj.runAt = DelayedJobRetryStrategy.calculateNextRetryInterval(dj.attempts);
-              dj.lastRunBy = server;
-              return dj.persistAndFlush();
-            })
             .onItem().transformToUni(v -> {
               dj.lockedBy = null;
               dj.lockedAt = null;
+              dj.attempts = dj.attempts + 1;
               dj.completedAt = Instant.now();
               dj.complete = true;
               dj.lastRunBy = server;
@@ -101,6 +94,18 @@ public class DelayedJobService {
                 LOGGER.info("delayed job unlocked: " + id);
                 return Uni.createFrom().voidItem();
               });
+            })
+            .onFailure().call(t -> {
+              LOGGER.error("Error completing delayed job: " + id, t);
+              dj.lastError = String.join("\n", Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).toArray(String[]::new));
+              dj.failedAt = Instant.now();
+              dj.attempts = dj.attempts + 1;
+              dj.locked = false;
+              dj.lockedBy = null;
+              dj.lockedAt = null;
+              dj.runAt = DelayedJobRetryStrategy.calculateNextRetryInterval(dj.attempts);
+              dj.lastRunBy = server;
+              return dj.persistAndFlush();
             });
         default:
           LOGGER.error("Unknown queue: " + dj.queue);
@@ -108,6 +113,32 @@ public class DelayedJobService {
       }
     });
   }
+
+  @Scheduled(every = "30s")
+  @WithSession
+  @WithSpan("DelayedJobService.run")
+  Uni<Void> run() {
+    return DelayedJob.findReadyToRun().onItem().transformToUni(djs -> {
+      if (djs.isEmpty()) {
+        return Uni.createFrom().voidItem();
+      }
+
+      LOGGER.info("found " + djs.size() + " delayed jobs to run");
+
+      return Uni.combine().all().unis(djs.stream().map(dj -> {
+        return getDelayedJobToWorkOn(dj.id).onItem().transformToUni(dj2 -> {
+          if (dj2 == null) {
+            return Uni.createFrom().voidItem();
+          }
+
+          return bus.request(DELAYED_JOB_CREATED, dj2.id).onItem().transformToUni(v -> {
+            return Uni.createFrom().voidItem();
+          });
+        });
+      }).toArray(Uni[]::new)).discardItems();
+    });
+  }
+
 
   @Transactional
   @WithSpan("DelayedJobService.getDelayedJobToWorkOn")
@@ -125,6 +156,7 @@ public class DelayedJobService {
 
       dj.lockedAt = Instant.now();
       dj.lockedBy = server;
+      dj.locked = true;
 
       return dj.persistAndFlush();
     });
