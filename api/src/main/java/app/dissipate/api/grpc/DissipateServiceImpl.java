@@ -15,6 +15,7 @@ import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.RegisterResponseResult;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
+import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.MessagingService;
 import app.dissipate.utils.EncryptionUtil;
 import app.dissipate.utils.StringUtil;
@@ -46,7 +47,7 @@ public class DissipateServiceImpl implements DissipateService {
   EncryptionUtil encryptionUtil;
 
   @Inject
-  Server server;
+  DelayedJobService delayedJobService;
 
   @Override
   @WithSession
@@ -83,14 +84,7 @@ public class DissipateServiceImpl implements DissipateService {
                   sessionValidation.email = ae;
                   sessionValidation.token = StringUtil.generateRandomString(6);
                   return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
-                    DelayedJob delayedJob = new DelayedJob();
-                    delayedJob.id = snowflakeIdGenerator.generate(DelayedJob.ID_GENERATOR_KEY);
-                    delayedJob.actorId = sv.id;
-                    delayedJob.runAt = sv.created;
-                    delayedJob.queue = DelayedJobQueue.EMAIL_AUTH;
-                    delayedJob.priority = DelayedJobQueue.EMAIL_AUTH.getPriority();
-
-                    return delayedJob.persistAndFlush().onItem().transformToUni(dj -> {
+                    return delayedJobService.createDelayedJob(sv).onItem().transformToUni(dj -> {
                       messagingService.startSessionValidation(sessionValidation);
                       return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
                     });

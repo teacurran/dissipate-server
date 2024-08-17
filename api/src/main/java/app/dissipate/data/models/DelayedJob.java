@@ -1,5 +1,6 @@
 package app.dissipate.data.models;
 
+import io.smallrye.mutiny.Uni;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
@@ -38,5 +39,14 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
 
   @ManyToOne
   public Server lastRunBy;
+
+  public static Uni<DelayedJob> byId(String id) {
+    return DelayedJob.findById(id);
+  }
+
+  @Override
+  public Uni<DelayedJob> persistAndFlush() {
+    return super.persistAndFlush();
+  }
 
 }
