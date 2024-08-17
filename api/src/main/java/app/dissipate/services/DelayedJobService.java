@@ -84,28 +84,25 @@ public class DelayedJobService {
         case EMAIL_AUTH:
           return handleEmailAuth(dj.actorId)
             .onItem().transformToUni(v -> {
-              dj.lockedBy = null;
+              dj.locked = false;
               dj.lockedAt = null;
+              dj.lockedBy = null;
               dj.attempts = dj.attempts + 1;
               dj.completedAt = Instant.now();
               dj.complete = true;
               dj.lastRunBy = server;
-              return dj.persistAndFlush().onItem().transformToUni(dj2 -> {
-                LOGGER.info("delayed job unlocked: " + id);
-                return Uni.createFrom().voidItem();
-              });
+              return dj.persistAndFlush().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
             })
-            .onFailure().call(t -> {
-              LOGGER.error("Error completing delayed job: " + id, t);
+            .onFailure().recoverWithUni(t -> {
               dj.lastError = String.join("\n", Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).toArray(String[]::new));
               dj.failedAt = Instant.now();
-              dj.attempts = dj.attempts + 1;
               dj.locked = false;
-              dj.lockedBy = null;
               dj.lockedAt = null;
+              dj.lockedBy = null;
+              dj.attempts = dj.attempts + 1;
               dj.runAt = DelayedJobRetryStrategy.calculateNextRetryInterval(dj.attempts);
               dj.lastRunBy = server;
-              return dj.persistAndFlush();
+              return dj.persistAndFlush().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
             });
         default:
           LOGGER.error("Unknown queue: " + dj.queue);
@@ -126,14 +123,8 @@ public class DelayedJobService {
       LOGGER.info("found " + djs.size() + " delayed jobs to run");
 
       return Uni.combine().all().unis(djs.stream().map(dj -> {
-        return getDelayedJobToWorkOn(dj.id).onItem().transformToUni(dj2 -> {
-          if (dj2 == null) {
-            return Uni.createFrom().voidItem();
-          }
-
-          return bus.request(DELAYED_JOB_CREATED, dj2.id).onItem().transformToUni(v -> {
-            return Uni.createFrom().voidItem();
-          });
+        return bus.request(DELAYED_JOB_CREATED, dj.id).onItem().transformToUni(v -> {
+          return Uni.createFrom().voidItem();
         });
       }).toArray(Uni[]::new)).discardItems();
     });
@@ -149,14 +140,14 @@ public class DelayedJobService {
         return Uni.createFrom().nullItem();
       }
 
-      if (dj.lockedBy != null) {
+      if (dj.locked) {
         LOGGER.error("DelayedJob already locked: " + id);
         return Uni.createFrom().nullItem();
       }
 
-      dj.lockedAt = Instant.now();
-      dj.lockedBy = server;
       dj.locked = true;
+      dj.lockedBy = server;
+      dj.lockedAt = Instant.now();
 
       return dj.persistAndFlush();
     });
