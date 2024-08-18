@@ -52,11 +52,15 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
 
   public Instant lockedAt;
 
-  public Instant failedAt;
+    public Instant failedAt;
 
   public boolean complete = false;
 
   public Instant completedAt;
+
+  public boolean completedWithFailure = false;
+
+  public String failureReason;
 
   @ManyToOne
   public Server lockedBy;

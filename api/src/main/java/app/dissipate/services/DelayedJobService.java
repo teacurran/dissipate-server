@@ -5,11 +5,11 @@ import app.dissipate.data.models.DelayedJob;
 import app.dissipate.data.models.DelayedJobQueue;
 import app.dissipate.data.models.Server;
 import app.dissipate.data.models.SessionValidation;
-import io.opentelemetry.api.trace.Span;
+import app.dissipate.exceptions.DelayedJobException;
+import app.dissipate.services.jobs.DelayedJobHandler;
+import app.dissipate.services.jobs.DelayedJobHandlers;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
-import io.quarkus.mailer.Mail;
-import io.quarkus.mailer.reactive.ReactiveMailer;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.mutiny.Uni;
@@ -21,14 +21,13 @@ import org.jboss.logging.Logger;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
 
 @ApplicationScoped
 public class DelayedJobService {
 
   private static final Logger LOGGER = Logger.getLogger(DelayedJobService.class);
 
-  public static final String DELAYED_JOB_CREATED = "delayed-job-created";
+  public static final String DELAYED_JOB_RUN = "delayed-job-run";
 
   @Inject
   Server server;
@@ -40,7 +39,7 @@ public class DelayedJobService {
   SnowflakeIdGenerator snowflakeIdGenerator;
 
   @Inject
-  ReactiveMailer mailer;
+  DelayedJobHandlers jobHandlers;
 
   public Uni<DelayedJob> createDelayedJob(SessionValidation sessionValidation) {
     DelayedJob delayedJob = new DelayedJob();
@@ -54,14 +53,14 @@ public class DelayedJobService {
       if (dj == null) {
         LOGGER.error("Failed to create delayed job for session: " + sessionValidation.id);
       }
-      bus.publish(DELAYED_JOB_CREATED, delayedJob.id);
+      bus.publish(DELAYED_JOB_RUN, delayedJob.id);
     });
   }
 
   @WithSession
-  @ConsumeEvent(DELAYED_JOB_CREATED)
-  @WithSpan("DelayedJobService.handleDelayedJobCreated")
-  public Uni<Void> handleDelayedJobCreated(String id) {
+  @ConsumeEvent(DELAYED_JOB_RUN)
+  @WithSpan("DelayedJobService.handleDelayedJobRun")
+  public Uni<Void> run(String id) {
     return getDelayedJobToWorkOn(id).onItem().transformToUni(dj -> {
       if (dj == null) {
         return Uni.createFrom().voidItem();
@@ -80,33 +79,46 @@ public class DelayedJobService {
         });
       }
 
-      switch (dj.queue) {
-        case EMAIL_AUTH:
-          return handleEmailAuth(dj.actorId)
-            .onItem().transformToUni(v -> {
-              dj.locked = false;
-              dj.lockedAt = null;
-              dj.lockedBy = null;
-              dj.attempts = dj.attempts + 1;
-              dj.completedAt = Instant.now();
-              dj.complete = true;
-              dj.lastRunBy = server;
-              return dj.persistAndFlush().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
-            })
-            .onFailure().recoverWithUni(t -> {
-              dj.lastError = String.join("\n", Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).toArray(String[]::new));
-              dj.failedAt = Instant.now();
-              dj.locked = false;
-              dj.lockedAt = null;
-              dj.lockedBy = null;
-              dj.attempts = dj.attempts + 1;
+      DelayedJobHandler handler = jobHandlers.get(dj.queue);
+      if (handler == null) {
+        LOGGER.error("No handler found for queue: " + dj.queue);
+        return Uni.createFrom().voidItem();
+      } else {
+        return handler.run(dj.actorId)
+          .onItem().transformToUni(v -> {
+            dj.locked = false;
+            dj.lockedAt = null;
+            dj.lockedBy = null;
+            dj.attempts = dj.attempts + 1;
+            dj.completedAt = Instant.now();
+            dj.complete = true;
+            dj.lastRunBy = server;
+            return dj.persistAndFlush().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
+          })
+          .onFailure().recoverWithUni(t -> {
+            dj.lastError = String.join("\n", Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).toArray(String[]::new));
+            dj.failedAt = Instant.now();
+            dj.locked = false;
+            dj.lockedAt = null;
+            dj.lockedBy = null;
+            dj.attempts = dj.attempts + 1;
+
+            if (t instanceof DelayedJobException dje) {
+              if (dje.isFatal()) {
+                dj.complete = true;
+                dj.completedAt = Instant.now();
+                dj.completedWithFailure = true;
+              }
+              dj.failureReason = dje.getMessage();
+            }
+
+            if (!dj.completedWithFailure) {
               dj.runAt = DelayedJobRetryStrategy.calculateNextRetryInterval(dj.attempts);
-              dj.lastRunBy = server;
-              return dj.persistAndFlush().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
-            });
-        default:
-          LOGGER.error("Unknown queue: " + dj.queue);
-          return Uni.createFrom().voidItem();
+            }
+
+            dj.lastRunBy = server;
+            return dj.persistAndFlush().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
+          });
       }
     });
   }
@@ -122,14 +134,13 @@ public class DelayedJobService {
 
       LOGGER.info("found " + djs.size() + " delayed jobs to run");
 
-      return Uni.combine().all().unis(djs.stream().map(dj -> {
-        return bus.request(DELAYED_JOB_CREATED, dj.id).onItem().transformToUni(v -> {
-          return Uni.createFrom().voidItem();
-        });
-      }).toArray(Uni[]::new)).discardItems();
+      return Uni.combine().all().unis(
+        djs.stream()
+          .map(dj -> bus.request(DELAYED_JOB_RUN, dj.id).replaceWith(Uni.createFrom().voidItem()))
+          .toArray(Uni[]::new)
+      ).discardItems();
     });
   }
-
 
   @Transactional
   @WithSpan("DelayedJobService.getDelayedJobToWorkOn")
@@ -150,36 +161,6 @@ public class DelayedJobService {
       dj.lockedAt = Instant.now();
 
       return dj.persistAndFlush();
-    });
-  }
-
-  @Transactional
-  @WithSpan("DelayedJobService.handleEmailAuth")
-  public Uni<Void> handleEmailAuth(String id) {
-    return SessionValidation.byId(id).onItem().transformToUni(sessionValidation -> {
-      if (sessionValidation == null) {
-        LOGGER.error("SessionValidation not found: " + id);
-        return Uni.createFrom().voidItem();
-      }
-
-      if (sessionValidation.email != null) {
-        Span.current().setAttribute("email", sessionValidation.email.email);
-        Mail m = new Mail();
-        m.setFrom("admin@hallofjustice.net");
-        m.setTo(List.of(sessionValidation.email.email));
-        m.setText("Lex Luthor has been seen in Gotham City!");
-        m.setSubject("WARNING: Super Villain Alert");
-
-        LOGGER.info("handleSessionValidation(): " + sessionValidation.email.email);
-
-        return mailer.send(m);
-      } else if (sessionValidation.phone != null) {
-        LOGGER.info("handleSessionValidation(): " + sessionValidation.phone.phone);
-      } else {
-        LOGGER.error("SessionValidation has no email or phone: " + id);
-      }
-
-      return Uni.createFrom().voidItem();
     });
   }
 
