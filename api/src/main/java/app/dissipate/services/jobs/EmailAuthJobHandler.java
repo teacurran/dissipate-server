@@ -15,10 +15,13 @@ import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EmailAuthJobHandler implements DelayedJobHandler {
@@ -34,7 +37,9 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
   static class Templates {
     public static native MailTemplate.MailTemplateInstance otp(ResourceBundle i18n,
                                                                String otp,
-                                                               String email);
+                                                               String email,
+                                                               String stylesheet,
+                                                               String imageHead);
   }
 
   @Override
@@ -51,38 +56,21 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
 
         LOGGER.info("handleSessionValidation(): " + sessionValidation.email.email);
 
-        try {
-          byte[] image1 = loadResourceAsBytes("images/image-1.png");
-          byte[] image2 = loadResourceAsBytes("images/image-2.png");
-          byte[] image3 = loadResourceAsBytes("images/image-3.png");
-          byte[] image4 = loadResourceAsBytes("images/image-4.png");
-          byte[] image5 = loadResourceAsBytes("images/image-5.png");
-          byte[] image6 = loadResourceAsBytes("images/image-6.png");
-          byte[] image7 = loadResourceAsBytes("images/image-7.png");
-          byte[] image8 = loadResourceAsBytes("images/image-8.png");
+        ResourceBundle i18n = localizationService.getBundle(Locale.getDefault());
 
-          return Templates.otp(localizationService.getBundle(Locale.getDefault()),
+        try {
+          String imageHead = loadResourceAsBase64("images/server_farm_2_m.png");
+          String css = loadResourceAsString("css/email.css");
+
+          return Templates.otp(i18n,
               sessionValidation.token,
-              sessionValidation.email.email)
+              sessionValidation.email.email,
+              css,
+              imageHead)
             .from("admin@hallofjustice.net")
             .to(sessionValidation.email.email)
-            .subject("OTP for Email Verification")
-            .addInlineAttachment("image-1.png", image1, "image/png", "image-1.png")
-            .addInlineAttachment("image-2.png", image2, "image/png", "image-2.png")
-            .addInlineAttachment("image-3.png", image3, "image/png", "image-3.png")
-            .addInlineAttachment("image-4.png", image4, "image/png", "image-4.png")
-            .addInlineAttachment("image-5.png", image5, "image/png", "image-5.png")
-            .addInlineAttachment("image-6.png", image6, "image/png", "image-6.png")
-            .addInlineAttachment("image-7.png", image7, "image/png", "image-7.png")
-            .addInlineAttachment("image-8.png", image8, "image/png", "image-8.png")
+            .subject(i18n.getString("auth.email.otp.subject"))
             .send();
-
-//        Mail m = new Mail();
-//        m.setFrom("admin@hallofjustice.net");
-//        m.setTo(List.of(sessionValidation.email.email));
-//        m.setText("Lex Luthor has been seen in Gotham City!");
-//        m.setSubject("WARNING: Super Villain Alert");
-
         } catch (IOException | URISyntaxException e) {
           LOGGER.error("Failed to load image resources", e);
           return Uni.createFrom().failure(new DelayedJobException(true, "Failed to load image resources"));
@@ -100,7 +88,17 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
     });
   }
 
+  private String loadResourceAsString(String resourcePath) throws IOException, URISyntaxException {
+    return Files.readAllLines(
+      Paths.get(getClass().getClassLoader().getResource(resourcePath).toURI()), StandardCharsets.UTF_8
+    ).stream().collect(Collectors.joining("\n"));
+  }
+
   private byte[] loadResourceAsBytes(String resourcePath) throws IOException, URISyntaxException {
     return Files.readAllBytes(Paths.get(getClass().getClassLoader().getResource(resourcePath).toURI()));
+  }
+  public String loadResourceAsBase64(String resourcePath) throws IOException, URISyntaxException {
+    byte resource[] = loadResourceAsBytes(resourcePath);
+    return java.util.Base64.getEncoder().encodeToString(resource);
   }
 }
