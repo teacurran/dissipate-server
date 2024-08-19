@@ -38,8 +38,7 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
     public static native MailTemplate.MailTemplateInstance otp(ResourceBundle i18n,
                                                                String otp,
                                                                String email,
-                                                               String stylesheet,
-                                                               String imageHead);
+                                                               String stylesheet);
   }
 
   @Override
@@ -53,24 +52,25 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
 
       if (sessionValidation.email != null) {
         Span.current().setAttribute("email", sessionValidation.email.email);
-
-        LOGGER.info("handleSessionValidation(): " + sessionValidation.email.email);
-
         ResourceBundle i18n = localizationService.getBundle(Locale.getDefault());
 
         try {
-          String imageHead = loadResourceAsBase64("images/server_farm_2_m.png");
+          //String imageHead = loadResourceAsBase64("images/server_farm_2_m.png");
           String css = loadResourceAsString("css/email.css");
+          byte imageHead[] = loadResourceAsBytes("images/server_farm_2_m.png");
 
           return Templates.otp(i18n,
               sessionValidation.token,
               sessionValidation.email.email,
-              css,
-              imageHead)
+              css)
             .from("admin@hallofjustice.net")
             .to(sessionValidation.email.email)
             .subject(i18n.getString("auth.email.otp.subject"))
-            .send();
+            .addInlineAttachment("header.png", imageHead, "image/png", "header")
+            .send().onItem().invoke(() -> {
+              Span.current().addEvent("Email sent");
+            });
+
         } catch (IOException | URISyntaxException e) {
           LOGGER.error("Failed to load image resources", e);
           return Uni.createFrom().failure(new DelayedJobException(true, "Failed to load image resources"));

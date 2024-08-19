@@ -17,32 +17,28 @@
   <!--[if !mso]><!-->
   <meta http-equiv="X-UA-Compatible" content="IE=edge"><!--<![endif]-->
   <title></title>
-  <link rel="stylesheet" type="text/css" href="cid:email.css">
   <style type="text/css">
       {stylesheet.raw}
   </style>
-
-  <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap" rel="stylesheet" type="text/css">
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" rel="stylesheet" type="text/css">
-  <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:400,700&display=swap" rel="stylesheet" type="text/css">
-  <!--<![endif]-->
 </head>
 
-<body>
+<table>
+  <tr>
+    <td class="outer-wrapper">
+      <img class="header-image" border="0" src="cid:header"
+           alt="image of the inside of a farm server"/>
 
-<img class="header-image" border="0" src="data:image/png;base64,{imageHead.raw}" alt="image of the inside of a farm server" />
+      <h1>{i18n.getString('auth.email.otp.header')}</h1>
 
-<h1>{i18n.getString('auth.email.otp.header')}</h1>
+      <span class="otp-box">{otp}</span>
 
-<span class="otp-box">{otp}</span>
-
-<div style="font-size: 14px; line-height: 140%; text-align: center;">
-  <p style="line-height: 140%;">{i18n.getString('auth.email.otp.text1')}</p>
-  <p style="line-height: 140%;">{i18n.getString('auth.email.otp.text2')}</p>
-  <p style="line-height: 140%;">{i18n.getString('auth.email.otp.text3')}</p>
-</div>
-
-</body>
+      <div class="footer">
+        <p>{i18n.getString('auth.email.otp.text1')}</p>
+        <p>{i18n.getString('auth.email.otp.text2')}</p>
+        <p>{i18n.getString('auth.email.otp.text3')}</p>
+      </div>
+    </td>
+  </tr>
+</table>
 
 </html>
