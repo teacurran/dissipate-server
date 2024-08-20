@@ -53,23 +53,24 @@ public class DissipateServiceImpl implements DissipateService {
   @WithSession
   @WithTransaction
   public Uni<RegisterResponse> register(RegisterRequest request) {
-    Span currentSpan = Span.current();
+    Span otel = Span.current();
 
     String email = request.getEmail().toLowerCase();
 
-    try (Scope scope = currentSpan.makeCurrent()) {
-      currentSpan.setAttribute("email", email);
-      currentSpan.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
+    try (Scope scope = otel.makeCurrent()) {
+      otel.setAttribute("email", email);
+      otel.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
       return AccountEmail.findByEmailValidated(email)
         .onItem()
         .transformToUni(accountEmail -> {
           if (accountEmail != null) {
             LOGGER.infov("email already exists: {0}", email);
-            currentSpan.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
+            otel.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
             return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
           }
           Locale locale = LocaleConverter.fromValue(request.getLocale());
+          otel.setAttribute("locale", locale.toLanguageTag());
           return Account.createNewAnonymousAccount(locale, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
             AccountEmail accountEmail2 = new AccountEmail();
             accountEmail2.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
@@ -90,8 +91,7 @@ public class DissipateServiceImpl implements DissipateService {
                   });
                 });
               }).onFailure().call(t -> {
-                LOGGER.error("error creating session", t);
-                currentSpan.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+                otel.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
                 return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
               });
             });
@@ -99,7 +99,7 @@ public class DissipateServiceImpl implements DissipateService {
 
         }).onFailure().call(t -> {
           LOGGER.error("error registering user", t);
-          currentSpan.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+          otel.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
           return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
         });
     }

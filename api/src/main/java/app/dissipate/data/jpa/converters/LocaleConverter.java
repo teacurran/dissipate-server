@@ -14,7 +14,7 @@ public class LocaleConverter implements AttributeConverter<Locale, String> {
       return null;
     }
 
-    return type.toString();
+    return type.toLanguageTag();
 
   }
 
@@ -28,17 +28,6 @@ public class LocaleConverter implements AttributeConverter<Locale, String> {
       return Locale.getDefault();
     }
 
-    String[] parts = value.split("_");
-    Locale.Builder builder = new Locale.Builder().setLanguage(parts[0]);
-
-    if (parts.length > 1) {
-      builder.setRegion(parts[1]);
-    }
-
-    if (parts.length > 2) {
-      builder.setVariant(parts[2]);
-    }
-
-    return builder.build();
+    return Locale.forLanguageTag(value);
   }
 }

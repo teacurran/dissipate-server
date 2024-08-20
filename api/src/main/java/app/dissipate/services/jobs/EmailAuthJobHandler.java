@@ -53,10 +53,10 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
         return Uni.createFrom().voidItem();
       }
 
-      Span span = Span.current();
+      Span otel = Span.current();
 
       if (sessionValidation.email != null) {
-        span.setAttribute("email", sessionValidation.email.email);
+        otel.setAttribute("email", sessionValidation.email.email);
         Locale locale = null;
         if (sessionValidation.session != null
           && sessionValidation.session.account  != null
@@ -65,7 +65,7 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
         } else {
           locale = LocalizationService.DEFAULT_LOCALE;
         }
-        span.setAttribute("locale", locale.toLanguageTag());
+        otel.setAttribute("locale", locale.toLanguageTag());
         ResourceBundle i18n = localizationService.getBundle(locale);
 
         try {
