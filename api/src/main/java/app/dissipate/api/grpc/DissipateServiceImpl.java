@@ -1,11 +1,9 @@
 package app.dissipate.api.grpc;
 
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.converters.LocaleConverter;
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
-import app.dissipate.data.models.DelayedJob;
-import app.dissipate.data.models.DelayedJobQueue;
-import app.dissipate.data.models.Server;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.CreateHandleRequest;
@@ -30,6 +28,8 @@ import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
+
+import java.util.Locale;
 
 @GrpcService
 @RegisterInterceptor(GrpcAuthInterceptor.class)
@@ -68,34 +68,35 @@ public class DissipateServiceImpl implements DissipateService {
             LOGGER.infov("email already exists: {0}", email);
             currentSpan.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
             return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
-          } else {
-            return Account.createNewAnonymousAccount(snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
-              AccountEmail accountEmail2 = new AccountEmail();
-              accountEmail2.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
-              accountEmail2.account = a;
-              accountEmail2.email = email;
-              return accountEmail2.persistAndFlush().onItem().transformToUni(ae -> {
-                Session session = new Session();
-                session.account = a;
-                return session.persistAndFlush().onItem().transformToUni(s -> {
-                  SessionValidation sessionValidation = new SessionValidation();
-                  sessionValidation.session = s;
-                  sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
-                  sessionValidation.email = ae;
-                  sessionValidation.token = StringUtil.generateRandomString(6);
-                  return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
-                    return delayedJobService.createDelayedJob(sv).onItem().transformToUni(dj -> {
-                      return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
-                    });
+          }
+          Locale locale = LocaleConverter.fromValue(request.getLocale());
+          return Account.createNewAnonymousAccount(locale, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
+            AccountEmail accountEmail2 = new AccountEmail();
+            accountEmail2.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
+            accountEmail2.account = a;
+            accountEmail2.email = email;
+            return accountEmail2.persistAndFlush().onItem().transformToUni(ae -> {
+              Session session = new Session();
+              session.account = a;
+              return session.persistAndFlush().onItem().transformToUni(s -> {
+                SessionValidation sessionValidation = new SessionValidation();
+                sessionValidation.session = s;
+                sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+                sessionValidation.email = ae;
+                sessionValidation.token = StringUtil.generateRandomString(6);
+                return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
+                  return delayedJobService.createDelayedJob(sv).onItem().transformToUni(dj -> {
+                    return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
                   });
-                }).onFailure().call(t -> {
-                  LOGGER.error("error creating session", t);
-                  currentSpan.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
-                  return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
                 });
+              }).onFailure().call(t -> {
+                LOGGER.error("error creating session", t);
+                currentSpan.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+                return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
               });
             });
-          }
+          });
+
         }).onFailure().call(t -> {
           LOGGER.error("error registering user", t);
           currentSpan.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));

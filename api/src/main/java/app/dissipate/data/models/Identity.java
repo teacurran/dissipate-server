@@ -7,6 +7,7 @@ import org.hibernate.annotations.ColumnTransformer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Entity
 @Table(name = "identities")
@@ -41,7 +42,7 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
   )
   public List<IdentityOrganization> membershipApprovals = new ArrayList<IdentityOrganization>();
 
-  public String language;
+  public Locale locale;
 
   @OneToMany(
     mappedBy = "identity",

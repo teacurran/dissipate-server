@@ -13,6 +13,7 @@ import jakarta.persistence.Transient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Entity
 @Table(name = "accounts")
@@ -49,7 +50,7 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   )
   public List<Identity> identities = new ArrayList<Identity>();
 
-  String language;
+  public Locale locale;
 
   @Override
   public <T extends PanacheEntityBase> Uni<T> persist() {
@@ -86,10 +87,13 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
     return find("srcId", srcId).firstResult();
   }
 
-  public static Uni<Account> createNewAnonymousAccount(SnowflakeIdGenerator snowflakeIdGenerator, EncryptionUtil encryptionUtil) {
+  public static Uni<Account> createNewAnonymousAccount(Locale locale,
+                                                       SnowflakeIdGenerator snowflakeIdGenerator,
+                                                       EncryptionUtil encryptionUtil) {
     Account account = new Account();
     account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
     account.status = AccountStatus.PENDING;
+    account.locale = locale;
     return account.persistAndFlush(encryptionUtil);
   }
 }

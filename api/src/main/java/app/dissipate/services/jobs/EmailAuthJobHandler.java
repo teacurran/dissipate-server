@@ -8,6 +8,7 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.mailer.MailTemplate;
 import io.quarkus.mailer.reactive.ReactiveMailer;
 import io.quarkus.qute.CheckedTemplate;
+import io.quarkus.vertx.http.runtime.CurrentRequestProducer;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -32,6 +33,8 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
 
   @Inject
   LocalizationService localizationService;
+  @Inject
+  CurrentRequestProducer currentRequestProducer;
 
   @CheckedTemplate
   static class Templates {
@@ -50,9 +53,20 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
         return Uni.createFrom().voidItem();
       }
 
+      Span span = Span.current();
+
       if (sessionValidation.email != null) {
-        Span.current().setAttribute("email", sessionValidation.email.email);
-        ResourceBundle i18n = localizationService.getBundle(Locale.getDefault());
+        span.setAttribute("email", sessionValidation.email.email);
+        Locale locale = null;
+        if (sessionValidation.session != null
+          && sessionValidation.session.account  != null
+          && sessionValidation.session.account.locale != null) {
+          locale = sessionValidation.session.account.locale;
+        } else {
+          locale = LocalizationService.DEFAULT_LOCALE;
+        }
+        span.setAttribute("locale", locale.toLanguageTag());
+        ResourceBundle i18n = localizationService.getBundle(locale);
 
         try {
           //String imageHead = loadResourceAsBase64("images/server_farm_2_m.png");

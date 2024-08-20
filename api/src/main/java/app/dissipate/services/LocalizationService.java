@@ -11,11 +11,14 @@ public class LocalizationService {
 
   Map<Locale, ResourceBundle> bundles;
 
-  public Locale DEFAULT_LOCALE = new Locale.Builder().setLanguage("en").setRegion("US").build();
+  public static final Locale DEFAULT_LOCALE = new Locale.Builder().setLanguage("en").setRegion("US").build();
+
+  public static final Locale US_SPANISH = new Locale.Builder().setLanguage("es").setRegion("US").build();
 
   public LocalizationService() {
     bundles = Map.of(
-      DEFAULT_LOCALE, ResourceBundle.getBundle("locales.i18n", DEFAULT_LOCALE)
+      DEFAULT_LOCALE, ResourceBundle.getBundle("locales.i18n", DEFAULT_LOCALE),
+      US_SPANISH, ResourceBundle.getBundle("locales.i18n", US_SPANISH)
     );
   }
 
