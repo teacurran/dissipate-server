@@ -27,7 +27,7 @@ public class SnowflakeIdGenerator {
         if (snowflakes.containsKey(idName)) {
             snowflake = snowflakes.get(idName);
         } else {
-            snowflake = new Snowflake(serverInstance.getServer().instanceNumber);
+            snowflake = new Snowflake(serverInstance.getServer().instanceNumber, 0, 0);
             snowflakes.put(idName, snowflake);
         }
         long newId = snowflake.nextId();
@@ -35,22 +35,38 @@ public class SnowflakeIdGenerator {
     }
 
     static class Snowflake {
-        private static final int INSTANCE_BITS = 10;
-        private static final int SEQUENCE_BITS = 12;
+      private static final int REGION_BITS = 8;
+      private static final int INSTANCE_BITS = 10;
+      private static final int SEQUENCE_BITS = 12;
+      private static final int ADDITIONAL_ID_BITS = 8;
+      // informational only: 45 bits left = (2^{45}) milliseconds ≈ 1,099.5 years
+      // private static final int TIMESTAMP_BITS = 45;
 
-        private static final long MAX_INSTANCE_ID = (1L << INSTANCE_BITS) - 1;
-        private static final long MAX_SEQUENCE = (1L << SEQUENCE_BITS) - 1;
+      private static final long MAX_REGION_ID = (1L << REGION_BITS) - 1;
+      private static final long MAX_INSTANCE_ID = (1L << INSTANCE_BITS) - 1;
+      private static final long MAX_SEQUENCE = (1L << SEQUENCE_BITS) - 1;
+      private static final long MAX_ADDITIONAL_ID = (1L << ADDITIONAL_ID_BITS) - 1;
 
         private final ReentrantLock lock = new ReentrantLock();
-        private final long instanceNumber;
+      private final long regionNumber;
+      private final long instanceNumber;
+      private final long additionalId;
         private final AtomicLong lastTimestamp = new AtomicLong(-1L);
         private final AtomicLong sequence = new AtomicLong(0L);
 
-        public Snowflake(int instanceNumber) {
-            if(instanceNumber < 0 || instanceNumber > MAX_INSTANCE_ID) {
-                throw new IllegalArgumentException(String.format("Instance %s out of range %d - %d", instanceNumber, 0, MAX_INSTANCE_ID));
-            }
-            this.instanceNumber = instanceNumber;
+        public Snowflake(int instanceNumber, int regionNumber, int additionalId) {
+          if (regionNumber < 0 || regionNumber > MAX_REGION_ID) {
+            throw new IllegalArgumentException(String.format("Region %s out of range %d - %d", regionNumber, 0, MAX_REGION_ID));
+          }
+          if (instanceNumber < 0 || instanceNumber > MAX_INSTANCE_ID) {
+            throw new IllegalArgumentException(String.format("Instance %s out of range %d - %d", instanceNumber, 0, MAX_INSTANCE_ID));
+          }
+          if (additionalId < 0 || additionalId > MAX_ADDITIONAL_ID) {
+            throw new IllegalArgumentException(String.format("Additional ID %s out of range %d - %d", additionalId, 0, MAX_ADDITIONAL_ID));
+          }
+          this.regionNumber = regionNumber;
+          this.instanceNumber = instanceNumber;
+          this.additionalId = additionalId;
         }
 
         public long nextId() {
@@ -73,16 +89,18 @@ public class SnowflakeIdGenerator {
 
                 lastTimestamp.set(currentTimestamp);
 
-                return currentTimestamp << (INSTANCE_BITS + SEQUENCE_BITS)
-                        | (instanceNumber << SEQUENCE_BITS)
-                        | sequence.get();
+              return ((currentTimestamp << (REGION_BITS + INSTANCE_BITS + SEQUENCE_BITS + ADDITIONAL_ID_BITS)) >>> 1)
+                | (regionNumber << (INSTANCE_BITS + SEQUENCE_BITS + ADDITIONAL_ID_BITS))
+                | (instanceNumber << (SEQUENCE_BITS + ADDITIONAL_ID_BITS))
+                | (additionalId << SEQUENCE_BITS)
+                | sequence.get();
             } finally {
                 lock.unlock();
             }
         }
 
         private long timestamp() {
-            return Instant.now().toEpochMilli() - ApplicationConstants.APP_EPOCH;
+            return Instant.now().toEpochMilli();
         }
 
         private long waitForTimeToChange(long currentTimestamp) {

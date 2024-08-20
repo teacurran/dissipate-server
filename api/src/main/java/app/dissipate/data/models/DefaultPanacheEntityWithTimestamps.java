@@ -13,7 +13,7 @@ import java.time.Instant;
 public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBase {
 
     @Id
-    @Column(columnDefinition = "CHAR(13)", length = 13)
+    @Column(columnDefinition = "VARCHAR(16)", length = 16)
     public String id;
 
     @CreationTimestamp

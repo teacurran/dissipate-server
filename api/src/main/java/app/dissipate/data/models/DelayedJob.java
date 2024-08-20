@@ -40,7 +40,7 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
 
   public DelayedJobQueue queue;
 
-  @Column(columnDefinition = "CHAR(13)", length = 13)
+  @Column(columnDefinition = "VARCHAR(16)", length = 16)
   public String actorId;
 
   @Column(columnDefinition = "TEXT")
