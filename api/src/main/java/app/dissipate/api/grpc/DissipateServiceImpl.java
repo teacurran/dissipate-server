@@ -12,6 +12,8 @@ import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.RegisterResponseResult;
+import app.dissipate.grpc.ValidateSessionRequest;
+import app.dissipate.grpc.ValidateSessionResponse;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
 import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.MessagingService;
@@ -71,29 +73,29 @@ public class DissipateServiceImpl implements DissipateService {
           }
           Locale locale = LocaleConverter.fromValue(request.getLocale());
           otel.setAttribute("locale", locale.toLanguageTag());
-          return Account.createNewAnonymousAccount(locale, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
-            AccountEmail accountEmail2 = new AccountEmail();
-            accountEmail2.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
-            accountEmail2.account = a;
-            accountEmail2.email = email;
-            return accountEmail2.persistAndFlush().onItem().transformToUni(ae -> {
-              Session session = new Session();
-              session.account = a;
-              return session.persistAndFlush().onItem().transformToUni(s -> {
-                SessionValidation sessionValidation = new SessionValidation();
-                sessionValidation.session = s;
-                sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
-                sessionValidation.email = ae;
-                sessionValidation.token = StringUtil.generateRandomString(6);
-                return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
-                  return delayedJobService.createDelayedJob(sv).onItem().transformToUni(dj -> {
-                    return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).build());
-                  });
+          return Account.createNewAnonymousAccount(locale, email, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
+            Session session = new Session();
+            session.account = a;
+            return session.persistAndFlush().onItem().transformToUni(s -> {
+              SessionValidation sessionValidation = new SessionValidation();
+              sessionValidation.session = s;
+              sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+              sessionValidation.email = a.emails.get(0);
+              sessionValidation.token = StringUtil.generateRandomString(6);
+              return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
+                return delayedJobService.createDelayedJob(sv).onItem().transformToUni(dj -> {
+                  return Uni.createFrom().item(
+                    RegisterResponse.newBuilder()
+                      .setResult(RegisterResponseResult.EmailSent)
+                      .setSid(s.id.toString())
+                      .build()
+
+                  );
                 });
-              }).onFailure().call(t -> {
-                otel.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
-                return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
               });
+            }).onFailure().call(t -> {
+              otel.addEvent("error creating session", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+              return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
             });
           });
 
@@ -109,5 +111,10 @@ public class DissipateServiceImpl implements DissipateService {
   @WithSession
   public Uni<CreateHandleResponse> createHandle(CreateHandleRequest request) {
     return Uni.createFrom().item(CreateHandleResponse.newBuilder().setHandle(request.getHandle()).build());
+  }
+
+  @Override
+  public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) {
+    return null;
   }
 }

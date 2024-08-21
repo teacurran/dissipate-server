@@ -11,6 +11,7 @@ import "google/protobuf/timestamp.proto";
 service DissipateService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
   rpc CreateHandle(CreateHandleRequest) returns (CreateHandleResponse) {}
+  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {}
 }
 
 enum AccountStatus {
@@ -45,9 +46,21 @@ enum RegisterResponseResult {
 
 message RegisterResponse {
   RegisterResponseResult result = 1;
-  optional string error_message = 2;
+  optional string sid = 2;
+  optional string error_message = 3;
 }
 
 message SessionValidationProto {
   string id = 1;
 }
+
+message ValidateSessionRequest {
+  string sid = 1;
+  string otp = 2;
+}
+
+message ValidateSessionResponse {
+  bool valid = 1;
+  optional string error_message = 2;
+}
+

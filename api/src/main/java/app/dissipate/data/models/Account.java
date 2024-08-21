@@ -62,7 +62,7 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
     throw new RuntimeException("don't use, use persistAndFlush(EncryptionUtil encryptionUtil) instead");
   }
 
-  public <T extends PanacheEntityBase> Uni<T> persistAndFlush(EncryptionUtil encryptionUtil) {
+  public Uni<Account> persistAndFlush(EncryptionUtil encryptionUtil) {
     hashFields(encryptionUtil);
     return super.persistAndFlush();
   }
@@ -96,5 +96,25 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
     account.locale = locale;
     return account.persistAndFlush(encryptionUtil);
   }
+
+  public static Uni<Account> createNewAnonymousAccount(Locale locale,
+                                                       String email,
+                                                       SnowflakeIdGenerator snowflakeIdGenerator,
+                                                       EncryptionUtil encryptionUtil) {
+    Account account = new Account();
+    account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
+    account.status = AccountStatus.PENDING;
+    account.locale = locale;
+    return account.persistAndFlush(encryptionUtil).onItem().transformToUni(a -> {
+      AccountEmail accountEmail = new AccountEmail();
+      accountEmail.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
+      accountEmail.account = a;
+      accountEmail.email = email;
+      account.emails.add(accountEmail);
+      return accountEmail.persistAndFlush().onItem().transform(ae -> a);
+    });
+  }
+
+
 }
 
