@@ -23,6 +23,7 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
@@ -31,6 +32,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
+import java.time.Instant;
 import java.util.Locale;
 
 @GrpcService
@@ -114,7 +116,21 @@ public class DissipateServiceImpl implements DissipateService {
   }
 
   @Override
+  @WithSession
+  @WithTransaction
+  @WithSpan("DissipateServiceImpl.validateSession")
   public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) {
-    return null;
+    return SessionValidation.byId(request.getSid()).onItem().transformToUni(sv -> {
+      if (sv == null) {
+        return Uni.createFrom().item(ValidateSessionResponse.newBuilder().setValid(false).build());
+      }
+      if (sv.token.equals(request.getOtp())) {
+        sv.validated = Instant.now();
+        return sv.session.persistAndFlush().onItem().transformToUni(s -> {
+          return Uni.createFrom().item(ValidateSessionResponse.newBuilder().setValid(true).build());
+        });
+      }
+      return Uni.createFrom().item(ValidateSessionResponse.newBuilder().setValid(false).build());
+    });
   }
 }
