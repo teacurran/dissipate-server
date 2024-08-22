@@ -16,7 +16,6 @@ import app.dissipate.grpc.ValidateSessionRequest;
 import app.dissipate.grpc.ValidateSessionResponse;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
 import app.dissipate.services.DelayedJobService;
-import app.dissipate.services.MessagingService;
 import app.dissipate.utils.EncryptionUtil;
 import app.dissipate.utils.StringUtil;
 import io.opentelemetry.api.common.AttributeKey;
@@ -43,9 +42,6 @@ public class DissipateServiceImpl implements DissipateService {
 
   @Inject
   SnowflakeIdGenerator snowflakeIdGenerator;
-
-  @Inject
-  MessagingService messagingService;
 
   @Inject
   EncryptionUtil encryptionUtil;

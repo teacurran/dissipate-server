@@ -5,6 +5,7 @@ import app.dissipate.data.models.DelayedJob;
 import app.dissipate.data.models.DelayedJobQueue;
 import app.dissipate.data.models.Server;
 import app.dissipate.data.models.SessionValidation;
+import app.dissipate.data.models.Url;
 import app.dissipate.exceptions.DelayedJobException;
 import app.dissipate.services.jobs.DelayedJobHandler;
 import app.dissipate.services.jobs.DelayedJobHandlers;
@@ -41,20 +42,22 @@ public class DelayedJobService {
   @Inject
   DelayedJobHandlers jobHandlers;
 
-  public Uni<DelayedJob> createDelayedJob(SessionValidation sessionValidation) {
-    DelayedJob delayedJob = new DelayedJob();
-    delayedJob.id = snowflakeIdGenerator.generate(DelayedJob.ID_GENERATOR_KEY);
-    delayedJob.actorId = sessionValidation.id;
-    delayedJob.runAt = sessionValidation.created;
-    delayedJob.queue = DelayedJobQueue.EMAIL_AUTH;
-    delayedJob.priority = DelayedJobQueue.EMAIL_AUTH.getPriority();
+  private Uni<DelayedJob> createDelayedJobCommon(String actorId, DelayedJobQueue queue, Instant runAt) {
+    return DelayedJob.createDelayedJob(actorId, queue, runAt, snowflakeIdGenerator)
+      .onItem().invoke(dj -> {
+        if (dj == null) {
+          LOGGER.error("Failed to create delayed job for actor: " + actorId);
+        }
+        bus.publish(DELAYED_JOB_RUN, dj.id);
+      });
+  }
 
-    return delayedJob.persistAndFlush().onItem().invoke(dj -> {
-      if (dj == null) {
-        LOGGER.error("Failed to create delayed job for session: " + sessionValidation.id);
-      }
-      bus.publish(DELAYED_JOB_RUN, delayedJob.id);
-    });
+  public Uni<DelayedJob> createDelayedJob(SessionValidation sessionValidation) {
+    return createDelayedJobCommon(sessionValidation.id, DelayedJobQueue.EMAIL_AUTH, sessionValidation.created);
+  }
+
+  public Uni<DelayedJob> createDelayedJob(Url url) {
+    return createDelayedJobCommon(url.id, DelayedJobQueue.URL_CRAWL, Instant.now());
   }
 
   @WithSession

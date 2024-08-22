@@ -7,6 +7,7 @@ public enum DelayedJobQueue {
   EMAIL_AUTH(100),
   PHONE_AUTH(100),
   EMAIL_MARKETING(0),
+  URL_CRAWL(50),
   LICENSE_PROVISION(50);
 
   private final int priority;

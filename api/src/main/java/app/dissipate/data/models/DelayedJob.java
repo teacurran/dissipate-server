@@ -1,5 +1,6 @@
 package app.dissipate.data.models;
 
+import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.quarkus.hibernate.reactive.panache.PanacheQuery;
 import io.quarkus.panache.common.Parameters;
@@ -7,9 +8,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
@@ -52,7 +51,7 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
 
   public Instant lockedAt;
 
-    public Instant failedAt;
+  public Instant failedAt;
 
   public boolean complete = false;
 
@@ -70,6 +69,20 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
 
   public static Uni<DelayedJob> byId(String id) {
     return DelayedJob.findById(id);
+  }
+
+  public static Uni<DelayedJob> createDelayedJob(String actorId,
+                                                 DelayedJobQueue queue,
+                                                 Instant runAt,
+                                                 SnowflakeIdGenerator snowflakeIdGenerator) {
+    DelayedJob delayedJob = new DelayedJob();
+    delayedJob.id = snowflakeIdGenerator.generate(DelayedJob.ID_GENERATOR_KEY);
+    delayedJob.actorId = actorId;
+    delayedJob.runAt = runAt;
+    delayedJob.queue = queue;
+    delayedJob.priority = queue.getPriority();
+
+    return delayedJob.persistAndFlush();
   }
 
   @Override

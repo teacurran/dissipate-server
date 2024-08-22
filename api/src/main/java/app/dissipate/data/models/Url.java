@@ -1,5 +1,7 @@
 package app.dissipate.data.models;
 
+import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
+import io.smallrye.mutiny.Uni;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
@@ -9,12 +11,16 @@ import java.time.Instant;
 @Table(name = "urls")
 public class Url extends DefaultPanacheEntityWithTimestamps {
 
-    public String url;
+  public String url;
 
-    public String domain;
+  public String domain;
 
-    public Instant lastCrawledAt;
+  public Instant lastCrawledAt;
 
-    String body;
+  @SuppressWarnings("unchecked")
+  @Override
+  public Uni<Url> persistAndFlush() {
+    return super.persistAndFlush();
+  }
 
 }

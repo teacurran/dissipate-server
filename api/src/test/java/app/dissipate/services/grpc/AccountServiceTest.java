@@ -3,6 +3,7 @@ package app.dissipate.services.grpc;
 import app.dissipate.beans.AuthTokenVO;
 import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
+import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.services.AuthenticationService;
 import io.grpc.Metadata;
 import io.quarkus.grpc.GrpcClient;
@@ -58,7 +59,7 @@ class AccountServiceTest {
 
   @Test
   void shouldReturnValue() {
-    CompletableFuture<String> message = new CompletableFuture<>();
+    CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
 
     Metadata extraHeaders = new Metadata();
     extraHeaders.put(AUTH_HEADER_KEY, "test-auth-token");
@@ -66,10 +67,11 @@ class AccountServiceTest {
     DissipateService authedClient = GrpcClientUtils.attachHeaders(client, extraHeaders);
 
     authedClient.register(RegisterRequest.newBuilder().build())
-      .subscribe().with(reply -> message.complete(reply.toString()));
+      .subscribe().with(message::complete);
     try {
-      String msgValue = message.get(5, TimeUnit.SECONDS);
-      Assertions.assertEquals("test-uid", msgValue);
+      RegisterResponse response = message.get(5, TimeUnit.SECONDS);
+      Assertions.assertEquals("EmailSent", response.getResult().toString());
+      Assertions.assertNotNull(response.getSid());
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     }

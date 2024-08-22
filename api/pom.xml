@@ -82,11 +82,6 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-messaging-rabbitmq</artifactId>
-      <version>${version.quarkus}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-health</artifactId>
       <version>${version.quarkus}</version>
     </dependency>

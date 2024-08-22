@@ -13,8 +13,13 @@ public class DelayedJobHandlerProducer {
   @Inject
   EmailAuthJobHandler emailAuthJobHandler;
 
+  @Inject
+  UrlCrawlJobHandler urlCrawlJobHandler;
+  ;
+
   @Produces
   public DelayedJobHandlers getJobHandlers() {
-    return new DelayedJobHandlers(Map.of(DelayedJobQueue.EMAIL_AUTH, emailAuthJobHandler));
+    return new DelayedJobHandlers(Map.of(DelayedJobQueue.EMAIL_AUTH, emailAuthJobHandler,
+      DelayedJobQueue.URL_CRAWL, urlCrawlJobHandler));
   }
 }
