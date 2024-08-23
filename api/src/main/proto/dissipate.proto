@@ -55,10 +55,6 @@ message RegisterResponse {
   optional ApiError error = 3;
 }
 
-message SessionValidationProto {
-  string id = 1;
-}
-
 message ValidateSessionRequest {
   string sid = 1;
   string otp = 2;

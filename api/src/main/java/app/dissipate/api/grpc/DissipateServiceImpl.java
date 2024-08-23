@@ -81,13 +81,6 @@ public class DissipateServiceImpl implements DissipateService {
         if (!valid) {
           LOGGER.infov("invalid email: {0}", email);
           otel.addEvent("invalid email", Attributes.of(AttributeKey.stringKey("email"), email));
-//          return Uni.createFrom().item(
-//            RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error)
-//            .setError(ApiError.newBuilder()
-//              .setCode(ERROR_EMAIL_INVALID)
-//              .setMessage(i18n.getString(ERROR_EMAIL_INVALID))
-//              .build()
-//            ).build());
           throw new ApiException(Status.INVALID_ARGUMENT, ERROR_EMAIL_INVALID, i18n.getString(ERROR_EMAIL_INVALID));
         }
 
