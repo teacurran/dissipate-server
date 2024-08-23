@@ -1,6 +1,8 @@
 package app.dissipate.services.grpc;
 
+import app.dissipate.api.grpc.DissipateServiceImpl;
 import app.dissipate.beans.AuthTokenVO;
+import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
@@ -12,6 +14,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.common.vertx.VertxContext;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,8 @@ import static app.dissipate.constants.AuthenticationConstants.AUTH_HEADER_KEY;
 
 @QuarkusTest
 class AccountServiceTest {
+
+  private static final Logger LOGGER = Logger.getLogger(AccountServiceTest.class);
 
   @GrpcClient("dissipate")
   DissipateService client;
@@ -42,14 +47,20 @@ class AccountServiceTest {
 
   @Test
   void shouldRejectEmptyEmails() {
-    CompletableFuture<String> message = new CompletableFuture<>();
+    CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
 
     RegisterRequest request = RegisterRequest.newBuilder().build();
+
+
     Assertions.assertThrows(ExecutionException.class, () -> {
       client.register(request)
+        .onFailure().invoke(message::obtrudeException)
         .subscribe().with(reply -> {
+          message.complete(reply);
           throw new RuntimeException("Should not have reached here");
         });
+
+      message.get().wait();
     });
 
 
@@ -66,14 +77,21 @@ class AccountServiceTest {
 
     DissipateService authedClient = GrpcClientUtils.attachHeaders(client, extraHeaders);
 
-    authedClient.register(RegisterRequest.newBuilder().build())
-      .subscribe().with(message::complete);
+    authedClient.register(RegisterRequest.newBuilder()
+        .setEmail("tea@grilledcheese.com").build())
+      .subscribe().with(response -> {
+        LOGGER.info("Response: " + response);
+        message.complete(response);
+      });
+
     try {
       RegisterResponse response = message.get(5, TimeUnit.SECONDS);
       Assertions.assertEquals("EmailSent", response.getResult().toString());
       Assertions.assertNotNull(response.getSid());
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
     }
   }
 

@@ -6,6 +6,7 @@ import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
+import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.ApiError;
 import app.dissipate.grpc.CreateHandleRequest;
 import app.dissipate.grpc.CreateHandleResponse;
@@ -20,11 +21,13 @@ import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.LocalizationService;
 import app.dissipate.utils.EncryptionUtil;
 import app.dissipate.utils.StringUtil;
+import io.grpc.Status;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.quarkus.grpc.GrpcClient;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
@@ -78,13 +81,14 @@ public class DissipateServiceImpl implements DissipateService {
         if (!valid) {
           LOGGER.infov("invalid email: {0}", email);
           otel.addEvent("invalid email", Attributes.of(AttributeKey.stringKey("email"), email));
-          return Uni.createFrom().item(
-            RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error)
-            .setError(ApiError.newBuilder()
-              .setCode(ERROR_EMAIL_INVALID)
-              .setMessage(i18n.getString(ERROR_EMAIL_INVALID))
-              .build()
-            ).build());
+//          return Uni.createFrom().item(
+//            RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error)
+//            .setError(ApiError.newBuilder()
+//              .setCode(ERROR_EMAIL_INVALID)
+//              .setMessage(i18n.getString(ERROR_EMAIL_INVALID))
+//              .build()
+//            ).build());
+          throw new ApiException(Status.INVALID_ARGUMENT, ERROR_EMAIL_INVALID, i18n.getString(ERROR_EMAIL_INVALID));
         }
 
         return AccountEmail.findByEmailValidated(email)

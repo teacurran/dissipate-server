@@ -44,10 +44,12 @@ public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
     return find("#" + AccountEmail.QUERY_FIND_BY_EMAIL_VALIDATED, Parameters.with("email", email)).firstResult();
   }
 
+  @SuppressWarnings("unchecked")
   public Uni<AccountEmail> persist() {
     return super.persist();
   }
 
+  @SuppressWarnings("unchecked")
   public Uni<AccountEmail> persistAndFlush() {
     return super.persistAndFlush();
   }
