@@ -12,22 +12,22 @@ import java.time.Instant;
 @MappedSuperclass
 public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBase {
 
-    @Id
-    @Column(columnDefinition = "VARCHAR(16)", length = 16)
-    public String id;
+  @Id
+  @Column(columnDefinition = "VARCHAR(16)", length = 16)
+  public String id;
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    public Instant created;
+  @CreationTimestamp
+  @Column(nullable = false, updatable = false)
+  public Instant created;
 
-    @UpdateTimestamp
-    public Instant updated;
+  @UpdateTimestamp
+  public Instant updated;
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT FALSE")
-    public boolean deleted;
+  @Column(nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT FALSE")
+  public boolean deleted;
 
-    public String toString() {
-        String var10000 = this.getClass().getSimpleName();
-        return var10000 + "<" + this.id + ">";
-    }
+  public String toString() {
+    String var10000 = this.getClass().getSimpleName();
+    return var10000 + "<" + this.id + ">";
+  }
 }

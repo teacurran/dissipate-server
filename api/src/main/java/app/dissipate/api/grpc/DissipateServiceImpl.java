@@ -139,7 +139,7 @@ public class DissipateServiceImpl implements DissipateService {
   @WithTransaction
   @WithSpan("DissipateServiceImpl.validateSession")
   public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) {
-    return SessionValidation.byId(request.getSid()).onItem().transformToUni(sv -> {
+    return SessionValidation.findBySidToken(request.getSid(), request.getOtp()).onItem().transformToUni(sv -> {
       if (sv == null) {
         return Uni.createFrom().item(ValidateSessionResponse.newBuilder().setValid(false).build());
       }
@@ -160,7 +160,7 @@ public class DissipateServiceImpl implements DissipateService {
       return Uni.createFrom().item(false);
     }
     try {
-      EmailAddress emailAddr = new EmailAddress(email);
+      new EmailAddress(email);
       return Uni.createFrom().item(true);
     } catch (IllegalArgumentException e) {
       return Uni.createFrom().item(false);

@@ -1,19 +1,29 @@
 package app.dissipate.data.models;
 
-import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
+import io.quarkus.panache.common.Parameters;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "session_validations")
+@NamedQuery(name = SessionValidation.QUERY_BY_SID_TOKEN,
+  query = """
+    FROM SessionValidation
+    WHERE session.id = :sid
+    AND token = :token
+    """)
 public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
   public static final String ID_GENERATOR_KEY = "SessionValidation";
+
+  public static final String QUERY_BY_SID_TOKEN = "SessionValidation.findBySidToken";
 
   @ManyToOne
   public Session session;
@@ -40,6 +50,11 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
   public static Uni<SessionValidation> byId(String id) {
     return SessionValidation.findById(id);
+  }
+
+  public static Uni<SessionValidation> findBySidToken(String sid, String token) {
+    return find("#" + SessionValidation.QUERY_BY_SID_TOKEN,
+      Parameters.with("sid", UUID.fromString(sid)).and("token", token)).firstResult();
   }
 
 }
