@@ -7,6 +7,7 @@ option java_multiple_files = true;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
 
 service DissipateService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
@@ -56,8 +57,14 @@ message RegisterResponse {
 }
 
 message ValidateSessionRequest {
-  string sid = 1;
-  string otp = 2;
+  string sid = 1 [(buf.validate.field).cel = {
+    id: "sid"
+    expression: "this.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') ? null: 'ValidateSessionRequest.sid.invalid'"
+  }];
+  string otp = 2 [(buf.validate.field).cel = {
+    id: "otp"
+    expression: "this.matches('^[0-9A-Za-z]{6}$') ? null: 'ValidateSessionRequest.otp.invalid'"
+  }];
 }
 
 message ValidateSessionResponse {

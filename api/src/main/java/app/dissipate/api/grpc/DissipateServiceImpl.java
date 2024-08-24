@@ -7,7 +7,6 @@ import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.exceptions.ApiException;
-import app.dissipate.grpc.ApiError;
 import app.dissipate.grpc.CreateHandleRequest;
 import app.dissipate.grpc.CreateHandleResponse;
 import app.dissipate.grpc.DissipateService;
@@ -27,7 +26,6 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.quarkus.grpc.GrpcClient;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
@@ -139,6 +137,15 @@ public class DissipateServiceImpl implements DissipateService {
   @WithTransaction
   @WithSpan("DissipateServiceImpl.validateSession")
   public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) {
+
+    // This is in progress, trying to use protovalidate, it isn't working yet
+    //    try {
+    //      Validator validator = new Validator();
+    //      validator.validate(request);
+    //    } catch (ValidationException e) {
+    //      return Uni.createFrom().item(ValidateSessionResponse.newBuilder().setValid(false).build());
+    //    }
+
     return SessionValidation.findBySidToken(request.getSid(), request.getOtp()).onItem().transformToUni(sv -> {
       if (sv == null) {
         return Uni.createFrom().item(ValidateSessionResponse.newBuilder().setValid(false).build());

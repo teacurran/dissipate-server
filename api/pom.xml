@@ -17,7 +17,7 @@
     <version.cassandra.quarkus>1.2.0</version.cassandra.quarkus>
     <version.grpc>1.48.1</version.grpc>
     <version.kotlin>1.7.10</version.kotlin>
-    <version.os-maven-plugin>1.7.0</version.os-maven-plugin>
+    <version.os-maven-plugin>1.7.1</version.os-maven-plugin>
     <version.postgres.driver>42.4.1</version.postgres.driver>
     <version.quarkus>3.13.3</version.quarkus>
   </properties>
@@ -90,6 +90,16 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-vertx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>build.buf</groupId>
+      <artifactId>protovalidate</artifactId>
+      <version>0.2.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>3.25.3</version>
     </dependency>
     <dependency>
       <groupId>io.opentelemetry.instrumentation</groupId>
