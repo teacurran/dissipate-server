@@ -16,10 +16,10 @@ service DissipateService {
 }
 
 enum AccountStatus {
-  Active = 0;
-  Disabled = 1;
-  Suspended = 2;
-  Banned = 3;
+  ACCOUNT_STATUS_ACTIVE = 0;
+  ACCOUNT_STATUS_DISABLED = 1;
+  ACCOUNT_STATUS_SUSPENDED = 2;
+  ACCOUNT_STATUS_BANNED = 3;
 }
 
 message CreateHandleRequest {
