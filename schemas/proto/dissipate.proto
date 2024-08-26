@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+option java_package = "app.dissipate.grpc";
+option java_outer_classname = "DissipateProtos";
+option optimize_for = SPEED;
+option java_multiple_files = true;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+service DissipateService {
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  rpc CreateHandle(CreateHandleRequest) returns (CreateHandleResponse) {}
+  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {}
+}
+
+enum AccountStatus {
+  Active = 0;
+  Disabled = 1;
+  Suspended = 2;
+  Banned = 3;
+}
+
+message CreateHandleRequest {
+  string handle = 1;
+}
+
+message CreateHandleResponse {
+  string id = 1;
+  string handle = 2;
+  google.protobuf.Timestamp created = 3;
+  google.protobuf.Timestamp last_seen = 4;
+}
+
+message RegisterRequest {
+  optional string locale = 1;
+  optional string email = 2;
+  optional string phone_number = 3;
+}
+
+enum RegisterResponseResult {
+  Error = 0;
+  EmailSent = 1;
+  PhoneSent = 2;
+}
+
+message ApiError {
+  string code = 1;
+  string message = 2;
+}
+
+message RegisterResponse {
+  RegisterResponseResult result = 1;
+  optional string sid = 2;
+  optional ApiError error = 3;
+}
+
+message ValidateSessionRequest {
+  string sid = 1 [(buf.validate.field).cel = {
+    id: "sid"
+    expression: "this.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') ? null: 'ValidateSessionRequest.sid.invalid'"
+  }];
+  string otp = 2 [(buf.validate.field).cel = {
+    id: "otp"
+    expression: "this.matches('^[0-9A-Za-z]{6}$') ? null: 'ValidateSessionRequest.otp.invalid'"
+  }];
+}
+
+message ValidateSessionResponse {
+  bool valid = 1;
+  optional string error_message = 2;
+}
+
