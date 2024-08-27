@@ -3,7 +3,12 @@ managed:
   enabled: true
 plugins:
   - remote: buf.build/bufbuild/validate-java
-    out: gen
+    out: gen/java
   # dependencies
   - remote: buf.build/protocolbuffers/java
-    out: gen
+    out: gen/java
+  - remote: buf.build/protocolbuffers/dart:v21.1.2
+    out: gen/dart
+    opt:
+      # "grpc" option for gRPC stubs.
+      - grpc
