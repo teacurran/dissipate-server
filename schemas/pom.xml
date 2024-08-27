@@ -12,5 +12,76 @@
   <artifactId>schemas</artifactId>
   <packaging>jar</packaging>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.4.1</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
 
+            <configuration>
+              <executable>buf</executable>
+              <arguments>
+                <argument>generate</argument>
+              </arguments>
+              <environmentVariables>
+                <LANG>en_US</LANG>
+              </environmentVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <!-- specify the directory to add as a source root -->
+              <sources>
+                <source>${project.build.directory}/generated-sources</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+
+  </build>
+
+  <dependencies>
+    <!--
+    <dependency>
+      <groupId>build.buf.protoc-gen-validate</groupId>
+      <artifactId>pgv-java-grpc</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    -->
+
+    <!--
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>3.25.0</version>
+    </dependency>
+    <dependency>
+      <groupId>build.buf</groupId>
+      <artifactId>protovalidate</artifactId>
+      <version>0.2.1</version>
+    </dependency>
+    -->
+  </dependencies>
 </project>
