@@ -57,6 +57,7 @@ message RegisterResponse {
 }
 
 message ValidateSessionRequest {
+  optional string locale = 1;
   /*
   string sid = 1 [(buf.validate.field).cel = {
     id: "sid"
@@ -67,8 +68,8 @@ message ValidateSessionRequest {
     expression: "this.matches('^[0-9A-Za-z]{6}$') ? null: 'ValidateSessionRequest.otp.invalid'"
   }];
    */
-  string sid = 1;
-  string otp = 2;
+  string sid = 2;
+  string otp = 3;
 }
 
 message ValidateSessionResponse {

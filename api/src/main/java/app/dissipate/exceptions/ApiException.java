@@ -9,7 +9,7 @@ public class ApiException extends StatusRuntimeException {
   private final String message;
 
   public ApiException(Status status, String code, String message) {
-    super(status.withDescription(message), getTrailers(code, message));
+    super(status.withDescription(code), getTrailers(code, message));
     this.code = code;
     this.message = message;
   }
@@ -17,6 +17,7 @@ public class ApiException extends StatusRuntimeException {
   public static Metadata getTrailers(String code, String message) {
     Metadata trailers = new Metadata();
     trailers.put(Metadata.Key.of("code", Metadata.ASCII_STRING_MARSHALLER), code);
+    trailers.put(Metadata.Key.of("message", Metadata.ASCII_STRING_MARSHALLER), message);
     return trailers;
   }
 

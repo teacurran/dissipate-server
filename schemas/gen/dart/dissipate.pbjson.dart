@@ -135,19 +135,24 @@ final $typed_data.Uint8List registerResponseDescriptor = $convert.base64Decode(
 const ValidateSessionRequest$json = {
   '1': 'ValidateSessionRequest',
   '2': [
-    {'1': 'sid', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'sid'},
-    {'1': 'otp', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'otp'},
+    {'1': 'locale', '3': 1, '4': 1, '5': 9, '9': 0, '10': 'locale', '17': true},
+    {'1': 'sid', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'sid'},
+    {'1': 'otp', '3': 3, '4': 1, '5': 9, '8': {}, '10': 'otp'},
+  ],
+  '8': [
+    {'1': '_locale'},
   ],
 };
 
 /// Descriptor for `ValidateSessionRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List validateSessionRequestDescriptor = $convert.base64Decode(
-    'ChZWYWxpZGF0ZVNlc3Npb25SZXF1ZXN0Eq0BCgNzaWQYASABKAlCmgG6SJYBugGSAQoDc2lkGo'
-    'oBdGhpcy5tYXRjaGVzKCdeWzAtOWEtZkEtRl17OH0tWzAtOWEtZkEtRl17NH0tWzAtOWEtZkEt'
-    'Rl17NH0tWzAtOWEtZkEtRl17NH0tWzAtOWEtZkEtRl17MTJ9JCcpID8gbnVsbDogJ1ZhbGlkYX'
-    'RlU2Vzc2lvblJlcXVlc3Quc2lkLmludmFsaWQnUgNzaWQSbAoDb3RwGAIgASgJQlq6SFe6AVQK'
-    'A290cBpNdGhpcy5tYXRjaGVzKCdeWzAtOUEtWmEtel17Nn0kJykgPyBudWxsOiAnVmFsaWRhdG'
-    'VTZXNzaW9uUmVxdWVzdC5vdHAuaW52YWxpZCdSA290cA==');
+    'ChZWYWxpZGF0ZVNlc3Npb25SZXF1ZXN0EhsKBmxvY2FsZRgBIAEoCUgAUgZsb2NhbGWIAQESrQ'
+    'EKA3NpZBgCIAEoCUKaAbpIlgG6AZIBCgNzaWQaigF0aGlzLm1hdGNoZXMoJ15bMC05YS1mQS1G'
+    'XXs4fS1bMC05YS1mQS1GXXs0fS1bMC05YS1mQS1GXXs0fS1bMC05YS1mQS1GXXs0fS1bMC05YS'
+    '1mQS1GXXsxMn0kJykgPyBudWxsOiAnVmFsaWRhdGVTZXNzaW9uUmVxdWVzdC5zaWQuaW52YWxp'
+    'ZCdSA3NpZBJsCgNvdHAYAyABKAlCWrpIV7oBVAoDb3RwGk10aGlzLm1hdGNoZXMoJ15bMC05QS'
+    '1aYS16XXs2fSQnKSA/IG51bGw6ICdWYWxpZGF0ZVNlc3Npb25SZXF1ZXN0Lm90cC5pbnZhbGlk'
+    'J1IDb3RwQgkKB19sb2NhbGU=');
 
 @$core.Deprecated('Use validateSessionResponseDescriptor instead')
 const ValidateSessionResponse$json = {

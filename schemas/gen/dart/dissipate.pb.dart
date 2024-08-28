@@ -388,10 +388,14 @@ class RegisterResponse extends $pb.GeneratedMessage {
 
 class ValidateSessionRequest extends $pb.GeneratedMessage {
   factory ValidateSessionRequest({
+    $core.String? locale,
     $core.String? sid,
     $core.String? otp,
   }) {
     final $result = create();
+    if (locale != null) {
+      $result.locale = locale;
+    }
     if (sid != null) {
       $result.sid = sid;
     }
@@ -405,8 +409,9 @@ class ValidateSessionRequest extends $pb.GeneratedMessage {
   factory ValidateSessionRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ValidateSessionRequest', createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'sid')
-    ..aOS(2, _omitFieldNames ? '' : 'otp')
+    ..aOS(1, _omitFieldNames ? '' : 'locale')
+    ..aOS(2, _omitFieldNames ? '' : 'sid')
+    ..aOS(3, _omitFieldNames ? '' : 'otp')
     ..hasRequiredFields = false
   ;
 
@@ -432,22 +437,31 @@ class ValidateSessionRequest extends $pb.GeneratedMessage {
   static ValidateSessionRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.String get sid => $_getSZ(0);
+  $core.String get locale => $_getSZ(0);
   @$pb.TagNumber(1)
-  set sid($core.String v) { $_setString(0, v); }
+  set locale($core.String v) { $_setString(0, v); }
   @$pb.TagNumber(1)
-  $core.bool hasSid() => $_has(0);
+  $core.bool hasLocale() => $_has(0);
   @$pb.TagNumber(1)
-  void clearSid() => clearField(1);
+  void clearLocale() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get otp => $_getSZ(1);
+  $core.String get sid => $_getSZ(1);
   @$pb.TagNumber(2)
-  set otp($core.String v) { $_setString(1, v); }
+  set sid($core.String v) { $_setString(1, v); }
   @$pb.TagNumber(2)
-  $core.bool hasOtp() => $_has(1);
+  $core.bool hasSid() => $_has(1);
   @$pb.TagNumber(2)
-  void clearOtp() => clearField(2);
+  void clearSid() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get otp => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set otp($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasOtp() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearOtp() => clearField(3);
 }
 
 class ValidateSessionResponse extends $pb.GeneratedMessage {

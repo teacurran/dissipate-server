@@ -57,11 +57,12 @@ message RegisterResponse {
 }
 
 message ValidateSessionRequest {
-  string sid = 1 [(buf.validate.field).cel = {
+  optional string locale = 1;
+  string sid = 2 [(buf.validate.field).cel = {
     id: "sid"
     expression: "this.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') ? null: 'ValidateSessionRequest.sid.invalid'"
   }];
-  string otp = 2 [(buf.validate.field).cel = {
+  string otp = 3 [(buf.validate.field).cel = {
     id: "otp"
     expression: "this.matches('^[0-9A-Za-z]{6}$') ? null: 'ValidateSessionRequest.otp.invalid'"
   }];
