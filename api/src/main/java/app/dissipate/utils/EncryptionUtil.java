@@ -53,6 +53,16 @@ public class EncryptionUtil {
   }
 
   @WithSpan
+  public byte[] encrypt(String input, String key) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @WithSpan
+  public String decrypt(byte[] input, String key) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @WithSpan
   public String base64Encode(byte[] input) {
     return Base64.getEncoder().encodeToString(input);
   }

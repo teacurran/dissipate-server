@@ -23,8 +23,9 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   public AccountStatus status;
 
-  public String passwordEncrypted;
-  public String passwordSalt;
+  public byte[] passwordHash;
+
+  public byte[] passwordSalt;
 
   @Transient
   public String password;
@@ -74,12 +75,12 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
       if (this.passwordSalt == null) {
         saltBytes = eu.generateSalt16Byte();
       } else {
-        saltBytes = eu.base64Decode(this.passwordSalt);
+        saltBytes = this.passwordSalt;
       }
 
-      this.passwordEncrypted = eu.base64Encode(eu.generatePkcs552tHash(this.password, saltBytes));
+      this.passwordHash = eu.generatePkcs552tHash(this.password, saltBytes);
       this.password = null;
-      this.passwordSalt = eu.base64Encode(saltBytes);
+      this.passwordSalt = saltBytes;
     }
   }
 

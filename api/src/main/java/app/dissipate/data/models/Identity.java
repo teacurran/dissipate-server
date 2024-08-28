@@ -1,6 +1,9 @@
 package app.dissipate.data.models;
 
+import app.dissipate.utils.EncryptionUtil;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
+import io.smallrye.mutiny.Uni;
 import jakarta.persistence.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hibernate.annotations.ColumnTransformer;
@@ -12,18 +15,22 @@ import java.util.Locale;
 @Entity
 @Table(name = "identities")
 public class Identity extends DefaultPanacheEntityWithTimestamps {
+
   @ConfigProperty(name = "encryption.key")
   @Transient
   String key;
 
   public String name;
+
   public String publicKey;
 
-  @ColumnTransformer(
-    read = "PGP_SYM_DECRYPT(private_key, '${encryption.key}')",
-    write = "PGP_SYM_ENCRYPT(?, '${encryption.key}')")
-  @Column(columnDefinition = "bytea", name = "private_key")
+  @Transient
   public String privateKey;
+
+  @Transient
+  public String privateKeyKey;
+
+  public byte[] privateKeyEncrypted;
 
   @ManyToOne
   public Account account;
@@ -57,4 +64,18 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
     orphanRemoval = true
   )
   List<IdentityFollow> followers = new ArrayList<IdentityFollow>();
+
+  public Uni<Account> persistAndFlush(EncryptionUtil encryptionUtil) {
+    encryptFields(encryptionUtil);
+    return super.persistAndFlush();
+  }
+
+  @WithSpan
+  public void encryptFields(EncryptionUtil eu) {
+    if (this.privateKey != null) {
+      this.privateKeyEncrypted = eu.encrypt(this.privateKey, this.privateKeyKey);
+      this.privateKey = null;
+    }
+  }
+
 }
