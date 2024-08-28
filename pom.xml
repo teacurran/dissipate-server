@@ -8,7 +8,8 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>schemas</module>
+    <!-- not working yet -->
+    <!-- <module>schemas</module> -->
     <module>api</module>
   </modules>
 
