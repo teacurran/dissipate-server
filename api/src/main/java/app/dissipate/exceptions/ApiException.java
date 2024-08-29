@@ -9,7 +9,7 @@ public class ApiException extends StatusRuntimeException {
   private final String message;
 
   public ApiException(Status status, String code, String message) {
-    super(status.withDescription(code), getTrailers(code, message));
+    super(status.withDescription(message), getTrailers(code, message));
     this.code = code;
     this.message = message;
   }
