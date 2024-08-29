@@ -1,10 +1,14 @@
 package app.dissipate.services;
 
+import app.dissipate.exceptions.ApiException;
+import io.grpc.Status;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+
+import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_TOKEN_INVALID;
 
 @ApplicationScoped
 public class LocalizationService {
@@ -27,5 +31,10 @@ public class LocalizationService {
       return bundles.get(DEFAULT_LOCALE);
     }
     return bundles.get(locale);
+  }
+
+  public ApiException getApiException(Locale locale, Status status, String code) {
+    ResourceBundle i18n = getBundle(locale);
+    return new ApiException(status, code, i18n.getString(code));
   }
 }

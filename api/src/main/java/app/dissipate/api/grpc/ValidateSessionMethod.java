@@ -2,7 +2,6 @@ package app.dissipate.api.grpc;
 
 import app.dissipate.data.jpa.converters.LocaleConverter;
 import app.dissipate.data.models.SessionValidation;
-import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.ValidateSessionRequest;
 import app.dissipate.grpc.ValidateSessionResponse;
 import app.dissipate.services.LocalizationService;
@@ -14,7 +13,6 @@ import jakarta.inject.Inject;
 
 import java.time.Instant;
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_TOKEN_INVALID;
 
@@ -37,11 +35,10 @@ public class ValidateSessionMethod {
 
     Locale locale = LocaleConverter.fromValue(request.getLocale());
     otel.setAttribute("locale", locale.toLanguageTag());
-    ResourceBundle i18n = localizationService.getBundle(locale);
 
     return SessionValidation.findBySidToken(request.getSid(), request.getOtp()).onItem().transformToUni(sv -> {
       if (sv == null) {
-        throw new ApiException(Status.NOT_FOUND, AUTH_TOKEN_INVALID, i18n.getString(AUTH_TOKEN_INVALID));
+        throw localizationService.getApiException(locale, Status.NOT_FOUND, AUTH_TOKEN_INVALID);
       }
       if (sv.token.equals(request.getOtp())) {
         sv.validated = Instant.now();
