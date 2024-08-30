@@ -18,6 +18,7 @@ import io.grpc.Status;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.smallrye.mutiny.Uni;
 import io.vertx.ext.mail.mailencoder.EmailAddress;
@@ -49,23 +50,16 @@ public class RegisterMethod {
   EncryptionUtil encryptionUtil;
 
 
+  @WithSpan("RegisterMethod.register")
   public Uni<RegisterResponse> register(RegisterRequest request) {
     Span otel = Span.current();
     Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
 
-    String email = request.getEmail().toLowerCase();
-
-    otel.setAttribute("email", email);
     otel.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
-    otel.setAttribute("locale", locale.toLanguageTag());
     ResourceBundle i18n = localizationService.getBundle(locale);
 
-    return validateEmail(email).onItem().transformToUni(valid -> {
-      if (!valid) {
-        LOGGER.infov("invalid email: {0}", email);
-        otel.addEvent("invalid email", Attributes.of(AttributeKey.stringKey("email"), email));
-        throw new ApiException(Status.INVALID_ARGUMENT, AUTH_EMAIL_INVALID, i18n.getString(AUTH_EMAIL_INVALID));
-      }
+    return validateEmail(request.getEmail()).onItem().transformToUni(email -> {
+      otel.setAttribute("email", email);
 
       return AccountEmail.findByEmailValidated(email).onItem().transformToUni(accountEmail -> {
         if (accountEmail != null) {
@@ -104,17 +98,18 @@ public class RegisterMethod {
   }
 
   @WithSession
-  public Uni<Boolean> validateEmail(String email) {
-    String trimmedEmail = email.trim();
-    if (trimmedEmail.isEmpty()) {
-      return Uni.createFrom().item(false);
+  public Uni<String> validateEmail(String email) {
+    Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
+    String formattedEmail = email.toLowerCase().trim();
+    if (formattedEmail.isEmpty()) {
+      return Uni.createFrom().failure(localizationService.getApiException(locale, Status.INVALID_ARGUMENT, AUTH_EMAIL_INVALID));
     }
     try {
-      new EmailAddress(email);
-      return Uni.createFrom().item(true);
+      new EmailAddress(formattedEmail);
     } catch (IllegalArgumentException e) {
-      return Uni.createFrom().item(false);
+      return Uni.createFrom().failure(localizationService.getApiException(locale, Status.INVALID_ARGUMENT, AUTH_EMAIL_INVALID));
     }
+    return Uni.createFrom().item(formattedEmail);
   }
 
 }

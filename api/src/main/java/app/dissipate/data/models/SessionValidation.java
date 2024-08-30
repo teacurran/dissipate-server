@@ -15,9 +15,12 @@ import java.util.UUID;
 @Table(name = "session_validations")
 @NamedQuery(name = SessionValidation.QUERY_BY_SID_TOKEN,
   query = """
-    FROM SessionValidation
-    WHERE session.id = :sid
-    AND token = :token
+    FROM SessionValidation sv
+    JOIN FETCH sv.session
+    LEFT JOIN FETCH sv.email
+    LEFT JOIN FETCH sv.phone
+    WHERE sv.session.id = :sid
+    AND sv.token = :token
     """)
 public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
@@ -54,7 +57,7 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
   public static Uni<SessionValidation> findBySidToken(String sid, String token) {
     return find("#" + SessionValidation.QUERY_BY_SID_TOKEN,
-      Parameters.with("sid", UUID.fromString(sid)).and("token", token)).firstResult();
+      Parameters.with("sid", UUID.fromString(sid)).and("token", token.toUpperCase())).firstResult();
   }
 
 }

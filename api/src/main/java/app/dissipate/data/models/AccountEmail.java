@@ -18,7 +18,7 @@ import java.time.Instant;
   query = """
     FROM AccountEmail
     WHERE email = :email
-    AND validated != null
+    AND validated IS NOT NULL
     AND deleted = false
     """)
 public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
@@ -52,6 +52,11 @@ public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
   @SuppressWarnings("unchecked")
   public Uni<AccountEmail> persistAndFlush() {
     return super.persistAndFlush();
+  }
+
+  public Uni<AccountEmail> markValidated() {
+    validated = Instant.now();
+    return persistAndFlush();
   }
 
 }
