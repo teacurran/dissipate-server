@@ -1,5 +1,6 @@
 package app.dissipate.api.grpc;
 
+import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.*;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
@@ -38,8 +39,7 @@ public class DissipateServiceImpl implements DissipateService {
   @Override
   @WithSession
   @WithTransaction
-  @WithSpan("DissipateServiceImpl.validateSession")
-  public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) {
+  public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) throws ApiException {
     return validateSessionMethod.validateSession(request);
   }
 }

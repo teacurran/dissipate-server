@@ -1,6 +1,7 @@
 package app.dissipate.interceptors;
 
 import io.grpc.*;
+import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 import jakarta.enterprise.context.ApplicationScoped;

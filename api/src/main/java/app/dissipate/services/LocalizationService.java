@@ -2,6 +2,7 @@ package app.dissipate.services;
 
 import app.dissipate.exceptions.ApiException;
 import io.grpc.Status;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.Locale;

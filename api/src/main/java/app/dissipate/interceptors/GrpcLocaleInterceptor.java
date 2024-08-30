@@ -3,6 +3,7 @@ package app.dissipate.interceptors;
 import app.dissipate.data.jpa.converters.LocaleConverter;
 import app.dissipate.services.LocalizationService;
 import io.grpc.*;
+import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -23,9 +24,11 @@ public class GrpcLocaleInterceptor implements ServerInterceptor {
   @Override
   @WithSpan("GrpcLocaleInterceptor")
   public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
+    Span otel = Span.current();
 
     String localeString = metadata.get(LOCALE_HEADER_KEY);
     Locale locale = LocaleConverter.fromValue(localeString);
+    otel.setAttribute(LOCALE_KEY_NAME, locale.toLanguageTag());
 
     Context context = Context.current().withValue(LOCALE_CONTEXT_KEY, locale);
 
