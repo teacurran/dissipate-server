@@ -14,6 +14,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.smallrye.mutiny.subscription.Cancellable;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -63,22 +64,16 @@ class AccountServiceTest {
   void shouldValidateEmail() throws InterruptedException {
     String email = "test-" + new Random().nextInt() + "@grilledcheese.com";
 
-    CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
 
-    client.register(RegisterRequest.newBuilder()
+    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
         .setEmail(email).build())
-      .subscribe().with(response -> {
-        LOGGER.info("Response: " + response);
-        message.complete(response);
-      });
+      .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-    try {
-      RegisterResponse response = message.get(5, TimeUnit.SECONDS);
-      Assertions.assertEquals("EmailSent", response.getResult().toString());
-      Assertions.assertNotNull(response.getSid());
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
+    RegisterResponse response = subscriber.awaitItem().getItem();
+
+    LOGGER.info("Response: " + response);
+    Assertions.assertEquals("EmailSent", response.getResult().toString());
+    Assertions.assertNotNull(response.getSid());
   }
 
 
