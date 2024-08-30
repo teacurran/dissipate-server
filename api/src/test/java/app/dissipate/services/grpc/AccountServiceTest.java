@@ -13,13 +13,15 @@ import io.quarkus.grpc.GrpcClientUtils;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.common.vertx.VertxContext;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.subscription.Cancellable;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -35,22 +37,11 @@ class AccountServiceTest {
   @GrpcClient("dissipate")
   DissipateService client;
 
-  @InjectMock
-  AuthenticationService mockAuth;
-
-  @BeforeEach
-  public void setup() {
-    AuthTokenVO token = new AuthTokenVO();
-    token.setUid("test-uid");
-    Mockito.when(mockAuth.verifyIdToken("test-auth-token")).thenReturn(token);
-  }
-
   @Test
   void shouldRejectEmptyEmails() {
     CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
 
     RegisterRequest request = RegisterRequest.newBuilder().build();
-
 
     Assertions.assertThrows(ExecutionException.class, () -> {
       client.register(request)
@@ -67,6 +58,29 @@ class AccountServiceTest {
     Assertions.assertThrows(ExecutionException.class, () ->
       message.get(5, TimeUnit.SECONDS));
   }
+
+  @Test
+  void shouldValidateEmail() throws InterruptedException {
+    String email = "test-" + new Random().nextInt() + "@grilledcheese.com";
+
+    CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
+
+    client.register(RegisterRequest.newBuilder()
+        .setEmail(email).build())
+      .subscribe().with(response -> {
+        LOGGER.info("Response: " + response);
+        message.complete(response);
+      });
+
+    try {
+      RegisterResponse response = message.get(5, TimeUnit.SECONDS);
+      Assertions.assertEquals("EmailSent", response.getResult().toString());
+      Assertions.assertNotNull(response.getSid());
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 
   @Test
   void shouldReturnValue() {
@@ -90,8 +104,6 @@ class AccountServiceTest {
       Assertions.assertNotNull(response.getSid());
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
     }
   }
 
