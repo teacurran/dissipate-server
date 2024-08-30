@@ -8,9 +8,11 @@ import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.services.AuthenticationService;
 import io.grpc.Metadata;
+import io.grpc.StatusRuntimeException;
 import io.quarkus.grpc.GrpcClient;
 import io.quarkus.grpc.GrpcClientUtils;
 import io.quarkus.test.InjectMock;
+import io.quarkus.test.TestReactiveTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Uni;
@@ -21,6 +23,7 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import io.quarkus.test.vertx.UniAsserter;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +34,7 @@ import java.util.concurrent.TimeoutException;
 import static app.dissipate.constants.AuthenticationConstants.AUTH_HEADER_KEY;
 
 @QuarkusTest
+@TestReactiveTransaction
 class AccountServiceTest {
 
   private static final Logger LOGGER = Logger.getLogger(AccountServiceTest.class);
@@ -61,9 +65,34 @@ class AccountServiceTest {
   }
 
   @Test
-  void shouldValidateEmail() throws InterruptedException {
+  void shouldValidateEmail(UniAsserter asserter) throws InterruptedException {
+    String email = "test-" + new Random().nextInt() + "X-invalid-email.co.uk";
+
+    // one way to test
+    // doesn't work with reactive transactions
+    //  UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
+    //      .setEmail(email).build())
+    //    .subscribe().withSubscriber(UniAssertSubscriber.create());
+    //  subscriber.awaitFailure().assertFailedWith(StatusRuntimeException.class, "INVALID_ARGUMENT: The email address is invalid.");
+
+    // another way to test
+    asserter.assertFailedWith(() -> client.register(RegisterRequest.newBuilder().setEmail(email).build()), (cve) -> {
+      Assertions.assertEquals("INVALID_ARGUMENT: The email address is invalid.", cve.getMessage());
+    });
+
+  }
+
+  @Test
+  void shouldReturnValue(UniAsserter asserter) {
     String email = "test-" + new Random().nextInt() + "@grilledcheese.com";
 
+    //  CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
+    //  client.register(RegisterRequest.newBuilder()
+    //      .setEmail("tea@grilledcheese.com").build())
+    //    .subscribe().with(response -> {
+    //      LOGGER.info("Response: " + response);
+    //      message.complete(response);
+    //    });
 
     UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
         .setEmail(email).build())
@@ -71,35 +100,8 @@ class AccountServiceTest {
 
     RegisterResponse response = subscriber.awaitItem().getItem();
 
-    LOGGER.info("Response: " + response);
     Assertions.assertEquals("EmailSent", response.getResult().toString());
     Assertions.assertNotNull(response.getSid());
-  }
-
-
-  @Test
-  void shouldReturnValue() {
-    CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
-
-    Metadata extraHeaders = new Metadata();
-    extraHeaders.put(AUTH_HEADER_KEY, "test-auth-token");
-
-    DissipateService authedClient = GrpcClientUtils.attachHeaders(client, extraHeaders);
-
-    authedClient.register(RegisterRequest.newBuilder()
-        .setEmail("tea@grilledcheese.com").build())
-      .subscribe().with(response -> {
-        LOGGER.info("Response: " + response);
-        message.complete(response);
-      });
-
-    try {
-      RegisterResponse response = message.get(5, TimeUnit.SECONDS);
-      Assertions.assertEquals("EmailSent", response.getResult().toString());
-      Assertions.assertNotNull(response.getSid());
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   @Test
