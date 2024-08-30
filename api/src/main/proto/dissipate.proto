@@ -34,9 +34,8 @@ message CreateHandleResponse {
 }
 
 message RegisterRequest {
-  optional string locale = 1;
-  optional string email = 2;
-  optional string phone_number = 3;
+  optional string email = 1;
+  optional string phone_number = 2;
 }
 
 enum RegisterResponseResult {
@@ -57,7 +56,6 @@ message RegisterResponse {
 }
 
 message ValidateSessionRequest {
-  optional string locale = 1;
   /*
   string sid = 1 [(buf.validate.field).cel = {
     id: "sid"
@@ -68,8 +66,8 @@ message ValidateSessionRequest {
     expression: "this.matches('^[0-9A-Za-z]{6}$') ? null: 'ValidateSessionRequest.otp.invalid'"
   }];
    */
-  string sid = 2;
-  string otp = 3;
+  string sid = 1;
+  string otp = 2;
 }
 
 message ValidateSessionResponse {

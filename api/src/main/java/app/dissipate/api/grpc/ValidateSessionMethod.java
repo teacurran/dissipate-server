@@ -4,7 +4,9 @@ import app.dissipate.data.jpa.converters.LocaleConverter;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.ValidateSessionRequest;
 import app.dissipate.grpc.ValidateSessionResponse;
+import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.services.LocalizationService;
+import io.grpc.Context;
 import io.grpc.Status;
 import io.opentelemetry.api.trace.Span;
 import io.smallrye.mutiny.Uni;
@@ -25,6 +27,8 @@ public class ValidateSessionMethod {
   public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) {
     Span otel = Span.current();
 
+    Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
+
     // This is in progress, trying to use protovalidate, it isn't working yet
     //    try {
     //      Validator validator = new Validator();
@@ -33,7 +37,6 @@ public class ValidateSessionMethod {
     //      return Uni.createFrom().item(ValidateSessionResponse.newBuilder().setValid(false).build());
     //    }
 
-    Locale locale = LocaleConverter.fromValue(request.getLocale());
     otel.setAttribute("locale", locale.toLanguageTag());
 
     return SessionValidation.findBySidToken(request.getSid(), request.getOtp()).onItem().transformToUni(sv -> {

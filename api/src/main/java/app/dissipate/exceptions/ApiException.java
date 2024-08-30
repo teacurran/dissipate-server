@@ -17,7 +17,6 @@ public class ApiException extends StatusRuntimeException {
   public static Metadata getTrailers(String code, String message) {
     Metadata trailers = new Metadata();
     trailers.put(Metadata.Key.of("code", Metadata.ASCII_STRING_MARSHALLER), code);
-    trailers.put(Metadata.Key.of("message", Metadata.ASCII_STRING_MARSHALLER), message);
     return trailers;
   }
 
