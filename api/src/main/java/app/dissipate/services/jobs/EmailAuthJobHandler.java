@@ -81,9 +81,14 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
             .to(sessionValidation.email.email)
             .subject(i18n.getString("auth.email.otp.subject"))
             .addInlineAttachment("header.png", imageHead, "image/png", "header")
-            .send().onItem().invoke(() -> {
+            .send()
+            .onFailure().invoke(t -> {
+              LOGGER.error("Failed to send email", t);
+            })
+            .onItem().invoke(() -> {
               Span.current().addEvent("Email sent");
-            });
+            })
+            ;
 
         } catch (IOException | URISyntaxException e) {
           LOGGER.error("Failed to load image resources", e);

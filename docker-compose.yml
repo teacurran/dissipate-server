@@ -28,6 +28,9 @@ x-api-base: &api-base
     QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
     QUARKUS_HTTP_HOST: 0.0.0.0
     QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
+    QUARKUS_MAILER_HOST: mailpit
+    QUARKUS_MAILER_PORT: 1025
+    QUARKUS_MAILPIT_HTTP_SERVER: http://localhost:8025
   command:
     mvn
     quarkus:dev
@@ -98,18 +101,6 @@ services:
     ports:
       - "5433:5432"
 
-  iam_db:
-    image: postgres:latest
-    restart: always
-    environment:
-      POSTGRES_USER: dissipate_iam
-      POSTGRES_PASSWORD: dissipate_iam_pw
-      POSTGRES_DB: dissipate_iam
-    volumes:
-      - iam_db:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"
-
   # Jaeger
   jaeger:
     image: jaegertracing/all-in-one:latest
@@ -122,46 +113,6 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
       LOG_LEVEL: debug
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:23.0.4
-    environment:
-      KC_FEATURES: authorization,token-exchange,docker,impersonation,scripts,web-authn,client-policies,dynamic-scopes
-      KC_DB: postgres
-      KC_DB_PASSWORD: dissipate_iam_pw
-      KC_DB_SCHEMA: dissipate_iam
-      KC_DB_URL: jdbc:postgresql://iam_db:5432/dissipate_iam?ssl=allow
-      KC_DB_USERNAME: dissipate_iam
-      KC_HOSTNAME: keycloak.local
-      KC_HOSTNAME_STRICT: false
-      KC_HTTPS_CLIENT_AUTH: request
-      KC_HTTPS_KEY_STORE_FILE: /data/server.keystore
-      KC_HTTPS_KEY_STORE_PASSWORD: KEYSTOREPASSWORD
-      KC_HTTPS_PORT: 8443
-      KC_HTTPS_PROTOCOLS: TLSv1.3,TLSv1.2
-      KC_HTTPS_TRUST_STORE_FILE: /data/trust.keystore
-      KC_HTTPS_TRUST_STORE_PASSWORD: TRUSTSTOREPASSWORD
-      KC_HTTP_ENABLED: "true"
-      KC_HTTP_PORT: 8081
-      KC_METRICS_ENABLED: true
-      KC_PROXY: edge
-      KEYCLOAK_ADMIN: Admin
-      KEYCLOAK_ADMIN_PASSWORD: Admin
-      POSTGRES_DB: dissipate_iam
-      POSTGRES_PASSWORD: dissipate_iam_pw
-      POSTGRES_USER: dissipate_iam
-      PROXY_ADDRESS_FORWARDING: true
-    #DOCKER ENV KC_HTTPS_TRUST_STORE_FILE does not work
-    #WorkAround is to add the TrustStore to the start up (Using Trust Store For AD LDAPS Certificate, you may not need this at all)
-    entrypoint: /opt/keycloak/bin/kc.sh start --https-trust-store-file=${KC_HTTPS_TRUST_STORE_FILE} --https-trust-store-password=${KC_HTTPS_TRUST_STORE_PASSWORD}
-    #entrypoint: /opt/keycloak/bin/kc.sh start --auto-build
-    volumes:
-      - ./data:/data:rw
-    ports:
-      - 8081:8081
-      - 8443:8443
-    depends_on:
-      - iam_db
 
   #  redis:
 #    image: "redis:alpine"
@@ -257,7 +208,6 @@ services:
 
 volumes:
   main-db:
-  iam_db:
   maven_cache:
   maven_target:
   mailpit_data:
