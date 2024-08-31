@@ -22,7 +22,7 @@ x-api-base: &api-base
     REDIS_PORT: 6379
     REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
     GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
-    QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://postgresql:5432/dissipate
+    QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://main-db:5432/dissipate
     QUARKUS_DATASOURCE_USERNAME: dissipate
     QUARKUS_DATASOURCE_PASSWORD: dissipate
     QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
