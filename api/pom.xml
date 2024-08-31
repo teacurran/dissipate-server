@@ -125,10 +125,16 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-scheduler</artifactId>
     </dependency>
+    <!--
     <dependency>
       <groupId>io.quarkiverse.mailpit</groupId>
       <artifactId>quarkus-mailpit</artifactId>
       <version>1.2.2</version>
+    </dependency>
+    -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mailer</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
