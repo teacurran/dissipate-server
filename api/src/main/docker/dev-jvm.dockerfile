@@ -95,6 +95,8 @@ FROM maven:3.9-amazoncorretto-21-debian
 
 # Tell docker that all future commands should run as the appuser user
 
+RUN yum install -y docker
+
 RUN mkdir -p /app
 # RUN chown appuser /app
 
