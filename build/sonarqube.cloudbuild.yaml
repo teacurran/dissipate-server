@@ -36,8 +36,7 @@ steps:
       '-f', 'docker-compose.cloudbuild.yml',
       'up',
       '-d',
-      'postgresql',
-      'firebase-emulator',
+      'postgresql'
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',
@@ -70,8 +69,7 @@ steps:
       '-f', 'docker-compose.yml',
       '-f', 'docker-compose.cloudbuild.yml',
       'stop',
-      'postgresql',
-      'firebase-emulator',
+      'postgresql'
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',

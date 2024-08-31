@@ -8,7 +8,6 @@ x-api-base: &api-base
   depends_on:
     - main-db
     - main-db-migrations
-    - rabbitmq
     - jaeger
   volumes:
     - ./api:/app
@@ -55,7 +54,6 @@ services:
     depends_on:
       - main-db
       - main-db-migrations
-      - rabbitmq
       - jaeger
     volumes:
       - ./api:/app
@@ -76,7 +74,6 @@ services:
       QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
       QUARKUS_HTTP_HOST: 0.0.0.0
       QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
-      RABBITMQ_HOST: rabbitmq
     command:
       mvn
       quarkus:dev
@@ -225,19 +222,6 @@ services:
 #      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-server1:9092
 #    profiles: ["development"]
 
-  rabbitmq:
-    image: rabbitmq:3.11.3-management
-    container_name: 'rabbitmq'
-    ports:
-      - 5672:5672
-      - 15672:15672
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq/
-      - rabbitmq_logs:/var/log/rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: dissipate
-      RABBITMQ_DEFAULT_PASS: dissipate
-
   sonar-scanner:
     <<: *api-base
     command:
@@ -261,6 +245,4 @@ volumes:
   iam_db:
   maven_cache:
   maven_target:
-  rabbitmq_data:
-  rabbitmq_logs:
 
