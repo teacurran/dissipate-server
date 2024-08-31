@@ -1,45 +1,60 @@
 package app.dissipate.services.grpc;
 
-import app.dissipate.api.grpc.DissipateServiceImpl;
-import app.dissipate.beans.AuthTokenVO;
-import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
-import app.dissipate.services.AuthenticationService;
-import io.grpc.Metadata;
-import io.grpc.StatusRuntimeException;
+import io.quarkiverse.mailpit.test.InjectMailbox;
+import io.quarkiverse.mailpit.test.Mailbox;
+import io.quarkiverse.mailpit.test.WithMailbox;
+import io.quarkiverse.mailpit.test.model.Message;
 import io.quarkus.grpc.GrpcClient;
-import io.quarkus.grpc.GrpcClientUtils;
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.TestReactiveTransaction;
 import io.quarkus.test.junit.QuarkusTest;
-import io.smallrye.common.vertx.VertxContext;
+import io.quarkus.test.junit.callback.QuarkusTestAfterEachCallback;
+import io.quarkus.test.junit.callback.QuarkusTestBeforeEachCallback;
+import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
+import io.quarkus.test.vertx.UniAsserter;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.helpers.test.AssertSubscriber;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
-import io.smallrye.mutiny.subscription.Cancellable;
-import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import io.quarkus.test.vertx.UniAsserter;
 
+import java.time.Duration;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import static app.dissipate.constants.AuthenticationConstants.AUTH_HEADER_KEY;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.Is.is;
 
 @QuarkusTest
-class AccountServiceTest {
+@WithMailbox
+class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBeforeEachCallback {
 
   private static final Logger LOGGER = Logger.getLogger(AccountServiceTest.class);
 
+  @InjectMailbox
+  Mailbox mailbox;
+
   @GrpcClient("dissipate")
   DissipateService client;
+
+  @Override
+  public void afterEach(QuarkusTestMethodContext context) {
+    mailbox.clear();
+  }
+
+  @Override
+  public void beforeEach(QuarkusTestMethodContext context) {
+    // mailbox.clear();
+  }
 
   @Test
   void shouldRejectEmptyEmails() {
@@ -83,8 +98,7 @@ class AccountServiceTest {
   }
 
   @Test
-  @TestReactiveTransaction
-  void shouldReturnValue(UniAsserter asserter) {
+  void registerByEmail(UniAsserter asserter) {
     String email = "create-" + new Random().nextInt() + "@grilledcheese.com";
 
     //  CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
@@ -95,12 +109,41 @@ class AccountServiceTest {
     //      message.complete(response);
     //    });
 
-    asserter.assertThat(
-      () -> client.register(RegisterRequest.newBuilder().setEmail(email).build()),
-      (response) -> {
-        Assertions.assertEquals("EmailSent", response.getResult().toString());
-        Assertions.assertNotNull(response.getSid());
-    });
+    //  asserter.assertThat(
+    //    () -> client.register(RegisterRequest.newBuilder().setEmail(email).build()),
+    //    (response) -> {
+    //      Assertions.assertEquals("EmailSent", response.getResult().toString());
+    //      Assertions.assertNotNull(response.getSid());
+    //  });
+
+    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
+        .setEmail(email).build())
+      .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+    RegisterResponse response = subscriber.awaitItem().getItem();
+    Assertions.assertEquals("EmailSent", response.getResult().toString());
+    Assertions.assertNotNull(response.getSid());
+
+    Uni<Message> uniMessage = Multi.createBy()
+      .repeating()
+      .supplier(() -> mailbox.findFirst(email))
+      .withDelay(Duration.ofMillis(500))
+      .atMost(4)
+      .toUni();
+
+    // why doesn't this work?
+    //      .until(value -> {
+    //  LOGGER.info("Value: " + value);
+    //  return Objects.nonNull(value);
+    // }).toUni();
+
+    UniAssertSubscriber<Message> messageSubscriber = uniMessage.subscribe()
+      .withSubscriber(UniAssertSubscriber.create());
+    Message message = messageSubscriber.awaitItem().getItem();
+
+    assertThat(message, notNullValue());
+    assertThat(message.getTo().get(0).getAddress(), is(email));
+    assertThat(message.getSubject(), is("One Time Password for Email Verification"));
   }
 
   @Test
