@@ -34,7 +34,6 @@ import java.util.concurrent.TimeoutException;
 import static app.dissipate.constants.AuthenticationConstants.AUTH_HEADER_KEY;
 
 @QuarkusTest
-@TestReactiveTransaction
 class AccountServiceTest {
 
   private static final Logger LOGGER = Logger.getLogger(AccountServiceTest.class);
@@ -65,6 +64,7 @@ class AccountServiceTest {
   }
 
   @Test
+  @TestReactiveTransaction
   void shouldValidateEmail(UniAsserter asserter) throws InterruptedException {
     String email = "test-" + new Random().nextInt() + "X-invalid-email.co.uk";
 
@@ -83,8 +83,9 @@ class AccountServiceTest {
   }
 
   @Test
+  @TestReactiveTransaction
   void shouldReturnValue(UniAsserter asserter) {
-    String email = "test-" + new Random().nextInt() + "@grilledcheese.com";
+    String email = "create-" + new Random().nextInt() + "@grilledcheese.com";
 
     //  CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
     //  client.register(RegisterRequest.newBuilder()
@@ -94,14 +95,12 @@ class AccountServiceTest {
     //      message.complete(response);
     //    });
 
-    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
-        .setEmail(email).build())
-      .subscribe().withSubscriber(UniAssertSubscriber.create());
-
-    RegisterResponse response = subscriber.awaitItem().getItem();
-
-    Assertions.assertEquals("EmailSent", response.getResult().toString());
-    Assertions.assertNotNull(response.getSid());
+    asserter.assertThat(
+      () -> client.register(RegisterRequest.newBuilder().setEmail(email).build()),
+      (response) -> {
+        Assertions.assertEquals("EmailSent", response.getResult().toString());
+        Assertions.assertNotNull(response.getSid());
+    });
   }
 
   @Test
