@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>app.dissipate</groupId>
   <artifactId>dissipate-api</artifactId>
@@ -58,15 +59,29 @@
       <artifactId>quarkus-grpc</artifactId>
       <version>${version.quarkus}</version>
     </dependency>
+    <!--
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest</artifactId>
-      <version>${version.quarkus}</version>
+      <artifactId>quarkus-rest-client-jackson</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-rest-jackson</artifactId>
       <version>${version.quarkus}</version>
+    </dependency>
+    -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-resteasy-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-resteasy-multipart</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openapitools</groupId>
+      <artifactId>jackson-databind-nullable</artifactId>
+      <version>0.2.6</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -239,8 +254,15 @@
               <inputSpec>${project.basedir}/src/test/resources/openapi/mailpit.swagger.json</inputSpec>
               <generatorName>java</generatorName>
               <configOptions>
+                <apiPackage>app.dissipate.test.mailpit.api</apiPackage>
+                <modelPackage>app.dissipate.test.mailpit.model</modelPackage>
+                <invokerPackage>app.dissipate.test.mailpit</invokerPackage>
+
                 <!-- <sourceFolder>target/generated-test-sources/mailpit</sourceFolder> -->
+                <output>${project.build.directory}/generated-test-sources</output>
                 <library>resteasy</library>
+                <useJakartaEe>true</useJakartaEe>
+                <cleanupOutput>true</cleanupOutput>
               </configOptions>
             </configuration>
           </execution>

@@ -3,15 +3,13 @@ package app.dissipate.services.grpc;
 import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
-import io.quarkiverse.mailpit.test.InjectMailbox;
 import io.quarkiverse.mailpit.test.Mailbox;
-import io.quarkiverse.mailpit.test.WithMailbox;
 import io.quarkiverse.mailpit.test.model.Message;
 import io.quarkus.grpc.GrpcClient;
 import io.quarkus.test.TestReactiveTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.callback.QuarkusTestAfterEachCallback;
-import io.quarkus.test.junit.callback.QuarkusTestBeforeEachCallback;
+import io.quarkus.test.junit.callback.QuarkusTestBeforeTestExecutionCallback;
 import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
 import io.quarkus.test.vertx.UniAsserter;
 import io.smallrye.mutiny.Multi;
@@ -23,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import jakarta.ws.rs.client.Client;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Random;
@@ -35,25 +34,30 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 
 @QuarkusTest
-@WithMailbox
-class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBeforeEachCallback {
+class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBeforeTestExecutionCallback {
 
   private static final Logger LOGGER = Logger.getLogger(AccountServiceTest.class);
-
-  @InjectMailbox
-  Mailbox mailbox;
 
   @GrpcClient("dissipate")
   DissipateService client;
 
+  Mailbox mailbox = new Mailbox() {
+    @Override
+    public String getMailApiUrl() {
+      return System.getenv("QUARKUS_MAILPIT_HTTP_SERVER");
+    }
+  };
+
   @Override
   public void afterEach(QuarkusTestMethodContext context) {
-    mailbox.clear();
+    //mailbox.clear();
   }
 
   @Override
-  public void beforeEach(QuarkusTestMethodContext context) {
-    // mailbox.clear();
+  public void beforeTestExecution(QuarkusTestMethodContext context) {
+    // do nothing
+
+
   }
 
   @Test
@@ -124,11 +128,18 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
     Assertions.assertEquals("EmailSent", response.getResult().toString());
     Assertions.assertNotNull(response.getSid());
 
+//    ApiClient apiClient = new ApiClient();
+//    Client httpClient = apiClient.getHttpClient();
+//
+//    MessagesApi messagesApi = new MessagesApi(apiClient);
+//    messagesApi.ge
+
     Uni<Message> uniMessage = Multi.createBy()
       .repeating()
       .supplier(() -> mailbox.findFirst(email))
       .withDelay(Duration.ofMillis(500))
       .atMost(4)
+      .onFailure().invoke(throwable -> LOGGER.error("Error: " + throwable.getMessage()))
       .toUni();
 
     // why doesn't this work?
