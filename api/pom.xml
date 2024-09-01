@@ -227,6 +227,26 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>7.7.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/test/resources/openapi/mailpit.swagger.json</inputSpec>
+              <generatorName>java</generatorName>
+              <configOptions>
+                <!-- <sourceFolder>target/generated-test-sources/mailpit</sourceFolder> -->
+                <library>resteasy</library>
+              </configOptions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${compiler-plugin.version}</version>
         <configuration>
