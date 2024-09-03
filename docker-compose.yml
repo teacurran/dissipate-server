@@ -30,7 +30,7 @@ x-api-base: &api-base
     QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
     QUARKUS_MAILER_HOST: mailpit
     QUARKUS_MAILER_PORT: 1025
-    QUARKUS_MAILPIT_HTTP_SERVER: http://localhost:8025
+    QUARKUS_MAILPIT_HTTP_SERVER: http://mailpit:8025
   command:
     mvn
     quarkus:dev

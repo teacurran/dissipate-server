@@ -44,7 +44,12 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   Mailbox mailbox = new Mailbox() {
     @Override
     public String getMailApiUrl() {
-      return System.getenv("QUARKUS_MAILPIT_HTTP_SERVER");
+      String mailpitUrl = System.getenv("QUARKUS_MAILPIT_HTTP_SERVER");
+      if (mailpitUrl == null) {
+        mailpitUrl = "http://localhost:8025";
+      }
+
+      return mailpitUrl;
     }
   };
 
@@ -56,8 +61,6 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   @Override
   public void beforeTestExecution(QuarkusTestMethodContext context) {
     // do nothing
-
-
   }
 
   @Test
@@ -139,7 +142,7 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
       .supplier(() -> mailbox.findFirst(email))
       .withDelay(Duration.ofMillis(500))
       .atMost(4)
-      .onFailure().invoke(throwable -> LOGGER.error("Error: " + throwable.getMessage()))
+      .onFailure().invoke(throwable -> LOGGER.error("Error: " + throwable.getMessage(), throwable))
       .toUni();
 
     // why doesn't this work?
