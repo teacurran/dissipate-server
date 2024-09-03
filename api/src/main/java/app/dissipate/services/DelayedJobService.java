@@ -64,46 +64,35 @@ public class DelayedJobService {
   @ConsumeEvent(DELAYED_JOB_RUN)
   @WithSpan("DelayedJobService.handleDelayedJobRun")
   public Uni<Void> run(String id) {
-    return getDelayedJobToWorkOn(id).onItem().transformToUni(dj -> {
-      if (dj == null) {
-        return Uni.createFrom().voidItem();
-      }
+    return getDelayedJobToWorkOn(id)
+      .onItem()
+      .ifNotNull()
+      .transformToUni(dj -> {
 
-      LOGGER.info("handling delayed job with id: " + id + " and actorId: " + dj.actorId);
+        LOGGER.info("handling delayed job with id: " + id + " and actorId: " + dj.actorId);
 
-      if (dj.runAt.isAfter(Instant.now())) {
-        LOGGER.info("delayed job is not ready to run: " + id);
+        if (dj.runAt.isAfter(Instant.now())) {
+          LOGGER.info("delayed job is not ready to run: " + id);
 
-        dj.lockedBy = null;
-        dj.lockedAt = null;
-        return dj.persistAndFlush().onItem().transformToUni(dj2 -> {
-          LOGGER.info("delayed job unlocked: " + id);
+          return dj.unlock().onItem().transformToUni(v -> Uni.createFrom().voidItem());
+        }
+
+        DelayedJobHandler handler = jobHandlers.get(dj.queue);
+        if (handler == null) {
+          LOGGER.error("No handler found for queue: " + dj.queue);
           return Uni.createFrom().voidItem();
-        });
-      }
-
-      DelayedJobHandler handler = jobHandlers.get(dj.queue);
-      if (handler == null) {
-        LOGGER.error("No handler found for queue: " + dj.queue);
-        return Uni.createFrom().voidItem();
-      } else {
+        }
         return handler.run(dj.actorId)
           .onItem().transformToUni(v -> {
-            dj.locked = false;
-            dj.lockedAt = null;
-            dj.lockedBy = null;
             dj.attempts = dj.attempts + 1;
             dj.completedAt = Instant.now();
             dj.complete = true;
             dj.lastRunBy = server;
-            return dj.persistAndFlush().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
+            return dj.unlock().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
           })
           .onFailure().recoverWithUni(t -> {
             dj.lastError = String.join("\n", Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).toArray(String[]::new));
             dj.failedAt = Instant.now();
-            dj.locked = false;
-            dj.lockedAt = null;
-            dj.lockedBy = null;
             dj.attempts = dj.attempts + 1;
 
             if (t instanceof DelayedJobException dje) {
@@ -120,10 +109,10 @@ public class DelayedJobService {
             }
 
             dj.lastRunBy = server;
-            return dj.persistAndFlush().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
+            return dj.unlock().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
           });
-      }
-    });
+
+      });
   }
 
   @Scheduled(every = "30s")

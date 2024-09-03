@@ -90,10 +90,18 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
     return super.persistAndFlush();
   }
 
+  public Uni<DelayedJob> unlock() {
+    this.locked = false;
+    this.lockedAt = null;
+    this.lockedBy = null;
+    return persistAndFlush();
+  }
+
   public static Uni<List<DelayedJob>> findReadyToRun() {
     PanacheQuery<PanacheEntityBase> query = find("#" + QUERY_FIND_READY_TO_RUN, Parameters.with("now", Instant.now()));
     query.range(0, 100);
     return query.list();
   }
+
 
 }

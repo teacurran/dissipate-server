@@ -27,19 +27,24 @@ public class ModelNamingStrategy extends CamelCaseToUnderscoresNamingStrategy {
         }
     }
 
-    private Identifier classToTableName(Identifier name, JdbcEnvironment jdbcEnvironment) {
-        if (name == null) {
-            return null;
-        }
-        StringBuilder builder = new StringBuilder(name.getText().replace('.', '_'));
+    public Identifier classToTableName(Identifier name, JdbcEnvironment jdbcEnvironment) {
+      if (name == null) {
+        return null;
+      }
+      String text = name.getText().replace('.', '_');
+      StringBuilder builder = new StringBuilder(text);
 
-        for (int i = 1; i < builder.length() - 1; ++i) {
-            if (this.needsUnderscore(builder.charAt(i - 1), builder.charAt(i), builder.charAt(i + 1))) {
-                builder.insert(i++, '_');
-            }
+      int i = 1;
+      while (i < builder.length() - 1) {
+        if (needsUnderscore(builder.charAt(i - 1), builder.charAt(i), builder.charAt(i + 1))) {
+          builder.insert(i, '_');
+          i += 2; // Skip the next character to avoid infinite loop
+        } else {
+          i++;
         }
+      }
 
-        return this.getIdentifier(builder.toString(), name.isQuoted(), jdbcEnvironment);
+      return getIdentifier(builder.toString(), name.isQuoted(), jdbcEnvironment);
     }
 
     private boolean needsUnderscore(char before, char current, char after) {
