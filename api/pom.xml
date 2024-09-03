@@ -12,8 +12,6 @@
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <sonar.organization>appi</sonar.organization>
-    <sonar.projectKey>teacurran_dissipate-server</sonar.projectKey>
     <surefire-plugin.version>3.2.3</surefire-plugin.version>
     <version.cassandra.quarkus>1.2.0</version.cassandra.quarkus>
     <version.grpc>1.48.1</version.grpc>
@@ -305,11 +303,6 @@
             <version>${version.postgres.driver}</version>
           </dependency>
         </dependencies>
-      </plugin>
-      <plugin>
-        <groupId>org.sonarsource.scanner.maven</groupId>
-        <artifactId>sonar-maven-plugin</artifactId>
-        <version>3.9.1.2184</version>
       </plugin>
     </plugins>
   </build>

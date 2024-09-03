@@ -190,6 +190,9 @@ services:
 
   sonar-scanner:
     <<: *api-base
+    volumes:
+      - ./:/app
+      - ~/.config/gcloud:/tmp/.config/gcloud
     command:
       - mvn
       - verify
