@@ -13,8 +13,7 @@
   </properties>
 
   <modules>
-    <!-- not working yet -->
-    <!-- <module>schemas</module> -->
+    <!-- schemas module not working yet, maybe dead -->
     <module>api</module>
   </modules>
 

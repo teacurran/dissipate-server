@@ -52,7 +52,7 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
   }
 
   public static Uni<SessionValidation> byId(String id) {
-    return SessionValidation.findById(id);
+    return findById(id);
   }
 
   public static Uni<SessionValidation> findBySidToken(String sid, String token) {

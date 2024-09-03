@@ -9,6 +9,7 @@ public class AuthTokenVO {
     String email;
 
     public AuthTokenVO() {
+      // empty constructor
     }
 
     public String getUid() {

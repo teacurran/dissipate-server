@@ -68,7 +68,7 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
   public Server lastRunBy;
 
   public static Uni<DelayedJob> byId(String id) {
-    return DelayedJob.findById(id);
+    return findById(id);
   }
 
   public static Uni<DelayedJob> createDelayedJob(String actorId,
@@ -76,7 +76,7 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
                                                  Instant runAt,
                                                  SnowflakeIdGenerator snowflakeIdGenerator) {
     DelayedJob delayedJob = new DelayedJob();
-    delayedJob.id = snowflakeIdGenerator.generate(DelayedJob.ID_GENERATOR_KEY);
+    delayedJob.id = snowflakeIdGenerator.generate(ID_GENERATOR_KEY);
     delayedJob.actorId = actorId;
     delayedJob.runAt = runAt;
     delayedJob.queue = queue;
@@ -91,7 +91,7 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
   }
 
   public static Uni<List<DelayedJob>> findReadyToRun() {
-    PanacheQuery<PanacheEntityBase> query = find("#" + DelayedJob.QUERY_FIND_READY_TO_RUN, Parameters.with("now", Instant.now()));
+    PanacheQuery<PanacheEntityBase> query = find("#" + QUERY_FIND_READY_TO_RUN, Parameters.with("now", Instant.now()));
     query.range(0, 100);
     return query.list();
   }
