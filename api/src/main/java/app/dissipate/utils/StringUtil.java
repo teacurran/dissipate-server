@@ -10,7 +10,7 @@ public class StringUtil {
     String alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     StringBuilder builder = new StringBuilder();
     while (length-- != 0) {
-      int character = random.nextInt() * alphaNumericString.length();
+      int character = random.nextInt(alphaNumericString.length());
       builder.append(alphaNumericString.charAt(character));
     }
     return builder.toString();
@@ -20,7 +20,7 @@ public class StringUtil {
     String alphaNumericString = "0123456789";
     StringBuilder builder = new StringBuilder();
     while (length-- != 0) {
-      int character = random.nextInt() * alphaNumericString.length();
+      int character = random.nextInt(alphaNumericString.length());
       builder.append(alphaNumericString.charAt(character));
     }
     return builder.toString();

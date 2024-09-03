@@ -154,9 +154,9 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
-#  integration-tests:
-#    <<: *api-base
-#    command: mvn verify
+  integration-tests:
+    <<: *api-base
+    command: mvn verify
 
 #  kafka-server1:
 #    <<: *kafka-base
