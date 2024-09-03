@@ -6,6 +6,19 @@ steps:
       - -c
       - docker pull ${_ARTIFACT_REPO}/$PROJECT_ID/dissipate-docker/sonar-scanner:compose || exit 0
 
+  - name: 'gcr.io/cloud-builders/git'
+    id: "restore git metadata"
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        git init
+        git remote add origin git@github.com:/teacurran/$REPO_NAME.git
+        git fetch --unshallow origin main
+        git fetch --unshallow origin $COMMIT_SHA
+        git config -f .gitmodules submodule.core.url git@github.com:/teacurran/$REPO_NAME.git
+        git submodule update --init
+
   - name: 'bash'
     id: 'generate-credentials'
     args:
