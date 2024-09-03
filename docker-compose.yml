@@ -197,7 +197,7 @@ services:
       - mvn
       - verify
       - sonar:sonar
-      - -Dsonar.login=${SONAR_TOKEN}
+      - -Dsonar.token=${SONAR_TOKEN}
       - -Dsonar.host.url=https://sonarcloud.io
       - -DGOOGLE_APPLICATION_CREDENTIALS=/app/cloudbuild_credentials.json
       - -e
