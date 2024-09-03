@@ -6,6 +6,10 @@ import java.time.Instant;
 public class DelayedJobRetryStrategy {
   private static final Duration MAX_RETRY_INTERVAL = Duration.ofDays(20);
 
+  private DelayedJobRetryStrategy() {
+    // class cannot be instantiated
+  }
+
   public static Instant calculateNextRetryInterval(int attempts) {
     // Formula: 5 seconds + N ** 4
     Duration baseInterval = Duration.ofSeconds(5);
@@ -14,3 +18,4 @@ public class DelayedJobRetryStrategy {
     return Instant.now().plus(calculated);
   }
 }
+

@@ -53,36 +53,33 @@ public class ServerInstance {
     // Don't forget to mark the context safe
     VertxContextSafetyToggle.setContextSafe(context, true);
     // Run the logic on the context created above
-    context.runOnContext(new Handler<Void>() {
-      @Override
-      public void handle(Void event) {
-        // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active/propagated
-        factory.withTransaction(session ->
-            Server.findMaxInstanceId().call(maxIntDto -> {
-              if (maxIntDto == null || maxIntDto.maxValue < 1000) {
-                return createNewServer(maxIntDto);
-              } else {
-                return findFirstUnusedServer();
-              }
-            })
-          )
-          // We need to subscribe to the Uni to trigger the action
-          .subscribe().with(v -> {
-          });
-
-        factory.withTransaction(session -> {
-          Uni<Integer> result = markAbandonedServersAsShutdown(zoneOffset);
-          if (result == null) {
-            LOGGER.error("markAbandonedServersAsShutdown returned null.");
-            return Uni.createFrom().failure(new NullPointerException("markAbandonedServersAsShutdown returned null."));
-          }
-          return result;
-        }).subscribe().with(v -> {
-          LOGGER.info("marked " + v + " servers as abandoned.");
-        }, failure -> {
-          LOGGER.error("Second transaction failed.", failure);
+    context.runOnContext(event1 -> {
+      // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active/propagated
+      factory.withTransaction(session ->
+          Server.findMaxInstanceId().call(maxIntDto -> {
+            if (maxIntDto == null || maxIntDto.maxValue < 1000) {
+              return createNewServer(maxIntDto);
+            } else {
+              return findFirstUnusedServer();
+            }
+          })
+        )
+        // We need to subscribe to the Uni to trigger the action
+        .subscribe().with(v -> {
         });
-      }
+
+      factory.withTransaction(session -> {
+        Uni<Integer> result = markAbandonedServersAsShutdown(zoneOffset);
+        if (result == null) {
+          LOGGER.error("markAbandonedServersAsShutdown returned null.");
+          return Uni.createFrom().failure(new NullPointerException("markAbandonedServersAsShutdown returned null."));
+        }
+        return result;
+      }).subscribe().with(v -> {
+        LOGGER.info("marked " + v + " servers as abandoned.");
+      }, failure -> {
+        LOGGER.error("Second transaction failed.", failure);
+      });
     });
   }
 
