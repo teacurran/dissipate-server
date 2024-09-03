@@ -36,7 +36,8 @@ steps:
       '-f', 'docker-compose.cloudbuild.yml',
       'up',
       '-d',
-      'main-db'
+      'main-db',
+      'mailpit'
     ]
     env: [
       'COMPOSE_HTTP_TIMEOUT=400',

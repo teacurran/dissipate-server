@@ -14,16 +14,12 @@ import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
 import io.quarkus.test.vertx.UniAsserter;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.helpers.test.AssertSubscriber;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import jakarta.ws.rs.client.Client;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
