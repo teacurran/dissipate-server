@@ -3,6 +3,7 @@ package app.dissipate.services.grpc;
 import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
+import app.dissipate.grpc.ValidateSessionRequest;
 import io.quarkiverse.mailpit.test.Mailbox;
 import io.quarkiverse.mailpit.test.model.Message;
 import io.quarkus.grpc.GrpcClient;
@@ -15,6 +16,7 @@ import io.quarkus.test.vertx.UniAsserter;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
+import org.checkerframework.checker.regex.qual.Regex;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -24,10 +26,13 @@ import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
+import static org.wildfly.common.Assert.assertTrue;
 
 @QuarkusTest
 class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBeforeTestExecutionCallback {
@@ -154,6 +159,28 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
     assertThat(message, notNullValue());
     assertThat(message.getTo().get(0).getAddress(), is(email));
     assertThat(message.getSubject(), is("One Time Password for Email Verification"));
+
+    String html = message.getHTML();
+    assertThat(html, notNullValue());
+
+    // parses the OTP from the email, ie:
+    // <span class="otp-box">8QFDFH</span>
+    Pattern otpPattern = Pattern.compile("<span class=\"otp-box\">([A-Z0-9]{6})</span>");
+    Matcher matcher = otpPattern.matcher(html);
+    assertThat(matcher.find(), is(true));
+    String emailOtp = matcher.group(1);
+
+    ValidateSessionRequest vsr = ValidateSessionRequest.newBuilder()
+      .setSid(response.getSid())
+      .setOtp(emailOtp)
+      .build();
+    client.validateSession(vsr)
+      .subscribe().with(reply -> {
+        LOGGER.info("Validation response: " + reply);
+        assertTrue(reply.getValid());
+      });
+
+
   }
 
   @Test
