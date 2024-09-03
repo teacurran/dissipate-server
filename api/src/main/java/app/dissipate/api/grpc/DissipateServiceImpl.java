@@ -1,10 +1,15 @@
 package app.dissipate.api.grpc;
 
 import app.dissipate.exceptions.ApiException;
-import app.dissipate.grpc.*;
+import app.dissipate.grpc.CreateHandleRequest;
+import app.dissipate.grpc.CreateHandleResponse;
+import app.dissipate.grpc.DissipateService;
+import app.dissipate.grpc.RegisterRequest;
+import app.dissipate.grpc.RegisterResponse;
+import app.dissipate.grpc.ValidateSessionRequest;
+import app.dissipate.grpc.ValidateSessionResponse;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;

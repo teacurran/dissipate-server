@@ -1,22 +1,27 @@
 package app.dissipate.utils;
 
+import java.util.Random;
+
 public class StringUtil {
+
+  private static final Random random = new Random();
+
   public static String generateRandomString(int length) {
-    String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    String alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     StringBuilder builder = new StringBuilder();
     while (length-- != 0) {
-      int character = (int) (Math.random() * ALPHA_NUMERIC_STRING.length());
-      builder.append(ALPHA_NUMERIC_STRING.charAt(character));
+      int character = random.nextInt() * alphaNumericString.length();
+      builder.append(alphaNumericString.charAt(character));
     }
     return builder.toString();
   }
 
   public static String generateRandomNumericString(int length) {
-    String ALPHA_NUMERIC_STRING = "0123456789";
+    String alphaNumericString = "0123456789";
     StringBuilder builder = new StringBuilder();
     while (length-- != 0) {
-      int character = (int) (Math.random() * ALPHA_NUMERIC_STRING.length());
-      builder.append(ALPHA_NUMERIC_STRING.charAt(character));
+      int character = random.nextInt() * alphaNumericString.length();
+      builder.append(alphaNumericString.charAt(character));
     }
     return builder.toString();
   }

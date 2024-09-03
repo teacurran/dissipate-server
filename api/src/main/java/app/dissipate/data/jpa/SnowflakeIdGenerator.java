@@ -1,6 +1,5 @@
 package app.dissipate.data.jpa;
 
-import app.dissipate.constants.ApplicationConstants;
 import app.dissipate.services.ServerInstance;
 import org.hibernate.HibernateException;
 
@@ -35,12 +34,11 @@ public class SnowflakeIdGenerator {
     }
 
     static class Snowflake {
-      private static final int REGION_BITS = 8;
-      private static final int INSTANCE_BITS = 10;
-      private static final int SEQUENCE_BITS = 12;
-      private static final int ADDITIONAL_ID_BITS = 8;
-      // informational only: 45 bits left = (2^{45}) milliseconds ≈ 1,099.5 years
-      // private static final int TIMESTAMP_BITS = 45;
+      private static final int REGION_BITS = 8; // numbers: 0-255
+      private static final int INSTANCE_BITS = 10; // numbers: 0-1023
+      private static final int SEQUENCE_BITS = 12; // numbers: 0-4095
+      private static final int ADDITIONAL_ID_BITS = 8; // numbers: 0-255
+      // informational only: 45 bits left for timestamp = (2^{45}) milliseconds ≈ 1,099.5 years
 
       private static final long MAX_REGION_ID = (1L << REGION_BITS) - 1;
       private static final long MAX_INSTANCE_ID = (1L << INSTANCE_BITS) - 1;

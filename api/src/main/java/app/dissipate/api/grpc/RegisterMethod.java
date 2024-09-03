@@ -5,7 +5,6 @@ import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
-import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.RegisterResponseResult;
@@ -27,7 +26,6 @@ import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_EMAIL_INVALID;
 import static io.opentelemetry.semconv.ExceptionAttributes.EXCEPTION_ESCAPED;
@@ -35,7 +33,7 @@ import static io.opentelemetry.semconv.ExceptionAttributes.EXCEPTION_ESCAPED;
 @ApplicationScoped
 public class RegisterMethod {
 
-  private static final Logger LOGGER = Logger.getLogger(DissipateServiceImpl.class);
+  private static final Logger LOGGER = Logger.getLogger(RegisterMethod.class);
 
   @Inject
   DelayedJobService delayedJobService;
@@ -56,7 +54,6 @@ public class RegisterMethod {
     Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
 
     otel.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
-    ResourceBundle i18n = localizationService.getBundle(locale);
 
     return validateEmail(request.getEmail()).onItem().transformToUni(email -> {
       otel.setAttribute("email", email);
@@ -77,12 +74,13 @@ public class RegisterMethod {
             sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
             sessionValidation.email = a.emails.get(0);
             sessionValidation.token = StringUtil.generateRandomString(6);
-            return sessionValidation.persistAndFlush().onItem().transformToUni(sv -> {
-              return delayedJobService.createDelayedJob(sv).onItem().transformToUni(dj -> {
-                return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).setSid(s.id.toString()).build()
-                );
-              });
-            });
+            return sessionValidation.persistAndFlush()
+              .onItem()
+              .transformToUni(sv -> delayedJobService.createDelayedJob(sv)
+                .onItem().transformToUni(dj -> Uni.createFrom().item(
+                  RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).setSid(s.id.toString()).build()
+                ))
+              );
           }).onFailure().call(t -> {
             otel.recordException(t, Attributes.of(EXCEPTION_ESCAPED, true));
             return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());

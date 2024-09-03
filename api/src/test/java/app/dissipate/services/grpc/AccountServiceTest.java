@@ -56,7 +56,7 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
 
   @Override
   public void afterEach(QuarkusTestMethodContext context) {
-    //mailbox.clear();
+    mailbox.clear();
   }
 
   @Override

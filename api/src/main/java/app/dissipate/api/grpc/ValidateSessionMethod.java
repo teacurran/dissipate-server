@@ -5,7 +5,6 @@ import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.ValidateSessionRequest;
 import app.dissipate.grpc.ValidateSessionResponse;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
-import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.LocalizationService;
 import io.grpc.Status;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -55,9 +54,10 @@ public class ValidateSessionMethod {
         .onItem().transformToUni(v -> markEmailValidated(sv))
         .onItem().transformToUni(v -> {
           sv.validated = Instant.now();
-          return sv.session.persistAndFlush().onItem().transformToUni(s -> {
-            return Uni.createFrom().item(ValidateSessionResponse.newBuilder().setValid(true).build());
-          });
+          return sv.session.persistAndFlush()
+            .onItem().transformToUni(s -> Uni.createFrom().item(
+              ValidateSessionResponse.newBuilder().setValid(true).build()
+            ));
         });
     });
   }

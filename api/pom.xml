@@ -110,11 +110,6 @@
       <artifactId>quarkus-vertx</artifactId>
     </dependency>
     <dependency>
-      <groupId>build.buf</groupId>
-      <artifactId>protovalidate</artifactId>
-      <version>0.2.1</version>
-    </dependency>
-    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>3.25.3</version>
@@ -138,13 +133,6 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-scheduler</artifactId>
     </dependency>
-    <!--
-    <dependency>
-      <groupId>io.quarkiverse.mailpit</groupId>
-      <artifactId>quarkus-mailpit</artifactId>
-      <version>1.2.2</version>
-    </dependency>
-    -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-mailer</artifactId>
