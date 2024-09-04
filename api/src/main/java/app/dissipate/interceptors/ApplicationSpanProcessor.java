@@ -1,14 +1,11 @@
 package app.dissipate.interceptors;
 
-import app.dissipate.data.models.Server;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
-
-import static app.dissipate.utils.DateUtil.OTEL_DATE_TIME_FORMATTER;
 
 @ApplicationScoped
 @RegisterForReflection

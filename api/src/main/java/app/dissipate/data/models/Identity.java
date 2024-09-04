@@ -2,11 +2,9 @@ package app.dissipate.data.models;
 
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.hibernate.annotations.ColumnTransformer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,14 +38,14 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
     cascade = CascadeType.ALL,
     orphanRemoval = true
   )
-  public List<IdentityOrganization> organizations = new ArrayList<IdentityOrganization>();
+  public List<IdentityOrganization> organizations = new ArrayList<>();
 
   @OneToMany(
     mappedBy = "approvedBy",
     cascade = CascadeType.ALL,
     orphanRemoval = true
   )
-  public List<IdentityOrganization> membershipApprovals = new ArrayList<IdentityOrganization>();
+  public List<IdentityOrganization> membershipApprovals = new ArrayList<>();
 
   public Locale locale;
 
@@ -56,14 +54,14 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
     cascade = CascadeType.ALL,
     orphanRemoval = true
   )
-  List<IdentityFollow> following = new ArrayList<IdentityFollow>();
+  List<IdentityFollow> following = new ArrayList<>();
 
   @OneToMany(
     mappedBy = "identity2",
     cascade = CascadeType.ALL,
     orphanRemoval = true
   )
-  List<IdentityFollow> followers = new ArrayList<IdentityFollow>();
+  List<IdentityFollow> followers = new ArrayList<>();
 
   public Uni<Account> persistAndFlush(EncryptionUtil encryptionUtil) {
     encryptFields(encryptionUtil);

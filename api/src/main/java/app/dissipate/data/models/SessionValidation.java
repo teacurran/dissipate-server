@@ -42,11 +42,13 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
   public AccountPhone phone;
 
   @Override
+  @SuppressWarnings("unchecked")
   public Uni<SessionValidation> persist() {
     return super.persist();
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Uni<SessionValidation> persistAndFlush() {
     return super.persistAndFlush();
   }

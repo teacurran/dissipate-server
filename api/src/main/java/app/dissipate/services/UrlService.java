@@ -17,7 +17,7 @@ public class UrlService {
   @WithTransaction
   public Uni<Url> addUrl(final String value) {
     Url url = new Url();
-    url.url = value;
+    url.value = value;
     return url.persistAndFlush().onItem().transformToUni(u -> {
       return delayedJobService.createDelayedJob(url).onItem().transform(dj -> {
         return url;

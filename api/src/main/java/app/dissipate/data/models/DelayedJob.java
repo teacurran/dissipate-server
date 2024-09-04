@@ -86,6 +86,7 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Uni<DelayedJob> persistAndFlush() {
     return super.persistAndFlush();
   }

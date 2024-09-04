@@ -32,10 +32,14 @@ public class Session  extends PanacheEntityBase {
 
   public Instant ended;
 
+  @Override
+  @SuppressWarnings("unchecked")
   public Uni<Session> persist() {
     return super.persist();
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
   public Uni<Session> persistAndFlush() {
     return super.persistAndFlush();
   }

@@ -45,11 +45,13 @@ public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   public Uni<AccountEmail> persist() {
     return super.persist();
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   public Uni<AccountEmail> persistAndFlush() {
     return super.persistAndFlush();
   }

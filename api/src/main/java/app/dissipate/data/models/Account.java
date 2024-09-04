@@ -35,21 +35,21 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
     cascade = CascadeType.ALL,
     orphanRemoval = true
   )
-  public List<AccountPhone> phones = new ArrayList<AccountPhone>();
+  public List<AccountPhone> phones = new ArrayList<>();
 
   @OneToMany(
     mappedBy = "account",
     cascade = CascadeType.ALL,
     orphanRemoval = true
   )
-  public List<AccountEmail> emails = new ArrayList<AccountEmail>();
+  public List<AccountEmail> emails = new ArrayList<>();
 
   @OneToMany(
     mappedBy = "account",
     cascade = CascadeType.ALL,
     orphanRemoval = true
   )
-  public List<Identity> identities = new ArrayList<Identity>();
+  public List<Identity> identities = new ArrayList<>();
 
   public Locale locale;
 
@@ -71,7 +71,7 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   @WithSpan
   public void hashFields(EncryptionUtil eu) {
     if (this.password != null) {
-      byte[] saltBytes = null;
+      byte[] saltBytes;
       if (this.passwordSalt == null) {
         saltBytes = eu.generateSalt16Byte();
       } else {

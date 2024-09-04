@@ -24,8 +24,8 @@ public class Organization extends DefaultPanacheEntityWithTimestamps {
   List<IdentityOrganization> accounts;
 
   @OneToMany(mappedBy = "parent")
-  List<Organization> children = new ArrayList<Organization>();
+  List<Organization> children = new ArrayList<>();
 
   @OneToMany(mappedBy = "organization")
-  List<OrganizationHierarchy> hierarchies = new ArrayList<OrganizationHierarchy>();
+  List<OrganizationHierarchy> hierarchies = new ArrayList<>();
 }

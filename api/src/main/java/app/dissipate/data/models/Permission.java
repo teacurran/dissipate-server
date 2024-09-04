@@ -19,5 +19,5 @@ public class Permission extends DefaultPanacheEntityWithTimestamps {
     cascade = CascadeType.ALL,
     orphanRemoval = true
   )
-  public List<IdentityPermission> identities = new ArrayList<IdentityPermission>();
+  public List<IdentityPermission> identities = new ArrayList<>();
 }
