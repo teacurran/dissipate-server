@@ -11,7 +11,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class AuthenticationService {
 
-
     @WithSpan("verify-id-token")
     public AuthTokenVO verifyIdToken(String idToken) {
 //        try {

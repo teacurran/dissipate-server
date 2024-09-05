@@ -109,7 +109,7 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
 
   private String loadResourceAsString(String resourcePath) throws IOException, URISyntaxException {
     return Files.readAllLines(
-      Paths.get(getClass().getClassLoader().getResource(resourcePath).toURI()), StandardCharsets.UTF_8
+      Paths.get(Thread.currentThread().getContextClassLoader().getResource(resourcePath).toURI()), StandardCharsets.UTF_8
     ).stream().collect(Collectors.joining("\n"));
   }
 

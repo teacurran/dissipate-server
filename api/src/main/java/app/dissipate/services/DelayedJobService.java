@@ -17,6 +17,7 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.eventbus.EventBus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
@@ -31,7 +32,8 @@ public class DelayedJobService {
   public static final String DELAYED_JOB_RUN = "delayed-job-run";
 
   @Inject
-  Server server;
+  @Named("currentServer")
+  Server currentServer;
 
   @Inject
   EventBus bus;
@@ -87,7 +89,7 @@ public class DelayedJobService {
             dj.attempts = dj.attempts + 1;
             dj.completedAt = Instant.now();
             dj.complete = true;
-            dj.lastRunBy = server;
+            dj.lastRunBy = currentServer;
             return dj.unlock().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
           })
           .onFailure().recoverWithUni(t -> {
@@ -108,7 +110,7 @@ public class DelayedJobService {
               dj.runAt = DelayedJobRetryStrategy.calculateNextRetryInterval(dj.attempts);
             }
 
-            dj.lastRunBy = server;
+            dj.lastRunBy = currentServer;
             return dj.unlock().onItem().transformToUni(dj2 -> Uni.createFrom().voidItem());
           });
 
@@ -149,7 +151,7 @@ public class DelayedJobService {
       }
 
       dj.locked = true;
-      dj.lockedBy = server;
+      dj.lockedBy = currentServer;
       dj.lockedAt = Instant.now();
 
       return dj.persistAndFlush();

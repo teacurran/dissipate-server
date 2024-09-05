@@ -26,7 +26,7 @@ public class SnowflakeIdGenerator {
         if (snowflakes.containsKey(idName)) {
             snowflake = snowflakes.get(idName);
         } else {
-            snowflake = new Snowflake(serverInstance.getServer().instanceNumber, 0, 0);
+            snowflake = new Snowflake(serverInstance.getCurrentServer().instanceNumber, 0, 0);
             snowflakes.put(idName, snowflake);
         }
         long newId = snowflake.nextId();

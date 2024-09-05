@@ -4,7 +4,11 @@ import java.util.Random;
 
 public class StringUtil {
 
-  private static final Random random = new Random();
+  private static final Random random = new Random(); // NOSONAR
+
+  private StringUtil() {
+    // class cannot be instantiated
+  }
 
   public static String generateRandomString(int length) {
     String alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

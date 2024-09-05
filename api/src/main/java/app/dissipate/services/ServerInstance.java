@@ -11,12 +11,12 @@ import io.quarkus.vertx.http.runtime.HttpConfiguration;
 import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Context;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.hibernate.reactive.mutiny.Mutiny;
 import io.quarkus.scheduler.Scheduled;
 
@@ -42,19 +42,20 @@ public class ServerInstance {
   HttpConfiguration httpConfiguration;
 
   @Produces
-  public Server getServer() {
+  @Named("currentServer")
+  public Server getCurrentServer() {
     return server;
   }
 
   @WithSpan("ServerInstance.onStart")
   public void onStart(@Observes StartupEvent event, Vertx vertx, Mutiny.SessionFactory factory) {
-    // We need a duplicated vertx context for hibernate reactive
+    // duplicate vertx context for hibernate reactive
     Context context = VertxContext.getOrCreateDuplicatedContext(vertx);
-    // Don't forget to mark the context safe
+    // mark the context safe
     VertxContextSafetyToggle.setContextSafe(context, true);
     // Run the logic on the context created above
     context.runOnContext(event1 -> {
-      // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active/propagated
+      // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active yet
       factory.withTransaction(session ->
           Server.findMaxInstanceId().call(maxIntDto -> {
             if (maxIntDto == null || maxIntDto.maxValue < 1000) {

@@ -18,10 +18,6 @@ public class UrlService {
   public Uni<Url> addUrl(final String value) {
     Url url = new Url();
     url.value = value;
-    return url.persistAndFlush().onItem().transformToUni(u -> {
-      return delayedJobService.createDelayedJob(url).onItem().transform(dj -> {
-        return url;
-      });
-    });
+    return url.persistAndFlush().onItem().transformToUni(u -> delayedJobService.createDelayedJob(url).onItem().transform(dj -> url));
   }
 }

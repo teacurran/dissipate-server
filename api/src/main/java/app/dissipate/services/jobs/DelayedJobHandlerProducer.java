@@ -15,7 +15,6 @@ public class DelayedJobHandlerProducer {
 
   @Inject
   UrlCrawlJobHandler urlCrawlJobHandler;
-  ;
 
   @Produces
   public DelayedJobHandlers getJobHandlers() {

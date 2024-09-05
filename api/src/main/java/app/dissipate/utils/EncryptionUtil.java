@@ -48,8 +48,7 @@ public class EncryptionUtil {
     PKCS5S2ParametersGenerator generator = new PKCS5S2ParametersGenerator();
     generator.init(value.getBytes(StandardCharsets.UTF_8), salt, 1024);
 
-    byte[] result = ((KeyParameter)generator.generateDerivedParameters(8*hashBytes)).getKey();
-    return result;
+    return ((KeyParameter)generator.generateDerivedParameters(8*hashBytes)).getKey();
   }
 
   @WithSpan
