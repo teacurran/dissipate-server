@@ -10,6 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import app.dissipate.exceptions.DissipateRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,12 +56,12 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   @Override
   public <T extends PanacheEntityBase> Uni<T> persist() {
-    throw new RuntimeException("don't use, use persistAndFlush(EncryptionUtil encryptionUtil) instead");
+    throw new DissipateRuntimeException("don't use, use persistAndFlush(EncryptionUtil encryptionUtil) instead");
   }
 
   @Override
   public <T extends PanacheEntityBase> Uni<T> persistAndFlush() {
-    throw new RuntimeException("don't use, use persistAndFlush(EncryptionUtil encryptionUtil) instead");
+    throw new DissipateRuntimeException("don't use, use persistAndFlush(EncryptionUtil encryptionUtil) instead");
   }
 
   public Uni<Account> persistAndFlush(EncryptionUtil encryptionUtil) {
