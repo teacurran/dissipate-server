@@ -4,6 +4,8 @@ import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.CreateHandleRequest;
 import app.dissipate.grpc.CreateHandleResponse;
 import app.dissipate.grpc.DissipateService;
+import app.dissipate.grpc.GetSessionRequest;
+import app.dissipate.grpc.GetSessionResponse;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.ValidateSessionRequest;
@@ -27,6 +29,16 @@ public class DissipateServiceImpl implements DissipateService {
 
   @Inject
   ValidateSessionMethod validateSessionMethod;
+
+  @Inject
+  GetSessionMethod getSessionMethod;
+
+  @Override
+  @WithSession
+  public Uni<GetSessionResponse> getSession(GetSessionRequest request) {
+    return getSessionMethod.handler(request);
+  }
+
 
   @Override
   @WithSession

@@ -180,34 +180,34 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
     headers.put(AuthenticationConstants.AUTH_HEADER_KEY, response.getSid());
     DissipateService authedClient = GrpcClientUtils.attachHeaders(client, headers);
 
-    authedClient.
-
-
-
-
-
-
-
-    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
-        .setEmail(email).build())
-      .subscribe().withSubscriber(UniAssertSubscriber.create());
-
-
-
-    asserter.assertThat(
-      () -> client.register(RegisterRequest.newBuilder().setEmail(email).build()),
-      response -> {
-        Assertions.assertEquals("EmailSent", response.getResult().toString());
-        Assertions.assertNotNull(response.getSid());
-    });
-
-    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
-        .setEmail(email).build())
-      .subscribe().withSubscriber(UniAssertSubscriber.create());
-
-    RegisterResponse response = subscriber.awaitItem().getItem();
-    Assertions.assertEquals("EmailSent", response.getResult().toString());
-    Assertions.assertNotNull(response.getSid());
+//    authedClient.
+//
+//
+//
+//
+//
+//
+//
+//    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
+//        .setEmail(email).build())
+//      .subscribe().withSubscriber(UniAssertSubscriber.create());
+//
+//
+//
+//    asserter.assertThat(
+//      () -> client.register(RegisterRequest.newBuilder().setEmail(email).build()),
+//      response -> {
+//        Assertions.assertEquals("EmailSent", response.getResult().toString());
+//        Assertions.assertNotNull(response.getSid());
+//    });
+//
+//    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
+//        .setEmail(email).build())
+//      .subscribe().withSubscriber(UniAssertSubscriber.create());
+//
+//    RegisterResponse response = subscriber.awaitItem().getItem();
+//    Assertions.assertEquals("EmailSent", response.getResult().toString());
+//    Assertions.assertNotNull(response.getSid());
 
   }
 
