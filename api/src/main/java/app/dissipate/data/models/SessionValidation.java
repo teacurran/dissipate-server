@@ -13,6 +13,14 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "session_validations")
+@NamedQuery(name = SessionValidation.QUERY_BY_SID,
+  query = """
+    FROM SessionValidation sv
+    JOIN FETCH sv.session
+    LEFT JOIN FETCH sv.email
+    LEFT JOIN FETCH sv.phone
+    WHERE sv.session.id = :sid
+    """)
 @NamedQuery(name = SessionValidation.QUERY_BY_SID_TOKEN,
   query = """
     FROM SessionValidation sv
@@ -26,6 +34,7 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
   public static final String ID_GENERATOR_KEY = "SessionValidation";
 
+  public static final String QUERY_BY_SID = "SessionValidation.findBySid";
   public static final String QUERY_BY_SID_TOKEN = "SessionValidation.findBySidToken";
 
   @ManyToOne
@@ -55,6 +64,11 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
   public static Uni<SessionValidation> byId(String id) {
     return findById(id);
+  }
+
+  public static Uni<SessionValidation> findBySid(String sid) {
+    return find("#" + SessionValidation.QUERY_BY_SID_TOKEN,
+      Parameters.with("sid", UUID.fromString(sid))).firstResult();
   }
 
   public static Uni<SessionValidation> findBySidToken(String sid, String token) {

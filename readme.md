@@ -39,3 +39,54 @@ Hosting:
 * 
 
 
+## Some things I've been trying:
+  
+```java
+  // way of using CompletableFuture to test async code
+  @Test
+  void registerByEmail(UniAsserter asserter) {
+    String email = "create-" + new Random().nextInt() + "@grilledcheese.com";
+
+    CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
+    client.register(RegisterRequest.newBuilder()
+        .setEmail("tea@grilledcheese.com").build())
+      .subscribe().with(response -> {
+        LOGGER.info("Response: " + response);
+        message.complete(response);
+      });
+
+    Assertions.assertThrows(ExecutionException.class, () ->
+      message.get(5, TimeUnit.SECONDS));
+  }
+
+  // UniAaserter can be used to test a Reactive db transaction
+  @Test
+  @TestReactiveTransaction
+  void registerByEmail(UniAsserter asserter) {
+    String email = "create-" + new Random().nextInt() + "@grilledcheese.com";
+    asserter.assertThat(
+      () -> client.register(RegisterRequest.newBuilder().setEmail(email).build()),
+      (response) -> {
+        Assertions.assertEquals("EmailSent", response.getResult().toString());
+        Assertions.assertNotNull(response.getSid());
+      });
+  }
+
+  @Test
+  void registerByEmail(UniAsserter asserter) {
+
+    //     why doesn't this work?
+    Uni<Message> uniMessage = Multi.createBy()
+      .repeating()
+      .supplier(() -> mailbox.findFirst(email))
+      .withDelay(Duration.ofMillis(500))
+      .atMost(4)
+      .onFailure().invoke(throwable -> LOGGER.error("Error: " + throwable.getMessage(), throwable))
+      .toUni()
+      .until(value -> {
+      LOGGER.info("Value: " + value);
+      return Objects.nonNull(value);
+     }).toUni();
+
+  }
+```

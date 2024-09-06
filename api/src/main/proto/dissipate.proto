@@ -13,6 +13,7 @@ service DissipateService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
   rpc CreateHandle(CreateHandleRequest) returns (CreateHandleResponse) {}
   rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {}
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {}
 }
 
 enum AccountStatus {
@@ -31,6 +32,17 @@ message CreateHandleResponse {
   string handle = 2;
   google.protobuf.Timestamp created = 3;
   google.protobuf.Timestamp last_seen = 4;
+}
+
+message GetSessionRequest {
+}
+
+message GetSessionResponse {
+  string sid = 1;
+  string handle = 2;
+  AccountStatus status = 3;
+  google.protobuf.Timestamp created = 4;
+  google.protobuf.Timestamp last_seen = 5;
 }
 
 message RegisterRequest {
