@@ -92,6 +92,7 @@ services:
   main-db:
     image: postgis/postgis
     restart: always
+    command: ["postgres", "-c", "log_statement=all"]
     environment:
       POSTGRES_USER: dissipate
       POSTGRES_PASSWORD: dissipate

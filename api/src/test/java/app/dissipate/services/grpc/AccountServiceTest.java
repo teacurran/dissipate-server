@@ -23,6 +23,7 @@ import io.quarkus.test.vertx.UniAsserter;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
+import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -186,8 +187,6 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   @Test
   @Order(3)
   void useValidatedToken() {
-    String email = "useValidatedToken-" + new Random().nextInt() + "@grilledcheese.com";
-
     Metadata headers = new Metadata();
     headers.put(AuthenticationConstants.AUTH_HEADER_KEY, sid);
     DissipateService authedClient = GrpcClientUtils.attachHeaders(client, headers);

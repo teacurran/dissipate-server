@@ -7,9 +7,12 @@ import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.LocalizationService;
 import app.dissipate.utils.EncryptionUtil;
+import io.grpc.Status;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
+import io.quarkus.security.identity.CurrentIdentityAssociation;
+import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -17,6 +20,8 @@ import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 import java.util.Locale;
+
+import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_TOKEN_INVALID;
 
 @ApplicationScoped
 public class GetSessionMethod {
@@ -35,13 +40,20 @@ public class GetSessionMethod {
   @Inject
   EncryptionUtil encryptionUtil;
 
+  @Inject
+  CurrentIdentityAssociation identity;
+
   @WithSpan("GetSessionMethod.handler")
   @RolesAllowed("user")
   @WithSession
   public Uni<GetSessionResponse> handler(GetSessionRequest request) {
-    Span otel = Span.current();
-    Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
-
-    return Uni.createFrom().item(GetSessionResponse.newBuilder().build());
+    return identity.getDeferredIdentity().onItem().transformToUni(si -> {
+      if (si == null) {
+        Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
+        return Uni.createFrom().failure(localizationService.getApiException(locale, Status.NOT_FOUND, AUTH_TOKEN_INVALID));
+      }
+      return Uni.createFrom().item(GetSessionResponse.newBuilder()
+        .setSid(si.getPrincipal().getName()).build());
+    });
   }
 }

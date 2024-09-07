@@ -24,7 +24,6 @@ import java.util.UUID;
     AND s.ended IS NULL
     AND sv.validated IS NOT NULL
     """)
-
 public class Session  extends PanacheEntityBase {
 
   public static final String QUERY_BY_SID_VALIDATED = "Session.findBySidValidated";
@@ -48,7 +47,7 @@ public class Session  extends PanacheEntityBase {
 
   public Instant ended;
 
-  @OneToMany
+  @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
   public List<SessionValidation> validations = new ArrayList<>();
 
   @Override
