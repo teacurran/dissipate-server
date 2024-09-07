@@ -1,8 +1,6 @@
 package app.dissipate.services.grpc;
 
 import app.dissipate.constants.AuthenticationConstants;
-import app.dissipate.data.models.Account;
-import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.DissipateService;
 import app.dissipate.grpc.GetSessionRequest;
 import app.dissipate.grpc.GetSessionResponse;
