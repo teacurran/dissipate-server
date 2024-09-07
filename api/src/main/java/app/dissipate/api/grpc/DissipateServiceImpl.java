@@ -19,6 +19,8 @@ import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 
+import javax.annotation.security.RolesAllowed;
+
 @GrpcService
 @RegisterInterceptor(GrpcAuthInterceptor.class)
 @RegisterInterceptor(GrpcLocaleInterceptor.class)
@@ -35,14 +37,13 @@ public class DissipateServiceImpl implements DissipateService {
 
   @Override
   @WithSession
+  @RolesAllowed("user")
   public Uni<GetSessionResponse> getSession(GetSessionRequest request) {
     return getSessionMethod.handler(request);
   }
 
-
   @Override
   @WithSession
-  @WithTransaction
   public Uni<RegisterResponse> register(RegisterRequest request) {
     return registerMethod.register(request);
   }
@@ -55,7 +56,6 @@ public class DissipateServiceImpl implements DissipateService {
 
   @Override
   @WithSession
-  @WithTransaction
   public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) throws ApiException {
     return validateSessionMethod.validateSession(request);
   }

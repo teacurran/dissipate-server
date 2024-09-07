@@ -1,9 +1,11 @@
 package app.dissipate.services.grpc;
 
 import app.dissipate.constants.AuthenticationConstants;
-import app.dissipate.data.models.Session;
+import app.dissipate.data.models.Account;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.DissipateService;
+import app.dissipate.grpc.GetSessionRequest;
+import app.dissipate.grpc.GetSessionResponse;
 import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.ValidateSessionRequest;
@@ -23,10 +25,12 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +44,7 @@ import static org.hamcrest.core.Is.is;
 import static org.wildfly.common.Assert.assertTrue;
 
 @QuarkusTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBeforeTestExecutionCallback {
 
   private static final Logger LOGGER = Logger.getLogger(AccountServiceTest.class);
@@ -58,6 +63,8 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
       return mailpitUrl;
     }
   };
+
+  static String sid;
 
   @Override
   public void afterEach(QuarkusTestMethodContext context) {
@@ -111,6 +118,7 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   }
 
   @Test
+  @Order(1)
   void registerByEmail() {
     String email = "create-" + new Random().nextInt() + "@grilledcheese.com";
 
@@ -132,8 +140,8 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
 
     UniAssertSubscriber<Message> messageSubscriber = uniMessage.subscribe()
       .withSubscriber(UniAssertSubscriber.create());
-    Message message = messageSubscriber.awaitItem().getItem();
 
+    Message message = messageSubscriber.awaitItem().getItem();
     assertThat(message, notNullValue());
     assertThat(message.getTo().get(0).getAddress(), is(email));
     assertThat(message.getSubject(), is("One Time Password for Email Verification"));
@@ -147,9 +155,10 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
     Matcher matcher = otpPattern.matcher(html);
     assertThat(matcher.find(), is(true));
     String emailOtp = matcher.group(1);
+    sid = response.getSid();
 
     ValidateSessionRequest vsr = ValidateSessionRequest.newBuilder()
-      .setSid(response.getSid())
+      .setSid(sid)
       .setOtp(emailOtp)
       .build();
     client.validateSession(vsr)
@@ -160,58 +169,7 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   }
 
   @Test
-  void useValidatedToken(UniAsserter asserter) {
-    String email = "create-" + new Random().nextInt() + "@grilledcheese.com";
-
-    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
-        .setEmail(email).build())
-      .subscribe().withSubscriber(UniAssertSubscriber.create());
-
-    RegisterResponse response = subscriber.awaitItem().getItem();
-    Assertions.assertEquals("EmailSent", response.getResult().toString());
-    Assertions.assertNotNull(response.getSid());
-
-    asserter.execute(() -> SessionValidation.findBySid(response.getSid()).onItem().transformToUni(sv -> {
-        sv.validated = Instant.now();
-        return sv.session.persistAndFlush();
-      }));
-
-    Metadata headers = new Metadata();
-    headers.put(AuthenticationConstants.AUTH_HEADER_KEY, response.getSid());
-    DissipateService authedClient = GrpcClientUtils.attachHeaders(client, headers);
-
-//    authedClient.
-//
-//
-//
-//
-//
-//
-//
-//    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
-//        .setEmail(email).build())
-//      .subscribe().withSubscriber(UniAssertSubscriber.create());
-//
-//
-//
-//    asserter.assertThat(
-//      () -> client.register(RegisterRequest.newBuilder().setEmail(email).build()),
-//      response -> {
-//        Assertions.assertEquals("EmailSent", response.getResult().toString());
-//        Assertions.assertNotNull(response.getSid());
-//    });
-//
-//    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
-//        .setEmail(email).build())
-//      .subscribe().withSubscriber(UniAssertSubscriber.create());
-//
-//    RegisterResponse response = subscriber.awaitItem().getItem();
-//    Assertions.assertEquals("EmailSent", response.getResult().toString());
-//    Assertions.assertNotNull(response.getSid());
-
-  }
-
-  @Test
+  @Order(2)
   void shouldThrowExceptionWithoutToken() {
     CompletableFuture<String> message = new CompletableFuture<>();
 
@@ -224,4 +182,22 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
     Assertions.assertThrows(ExecutionException.class, () ->
       message.get(5, TimeUnit.SECONDS));
   }
+
+  @Test
+  @Order(3)
+  void useValidatedToken() {
+    String email = "useValidatedToken-" + new Random().nextInt() + "@grilledcheese.com";
+
+    Metadata headers = new Metadata();
+    headers.put(AuthenticationConstants.AUTH_HEADER_KEY, sid);
+    DissipateService authedClient = GrpcClientUtils.attachHeaders(client, headers);
+
+    UniAssertSubscriber<GetSessionResponse> getSession = authedClient.getSession(GetSessionRequest.newBuilder().build())
+      .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+    GetSessionResponse response = getSession.awaitItem().getItem();
+    assertThat(response, notNullValue());
+    assertThat(response.getSid(), is(sid));
+  }
+
 }

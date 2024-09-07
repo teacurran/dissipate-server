@@ -55,10 +55,8 @@ public class RegisterMethod {
 
     otel.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
-    return validateEmail(request.getEmail()).onItem().transformToUni(email -> {
-      otel.setAttribute("email", email);
-
-      return AccountEmail.findByEmailValidated(email).onItem().transformToUni(accountEmail -> {
+    return validateEmail(request.getEmail()).onItem().transformToUni(email ->
+      AccountEmail.findByEmailValidated(email).onItem().transformToUni(accountEmail -> {
         if (accountEmail != null) {
           LOGGER.infov("email already exists: {0}", email);
           otel.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
@@ -75,20 +73,15 @@ public class RegisterMethod {
             sessionValidation.email = a.emails.get(0);
             sessionValidation.token = StringUtil.generateRandomString(6);
             return sessionValidation.persistAndFlush()
-              .onItem()
-              .transformToUni(sv -> delayedJobService.createDelayedJob(sv)
+              .onItem().transformToUni(sv -> delayedJobService.createDelayedJob(sv)
                 .onItem().transformToUni(dj -> Uni.createFrom().item(
                   RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).setSid(s.id.toString()).build()
                 ))
               );
-          }).onFailure().call(t -> {
-            otel.recordException(t, Attributes.of(EXCEPTION_ESCAPED, true));
-            return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
           });
         });
-      });
-
-    }).onFailure().call(t -> {
+      })
+    ).onFailure().call(t -> {
       otel.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
       otel.recordException(t, Attributes.of(EXCEPTION_ESCAPED, true));
       return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
@@ -97,6 +90,8 @@ public class RegisterMethod {
 
   @WithSession
   public Uni<String> validateEmail(String email) {
+    Span otel = Span.current();
+    otel.setAttribute("email", email);
     Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
     String formattedEmail = email.toLowerCase().trim();
     if (formattedEmail.isEmpty()) {

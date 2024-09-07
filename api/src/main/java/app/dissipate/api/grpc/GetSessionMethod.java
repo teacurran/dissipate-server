@@ -9,7 +9,9 @@ import app.dissipate.services.LocalizationService;
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -33,10 +35,13 @@ public class GetSessionMethod {
   @Inject
   EncryptionUtil encryptionUtil;
 
-  @WithSpan("RegisterMethod.register")
+  @WithSpan("GetSessionMethod.handler")
+  @RolesAllowed("user")
+  @WithSession
   public Uni<GetSessionResponse> handler(GetSessionRequest request) {
     Span otel = Span.current();
     Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
 
+    return Uni.createFrom().item(GetSessionResponse.newBuilder().build());
   }
 }
