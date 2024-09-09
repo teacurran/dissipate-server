@@ -18,9 +18,6 @@ x-api-base: &api-base
   environment:
     SERVICE: local
     GCLOUD_PROJECT: "dissipate"
-    REDIS_HOST: redis
-    REDIS_PORT: 6379
-    REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
     GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
     QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://main-db:5432/dissipate
     QUARKUS_DATASOURCE_USERNAME: dissipate
@@ -36,17 +33,6 @@ x-api-base: &api-base
     quarkus:dev
     -Ddebug=true
     -DdebugHost=0.0.0.0
-
-x-kafka-base: &kafka-base
-  image: "wurstmeister/kafka:2.13-2.8.1"
-  depends_on:
-    - zookeeper
-
-x-kafka-env: &kafka-env
-  KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-  KAFKA_CREATE_TOPICS: "posts:3:1"
-  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-  KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
 
 services:
   api:
@@ -147,8 +133,8 @@ services:
     volumes:
       - ./data:/data
     ports:
-      - 8025:8025
-      - 1025:1025
+      - "8025:8025"
+      - "1025:1025"
     environment:
       MP_MAX_MESSAGES: 5000
       MP_DATABASE: /data/mailpit.db
@@ -158,36 +144,6 @@ services:
   integration-tests:
     <<: *api-base
     command: mvn verify
-
-#  kafka-server1:
-#    <<: *kafka-base
-#    ports:
-#      - '29092:29092'
-#    environment:
-#      <<: *kafka-env
-#      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka-server1:9092,OUTSIDE://localhost:29092
-#      KAFKA_LISTENERS: INSIDE://kafka-server1:9092,OUTSIDE://kafka-server1:29092
-#
-#  kafka-cat-internal:
-#    image: confluentinc/cp-kafkacat
-#    entrypoint: "kafkacat"
-#    command: "-b kafka-server1:9092 -L -v"
-#    profiles: ["development"]
-#
-#  kafka-cat-external:
-#    image: confluentinc/cp-kafkacat
-#    entrypoint: "kafkacat"
-#    command: "-b host.docker.internal:29092 -L -d all"
-#    profiles: ["development"]
-#
-#  kafka-ui:
-#    image: provectuslabs/kafka-ui:latest
-#    ports:
-#      - '8080:8080'
-#    environment:
-#      KAFKA_CLUSTERS_0_NAME: dclocal-cluster
-#      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-server1:9092
-#    profiles: ["development"]
 
   sonar-scanner:
     <<: *api-base
