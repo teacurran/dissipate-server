@@ -18,7 +18,7 @@
     <version.kotlin>1.7.10</version.kotlin>
     <version.os-maven-plugin>1.7.1</version.os-maven-plugin>
     <version.postgres.driver>42.4.1</version.postgres.driver>
-    <version.quarkus>3.13.3</version.quarkus>
+    <version.quarkus>3.14.2</version.quarkus>
   </properties>
   <dependencyManagement>
     <dependencies>
