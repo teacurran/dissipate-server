@@ -11,6 +11,6 @@ public class City extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   public Country country;
 
-  @OneToMany
+  @ManyToOne
   public State state;
 }

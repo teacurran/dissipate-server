@@ -48,6 +48,18 @@
       <version>${version.quarkus}</version>
     </dependency>
     <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-spatial</artifactId>
+      <version>6.5.2.Final</version>
+    </dependency>
+    <!-- use geolatte instead, dependency of hibernate-spatial
+    <dependency>
+      <groupId>org.locationtech.jts</groupId>
+      <artifactId>jts-core</artifactId>
+      <version>1.19.0</version>
+    </dependency>
+    -->
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-reactive-pg-client</artifactId>
       <version>${version.quarkus}</version>

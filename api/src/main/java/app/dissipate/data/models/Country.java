@@ -3,6 +3,7 @@ package app.dissipate.data.models;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.geolatte.geom.Point;
 
 import java.util.List;
 
@@ -26,8 +27,7 @@ public class Country extends DefaultPanacheEntityWithTimestamps {
   public String subregion;
   public String subregionId;
   public String nationality;
-  public String latitude;
-  public String longitude;
+  public Point location;
   public String emoji;
   public String emojiU;
 
