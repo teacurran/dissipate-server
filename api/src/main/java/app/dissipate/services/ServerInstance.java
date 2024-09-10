@@ -6,6 +6,7 @@ import app.dissipate.data.models.dto.MaxIntDto;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
+import io.quarkus.scheduler.Scheduled;
 import io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle;
 import io.quarkus.vertx.http.runtime.HttpConfiguration;
 import io.smallrye.common.vertx.VertxContext;
@@ -18,7 +19,6 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.hibernate.reactive.mutiny.Mutiny;
-import io.quarkus.scheduler.Scheduled;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -68,21 +68,33 @@ public class ServerInstance {
         // We need to subscribe to the Uni to trigger the action
         .subscribe().with(v -> {
         });
-
-      factory.withTransaction(session -> {
-        Uni<Integer> result = markAbandonedServersAsShutdown(zoneOffset);
-        if (result == null) {
-          LOGGER.error("markAbandonedServersAsShutdown returned null.");
-          return Uni.createFrom().failure(new NullPointerException("markAbandonedServersAsShutdown returned null."));
-        }
-        return result;
-      }).subscribe().with(v -> {
-        LOGGER.info("marked " + v + " servers as abandoned.");
-      }, failure -> {
-        LOGGER.error("Second transaction failed.", failure);
-      });
     });
   }
+
+  @Scheduled(every = "1h")
+  @WithSpan("ServerInstance.markAbandonedServersAsShutdown")
+  Uni<Void> markAbandoned() {
+    Context context = Vertx.currentContext();
+    // Don't forget to mark the context safe
+    VertxContextSafetyToggle.setContextSafe(context, true);
+
+    // Run the logic on the context created above
+    context.runOnContext(event -> factory.withTransaction(session -> {
+      Uni<Integer> result = markAbandonedServersAsShutdown(zoneOffset);
+      if (result == null) {
+        LOGGER.error("markAbandonedServersAsShutdown returned null.");
+        return Uni.createFrom().failure(new NullPointerException("markAbandonedServersAsShutdown returned null."));
+      }
+      return result;
+    }).subscribe().with(v -> {
+      LOGGER.info("marked " + v + " servers as abandoned.");
+    }, failure -> {
+      LOGGER.error("Second transaction failed.", failure);
+    }));
+
+    return Uni.createFrom().nullItem();
+  }
+
 
   @Scheduled(every = "30s")
   @WithSpan("ServerInstance.heartbeat")
