@@ -33,4 +33,7 @@ public class Country extends DefaultPanacheEntityWithTimestamps {
 
   @OneToMany(mappedBy = "country")
   List<CountryTranslation> names;
+
+  @OneToMany(mappedBy = "country")
+  List<State> states;
 }
