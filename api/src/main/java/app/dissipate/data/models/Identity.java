@@ -33,6 +33,10 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   public Account account;
 
+  public String timezone;
+
+  public Locale locale;
+
   @OneToMany(
     mappedBy = "identity",
     cascade = CascadeType.ALL,
@@ -46,8 +50,6 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
     orphanRemoval = true
   )
   public List<IdentityOrganization> membershipApprovals = new ArrayList<>();
-
-  public Locale locale;
 
   @OneToMany(
     mappedBy = "identity",

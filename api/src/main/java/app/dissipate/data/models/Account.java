@@ -30,6 +30,10 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   public byte[] passwordSalt;
 
+  public String timezone;
+
+  public Locale locale;
+
   @Transient
   public String password;
 
@@ -53,8 +57,6 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
     orphanRemoval = true
   )
   public List<Identity> identities = new ArrayList<>();
-
-  public Locale locale;
 
   @Override
   public <T extends PanacheEntityBase> Uni<T> persist() {
