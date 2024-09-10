@@ -20,5 +20,4 @@ public class Asset extends DefaultPanacheEntityWithTimestamps {
 
   public AssetType type;
 
-
 }

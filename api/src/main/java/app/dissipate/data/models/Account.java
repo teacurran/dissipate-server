@@ -22,6 +22,8 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   public static final String ID_GENERATOR_KEY = "Account";
 
+  public int region;
+
   public AccountStatus status;
 
   public byte[] passwordHash;
