@@ -19,8 +19,17 @@ public class Product extends DefaultPanacheEntityWithTimestamps {
 
   public ProductType type;
 
-  BigDecimal price;
+  public BigDecimal price;
 
   @OneToMany(mappedBy = "product")
-  List<ProductPriceVarition> priceVaritions;
+  public List<ProductPriceVarition> priceVaritions;
+
+  public String name;
+
+  public String url;
+
+  public String summary;
+
+  public String description;
+
 }

@@ -5,11 +5,7 @@ import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.smallrye.mutiny.Uni;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import app.dissipate.exceptions.DissipateRuntimeException;
 
 import java.util.ArrayList;
@@ -33,6 +29,25 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   public String timezone;
 
   public Locale locale;
+
+  public String firstName;
+
+  public String lastName;
+
+  public String address1;
+
+  public String address2;
+
+  public String city;
+
+  @ManyToOne
+  public State state;
+
+  public String postalCode;
+
+  @ManyToOne
+  public Country country;
+
 
   @Transient
   public String password;

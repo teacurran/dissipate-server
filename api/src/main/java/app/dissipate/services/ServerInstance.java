@@ -63,6 +63,9 @@ public class ServerInstance {
             } else {
               return findFirstUnusedServer();
             }
+          }).onItem().transformToUni(s -> {
+            LOGGER.info("Server instance started: " + s.id);
+            return Uni.createFrom().nullItem();
           })
         )
         // We need to subscribe to the Uni to trigger the action

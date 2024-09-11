@@ -8,7 +8,10 @@ import org.geolatte.geom.Point;
 import java.util.List;
 
 @Entity
-@Table(name = "countries")
+@Table(name = "countries", indexes = {
+  @Index(columnList = "iso3", unique = true),
+  @Index(columnList = "iso2", unique = true)
+})
 public class Country extends DefaultPanacheEntityWithTimestamps {
 
   public String name;

@@ -5,11 +5,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "verification_requests")
-public class VerificationRequest extends DefaultPanacheEntityWithTimestamps {
+@Table(name = "account_validated_names")
+public class AccountValidatedName extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   public Account account;
 
-  @ManyToOne
-  public Order order;
+  public String name;
 }
