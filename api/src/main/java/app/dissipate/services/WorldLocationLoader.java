@@ -2,6 +2,7 @@ package app.dissipate.services;
 
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.location.json.CountryJson;
+import app.dissipate.data.models.City;
 import app.dissipate.data.models.Country;
 import app.dissipate.data.models.State;
 import app.dissipate.utils.EncryptionUtil;
@@ -20,6 +21,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +36,7 @@ import static java.util.zip.ZipFile.OPEN_READ;
 @ApplicationScoped
 public class WorldLocationLoader {
   private static final Logger LOGGER = Logger.getLogger(WorldLocationLoader.class);
+  private static final org.slf4j.Logger log = LoggerFactory.getLogger(WorldLocationLoader.class);
 
   @Inject
   SnowflakeIdGenerator snowflakeIdGenerator;
@@ -126,7 +129,22 @@ public class WorldLocationLoader {
                 state.id = String.valueOf(stateJson.id);
                 state.name = stateJson.name;
                 state.country = c;
-                return session.merge(state);
+                return session.merge(state)
+                  .onItem().transformToUni(s -> {
+                    return Multi.createFrom().iterable(stateJson.cities)
+                      .onItem().transformToUniAndConcatenate(cityJson -> {
+                        City city = new City();
+                        city.id = String.valueOf(cityJson.id);
+                        city.state = s;
+                        city.country = c;
+                        city.name = cityJson.name;
+
+                        // not working
+                        //city.location = cityJson.location;
+
+                        return session.merge(city);
+                      }).toUni().replaceWith(Uni.createFrom().nullItem());
+                  });
               }).collect().asList().replaceWith(Uni.createFrom().nullItem());
             }));
         }).collect().asList().replaceWith(Uni.createFrom().nullItem());
