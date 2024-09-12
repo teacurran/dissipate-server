@@ -1,9 +1,8 @@
 package app.dissipate.data.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import org.geolatte.geom.Point;
+import org.hibernate.annotations.Type;
 
 import java.util.List;
 
@@ -30,6 +29,8 @@ public class Country extends DefaultPanacheEntityWithTimestamps {
   public String subregion;
   public String subregionId;
   public String nationality;
+
+  @Column(columnDefinition="Geometry")
   public Point location;
   public String emoji;
   public String emojiU;
@@ -39,4 +40,5 @@ public class Country extends DefaultPanacheEntityWithTimestamps {
 
   @OneToMany(mappedBy = "country")
   List<State> states;
+
 }

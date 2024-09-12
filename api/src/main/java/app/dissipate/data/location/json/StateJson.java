@@ -1,10 +1,10 @@
-package app.dissipate.data.geo.json;
+package app.dissipate.data.location.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class State {
+public class StateJson {
   public int id;
   public String name;
   @JsonProperty("state_code")
@@ -12,5 +12,5 @@ public class State {
   public String latitude;
   public String longitude;
   public String type;
-  public List<City> cities;
+  public List<CityJson> cities;
 }

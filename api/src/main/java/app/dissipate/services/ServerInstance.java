@@ -57,14 +57,13 @@ public class ServerInstance {
     context.runOnContext(event1 -> {
       // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active yet
       factory.withTransaction(session ->
-          Server.findMaxInstanceId().call(maxIntDto -> {
+          Server.findMaxInstanceId().onItem().call(maxIntDto -> {
             if (maxIntDto == null || maxIntDto.maxValue < 1000) {
               return createNewServer(maxIntDto);
-            } else {
-              return findFirstUnusedServer();
             }
+            return findFirstUnusedServer();
           }).onItem().transformToUni(s -> {
-            LOGGER.info("Server instance started: " + s.id);
+            LOGGER.info("Server instance started: " + s);
             return Uni.createFrom().nullItem();
           })
         )

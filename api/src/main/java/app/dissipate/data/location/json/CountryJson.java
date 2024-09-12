@@ -1,11 +1,13 @@
-package app.dissipate.data.geo.json;
+package app.dissipate.data.location.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 
 import java.util.List;
 import java.util.Map;
 
-public class Country {
+@JsonRootName("country")
+public class CountryJson {
   public int id;
   public String name;
   public String iso3;
@@ -30,12 +32,12 @@ public class Country {
   @JsonProperty("subregion_id")
   public String subregionId;
   public String nationality;
-  public List<Timezone> timezones;
+  public List<TimezoneJson> timezones;
   public Map<String, String> translations;
   public String latitude;
   public String longitude;
   public String emoji;
   @JsonProperty("emojiU")
   public String emojiUnicode;
-  public List<State> states;
+  public List<StateJson> states;
 }
