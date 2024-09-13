@@ -1,11 +1,8 @@
 package app.dissipate.services;
 
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
-import app.dissipate.data.location.json.CountryJson;
-import app.dissipate.data.models.City;
-import app.dissipate.data.models.Country;
-import app.dissipate.data.models.CountryTranslation;
-import app.dissipate.data.models.State;
+import app.dissipate.data.location.json.*;
+import app.dissipate.data.models.*;
 import app.dissipate.utils.EncryptionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentelemetry.api.trace.Tracer;
@@ -30,6 +27,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -156,12 +154,79 @@ public class WorldLocationLoader {
                   countryTranslation.name = translationJson.translation;
                   // Save translations
                   return session.merge(countryTranslation);
-                }).collect().asList().replaceWith(Uni.createFrom().nullItem()));
+                }).toUni().replaceWith(Multi.createFrom().iterable(countryJson.timezones)
+                  .onItem().transformToUniAndConcatenate(timezoneJson -> {
+                    TimeZone tz = TimeZone.getTimeZone(timezoneJson.zoneName);
+                    return CountryTimezone.findByCountryTimezone(c, tz).onItem().transformToUni(ct -> {
+                      if (ct == null) {
+                        CountryTimezone countryTimezone = new CountryTimezone();
+                        countryTimezone.id = snowflakeIdGenerator.generate(CountryTimezone.ID_GENERATOR_KEY);
+                        countryTimezone.country = c;
+                        countryTimezone.timezone = tz;
+                        // Save timezones
+                        return session.merge(countryTimezone);
+                      }
+                      return Uni.createFrom().nullItem();
+                    });
+                  }).collect().asList().replaceWith(Uni.createFrom().nullItem())));
             }));
         }).collect().asList().replaceWith(Uni.createFrom().nullItem());
       });
     } catch (IOException | URISyntaxException e) {
       return Uni.createFrom().failure(e);
     }
+  }
+
+  private Uni<Void> processStates(Mutiny.Session session, List<StateJson> states, Country country) {
+    return Multi.createFrom().iterable(states)
+      .onItem().transformToUniAndConcatenate(stateJson -> {
+        State state = new State();
+        state.id = String.valueOf(stateJson.id);
+        state.name = stateJson.name;
+        state.country = country;
+        return session.merge(state)
+          .onItem().transformToUni(s -> processCities(session, stateJson.cities, s, country));
+      }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+  }
+
+  private Uni<Void> processCities(Mutiny.Session session, List<CityJson> cities, State state, Country country) {
+    return Multi.createFrom().iterable(cities)
+      .onItem().transformToUniAndConcatenate(cityJson -> {
+        City city = new City();
+        city.id = String.valueOf(cityJson.id);
+        city.state = state;
+        city.country = country;
+        city.name = cityJson.name;
+        return session.merge(city);
+      }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+  }
+
+  private Uni<Void> processTranslations(Mutiny.Session session, List<CountryTranslationJson> translations, Country country) {
+    return Multi.createFrom().iterable(translations)
+      .onItem().transformToUniAndConcatenate(translationJson -> {
+        CountryTranslation countryTranslation = new CountryTranslation();
+        countryTranslation.id = country.id + "-" + translationJson.language;
+        countryTranslation.country = country;
+        countryTranslation.locale = Locale.forLanguageTag(translationJson.language);
+        countryTranslation.name = translationJson.translation;
+        return session.merge(countryTranslation);
+      }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+  }
+
+  private Uni<Void> processTimezones(Mutiny.Session session, List<TimezoneJson> timezones, Country country) {
+    return Multi.createFrom().iterable(timezones)
+      .onItem().transformToUniAndConcatenate(timezoneJson -> {
+        TimeZone tz = TimeZone.getTimeZone(timezoneJson.zoneName);
+        return CountryTimezone.findByCountryTimezone(country, tz).onItem().transformToUni(ct -> {
+          if (ct == null) {
+            CountryTimezone countryTimezone = new CountryTimezone();
+            countryTimezone.id = snowflakeIdGenerator.generate(CountryTimezone.ID_GENERATOR_KEY);
+            countryTimezone.country = country;
+            countryTimezone.timezone = tz;
+            return session.merge(countryTimezone);
+          }
+          return Uni.createFrom().nullItem();
+        });
+      }).collect().asList().replaceWith(Uni.createFrom().nullItem());
   }
 }

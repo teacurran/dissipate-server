@@ -41,4 +41,7 @@ public class Country extends DefaultPanacheEntityWithTimestamps {
   @OneToMany(mappedBy = "country")
   List<State> states;
 
+  @OneToMany(mappedBy = "country")
+  List<CountryTimezone> timezones;
+
 }
