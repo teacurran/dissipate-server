@@ -2,9 +2,9 @@ package app.dissipate.data.location.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.List;
-import java.util.Map;
 
 @JsonRootName("country")
 public class CountryJson {
@@ -33,7 +33,8 @@ public class CountryJson {
   public String subregionId;
   public String nationality;
   public List<TimezoneJson> timezones;
-  public Map<String, String> translations;
+  @JsonDeserialize(using = CountryTranslationDeserializer.class)
+  public List<CountryTranslationJson> translations;
   public String latitude;
   public String longitude;
   public String emoji;

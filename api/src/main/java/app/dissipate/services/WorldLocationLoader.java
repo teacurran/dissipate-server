@@ -4,6 +4,7 @@ import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.location.json.CountryJson;
 import app.dissipate.data.models.City;
 import app.dissipate.data.models.Country;
+import app.dissipate.data.models.CountryTranslation;
 import app.dissipate.data.models.State;
 import app.dissipate.utils.EncryptionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -145,7 +147,16 @@ public class WorldLocationLoader {
                         return session.merge(city);
                       }).toUni().replaceWith(Uni.createFrom().nullItem());
                   });
-              }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+              }).toUni().replaceWith(Multi.createFrom().iterable(countryJson.translations)
+                .onItem().transformToUniAndConcatenate(translationJson -> {
+                  CountryTranslation countryTranslation = new CountryTranslation();
+                  countryTranslation.id = country.id + "-" + translationJson.language;
+                  countryTranslation.country = c;
+                  countryTranslation.locale = Locale.forLanguageTag(translationJson.language);
+                  countryTranslation.name = translationJson.translation;
+                  // Save translations
+                  return session.merge(countryTranslation);
+                }).collect().asList().replaceWith(Uni.createFrom().nullItem()));
             }));
         }).collect().asList().replaceWith(Uni.createFrom().nullItem());
       });
