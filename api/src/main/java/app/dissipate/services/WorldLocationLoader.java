@@ -63,9 +63,9 @@ public class WorldLocationLoader {
   @WithSpan
   public void handleStart(Mutiny.SessionFactory factory) {
     // Start a new transaction
-    factory.withTransaction(session -> loadConfig().onItem().transform(config -> {
-        LOGGER.info("Config loaded: " + config);
-        return config;
+    factory.withTransaction(session -> loadWorldLocations().onItem().transform(result -> {
+        LOGGER.info("World locations loaded");
+        return result;
       })).onFailure().invoke(t -> {
         LOGGER.error("Failed to load config", t);
       })
@@ -87,8 +87,7 @@ public class WorldLocationLoader {
   }
 
   @WithSpan
-  public Uni<Void> loadConfig() {
-
+  public Uni<Void> loadWorldLocations() {
     try {
       String zipFilePath = "db/seeds/countries-states-cities.json.zip";
 
@@ -123,53 +122,9 @@ public class WorldLocationLoader {
           // country.location = point(WGS84, g(Double.parseDouble(countryJson.longitude), Double.parseDouble(countryJson.latitude)));
 
           return Panache.getSession().onItem().transformToUni(session -> session.merge(country)
-            .onItem().transformToUni(c -> {
-              return Multi.createFrom().iterable(countryJson.states).onItem().transformToUniAndConcatenate(stateJson -> {
-                State state = new State();
-                state.id = String.valueOf(stateJson.id);
-                state.name = stateJson.name;
-                state.country = c;
-                return session.merge(state)
-                  .onItem().transformToUni(s -> {
-                    return Multi.createFrom().iterable(stateJson.cities)
-                      .onItem().transformToUniAndConcatenate(cityJson -> {
-                        City city = new City();
-                        city.id = String.valueOf(cityJson.id);
-                        city.state = s;
-                        city.country = c;
-                        city.name = cityJson.name;
-
-                        // not working
-                        //city.location = cityJson.location;
-
-                        return session.merge(city);
-                      }).toUni().replaceWith(Uni.createFrom().nullItem());
-                  });
-              }).toUni().replaceWith(Multi.createFrom().iterable(countryJson.translations)
-                .onItem().transformToUniAndConcatenate(translationJson -> {
-                  CountryTranslation countryTranslation = new CountryTranslation();
-                  countryTranslation.id = country.id + "-" + translationJson.language;
-                  countryTranslation.country = c;
-                  countryTranslation.locale = Locale.forLanguageTag(translationJson.language);
-                  countryTranslation.name = translationJson.translation;
-                  // Save translations
-                  return session.merge(countryTranslation);
-                }).toUni().replaceWith(Multi.createFrom().iterable(countryJson.timezones)
-                  .onItem().transformToUniAndConcatenate(timezoneJson -> {
-                    TimeZone tz = TimeZone.getTimeZone(timezoneJson.zoneName);
-                    return CountryTimezone.findByCountryTimezone(c, tz).onItem().transformToUni(ct -> {
-                      if (ct == null) {
-                        CountryTimezone countryTimezone = new CountryTimezone();
-                        countryTimezone.id = snowflakeIdGenerator.generate(CountryTimezone.ID_GENERATOR_KEY);
-                        countryTimezone.country = c;
-                        countryTimezone.timezone = tz;
-                        // Save timezones
-                        return session.merge(countryTimezone);
-                      }
-                      return Uni.createFrom().nullItem();
-                    });
-                  }).collect().asList().replaceWith(Uni.createFrom().nullItem())));
-            }));
+            .onItem().transformToUni(c -> processStates(session, countryJson.states, c)
+              .replaceWith(processTranslations(session, countryJson.translations, c)
+                .replaceWith(processTimezones(session, countryJson.timezones, c)))));
         }).collect().asList().replaceWith(Uni.createFrom().nullItem());
       });
     } catch (IOException | URISyntaxException e) {
@@ -177,7 +132,8 @@ public class WorldLocationLoader {
     }
   }
 
-  private Uni<Void> processStates(Mutiny.Session session, List<StateJson> states, Country country) {
+  @WithSpan
+  public Uni<Void> processStates(Mutiny.Session session, List<StateJson> states, Country country) {
     return Multi.createFrom().iterable(states)
       .onItem().transformToUniAndConcatenate(stateJson -> {
         State state = new State();
@@ -189,7 +145,8 @@ public class WorldLocationLoader {
       }).collect().asList().replaceWith(Uni.createFrom().nullItem());
   }
 
-  private Uni<Void> processCities(Mutiny.Session session, List<CityJson> cities, State state, Country country) {
+  @WithSpan
+  public Uni<Void> processCities(Mutiny.Session session, List<CityJson> cities, State state, Country country) {
     return Multi.createFrom().iterable(cities)
       .onItem().transformToUniAndConcatenate(cityJson -> {
         City city = new City();
@@ -201,7 +158,8 @@ public class WorldLocationLoader {
       }).collect().asList().replaceWith(Uni.createFrom().nullItem());
   }
 
-  private Uni<Void> processTranslations(Mutiny.Session session, List<CountryTranslationJson> translations, Country country) {
+  @WithSpan
+  public Uni<Void> processTranslations(Mutiny.Session session, List<CountryTranslationJson> translations, Country country) {
     return Multi.createFrom().iterable(translations)
       .onItem().transformToUniAndConcatenate(translationJson -> {
         CountryTranslation countryTranslation = new CountryTranslation();
@@ -213,7 +171,8 @@ public class WorldLocationLoader {
       }).collect().asList().replaceWith(Uni.createFrom().nullItem());
   }
 
-  private Uni<Void> processTimezones(Mutiny.Session session, List<TimezoneJson> timezones, Country country) {
+  @WithSpan
+  public Uni<Void> processTimezones(Mutiny.Session session, List<TimezoneJson> timezones, Country country) {
     return Multi.createFrom().iterable(timezones)
       .onItem().transformToUniAndConcatenate(timezoneJson -> {
         TimeZone tz = TimeZone.getTimeZone(timezoneJson.zoneName);
