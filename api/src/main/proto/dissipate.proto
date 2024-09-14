@@ -14,6 +14,7 @@ service DissipateService {
   rpc CreateHandle(CreateHandleRequest) returns (CreateHandleResponse) {}
   rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {}
   rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {}
+  rpc RunEtlLocation(RunEtlLocationRequest) returns (RunEtlLocationResponse) {}
 }
 
 enum AccountStatus {
@@ -21,6 +22,11 @@ enum AccountStatus {
   ACCOUNT_STATUS_DISABLED = 1;
   ACCOUNT_STATUS_SUSPENDED = 2;
   ACCOUNT_STATUS_BANNED = 3;
+}
+
+message ApiError {
+  string code = 1;
+  string message = 2;
 }
 
 message CreateHandleRequest {
@@ -56,15 +62,16 @@ enum RegisterResponseResult {
   PhoneSent = 2;
 }
 
-message ApiError {
-  string code = 1;
-  string message = 2;
-}
-
 message RegisterResponse {
   RegisterResponseResult result = 1;
   optional string sid = 2;
   optional ApiError error = 3;
+}
+
+message RunEtlLocationRequest {
+}
+
+message RunEtlLocationResponse {
 }
 
 message ValidateSessionRequest {

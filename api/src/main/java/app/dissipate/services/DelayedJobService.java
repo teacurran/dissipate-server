@@ -44,7 +44,7 @@ public class DelayedJobService {
   @Inject
   DelayedJobHandlers jobHandlers;
 
-  private Uni<DelayedJob> createDelayedJobCommon(String actorId, DelayedJobQueue queue, Instant runAt) {
+  public Uni<DelayedJob> createDelayedJob(String actorId, DelayedJobQueue queue, Instant runAt) {
     return DelayedJob.createDelayedJob(actorId, queue, runAt, snowflakeIdGenerator)
       .onItem().invoke(dj -> {
         if (dj == null) {
@@ -55,11 +55,11 @@ public class DelayedJobService {
   }
 
   public Uni<DelayedJob> createDelayedJob(SessionValidation sessionValidation) {
-    return createDelayedJobCommon(sessionValidation.id, DelayedJobQueue.EMAIL_AUTH, sessionValidation.created);
+    return createDelayedJob(sessionValidation.id, DelayedJobQueue.EMAIL_AUTH, sessionValidation.created);
   }
 
   public Uni<DelayedJob> createDelayedJob(Url url) {
-    return createDelayedJobCommon(url.id, DelayedJobQueue.URL_CRAWL, Instant.now());
+    return createDelayedJob(url.id, DelayedJobQueue.URL_CRAWL, Instant.now());
   }
 
   @WithSession

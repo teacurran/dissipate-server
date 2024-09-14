@@ -3,9 +3,7 @@ package app.dissipate.services;
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.location.json.*;
 import app.dissipate.data.models.*;
-import app.dissipate.utils.EncryptionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.Panache;
 import io.quarkus.runtime.StartupEvent;
@@ -34,9 +32,8 @@ import java.util.zip.ZipFile;
 import static java.util.zip.ZipFile.OPEN_READ;
 
 @ApplicationScoped
-public class WorldLocationLoader {
-  private static final Logger LOGGER = Logger.getLogger(WorldLocationLoader.class);
-  private static final org.slf4j.Logger log = LoggerFactory.getLogger(WorldLocationLoader.class);
+public class EtlLocation {
+  private static final Logger LOGGER = Logger.getLogger(EtlLocation.class);
 
   @Inject
   SnowflakeIdGenerator snowflakeIdGenerator;
@@ -44,29 +41,29 @@ public class WorldLocationLoader {
   @Inject
   ObjectMapper mapper;
 
-  @WithSpan("ConfigFileLoader.onStart")
-  public void onStart(@Observes StartupEvent event, Vertx vertx, Mutiny.SessionFactory factory) {
-    // Create a new Vertx context for Hibernate Reactive
-    io.vertx.core.Context context = VertxContext.getOrCreateDuplicatedContext(vertx);
-    // Mark the context as safe
-    VertxContextSafetyToggle.setContextSafe(context, true);
-    // Run the logic on the created context
-    context.runOnContext(v -> handleStart(factory));
-  }
-
-  @WithSpan
-  public void handleStart(Mutiny.SessionFactory factory) {
-    // Start a new transaction
-    factory.withTransaction(session -> loadWorldLocations().onItem().transform(result -> {
-        LOGGER.info("World locations loaded");
-        return result;
-      })).onFailure().invoke(t -> {
-        LOGGER.error("Failed to load config", t);
-      })
-      // Subscribe to the Uni to trigger the action
-      .subscribe().with(v -> {
-      });
-  }
+  //  @WithSpan("ConfigFileLoader.onStart")
+  //  public void onStart(@Observes StartupEvent event, Vertx vertx, Mutiny.SessionFactory factory) {
+  //    // Create a new Vertx context for Hibernate Reactive
+  //    io.vertx.core.Context context = VertxContext.getOrCreateDuplicatedContext(vertx);
+  //    // Mark the context as safe
+  //    VertxContextSafetyToggle.setContextSafe(context, true);
+  //    // Run the logic on the created context
+  //    context.runOnContext(v -> handleStart(factory));
+  //  }
+  //
+  //  @WithSpan
+  //  public void handleStart(Mutiny.SessionFactory factory) {
+  //    // Start a new transaction
+  //    factory.withTransaction(session -> loadWorldLocations().onItem().transform(result -> {
+  //        LOGGER.info("World locations loaded");
+  //        return result;
+  //      })).onFailure().invoke(t -> {
+  //        LOGGER.error("Failed to load config", t);
+  //      })
+  //      // Subscribe to the Uni to trigger the action
+  //      .subscribe().with(v -> {
+  //      });
+  //  }
 
   @WithSpan
   public Uni<List<CountryJson>> parseLocationFile(InputStream file) {

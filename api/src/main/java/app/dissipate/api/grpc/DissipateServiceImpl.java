@@ -1,15 +1,7 @@
 package app.dissipate.api.grpc;
 
 import app.dissipate.exceptions.ApiException;
-import app.dissipate.grpc.CreateHandleRequest;
-import app.dissipate.grpc.CreateHandleResponse;
-import app.dissipate.grpc.DissipateService;
-import app.dissipate.grpc.GetSessionRequest;
-import app.dissipate.grpc.GetSessionResponse;
-import app.dissipate.grpc.RegisterRequest;
-import app.dissipate.grpc.RegisterResponse;
-import app.dissipate.grpc.ValidateSessionRequest;
-import app.dissipate.grpc.ValidateSessionResponse;
+import app.dissipate.grpc.*;
 import app.dissipate.interceptors.GrpcAuthInterceptor;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import io.quarkus.grpc.GrpcService;
@@ -35,6 +27,15 @@ public class DissipateServiceImpl implements DissipateService {
   @Inject
   GetSessionMethod getSessionMethod;
 
+  @Inject
+  RunEtlLocationMethod runEtlLocationMethod;
+
+  @Override
+  @WithSession
+  public Uni<CreateHandleResponse> createHandle(CreateHandleRequest request) {
+    return Uni.createFrom().item(CreateHandleResponse.newBuilder().setHandle(request.getHandle()).build());
+  }
+
   @Override
   @WithSession
   @RolesAllowed("user")
@@ -50,8 +51,8 @@ public class DissipateServiceImpl implements DissipateService {
 
   @Override
   @WithSession
-  public Uni<CreateHandleResponse> createHandle(CreateHandleRequest request) {
-    return Uni.createFrom().item(CreateHandleResponse.newBuilder().setHandle(request.getHandle()).build());
+  public Uni<RunEtlLocationResponse> runEtlLocation(RunEtlLocationRequest request) {
+    return runEtlLocationMethod.run(request);
   }
 
   @Override

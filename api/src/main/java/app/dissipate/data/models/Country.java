@@ -2,7 +2,6 @@ package app.dissipate.data.models;
 
 import jakarta.persistence.*;
 import org.geolatte.geom.Point;
-import org.hibernate.annotations.Type;
 
 import java.util.List;
 

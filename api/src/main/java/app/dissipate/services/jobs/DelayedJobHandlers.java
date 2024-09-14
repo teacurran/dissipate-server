@@ -6,7 +6,7 @@ import java.util.Map;
 
 public class DelayedJobHandlers {
 
-  private Map<DelayedJobQueue, DelayedJobHandler> handlers;
+  private final Map<DelayedJobQueue, DelayedJobHandler> handlers;
 
   public DelayedJobHandlers(Map<DelayedJobQueue, DelayedJobHandler> handlers) {
     this.handlers = handlers;
