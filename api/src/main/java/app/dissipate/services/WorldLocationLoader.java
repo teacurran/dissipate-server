@@ -44,12 +44,6 @@ public class WorldLocationLoader {
   @Inject
   ObjectMapper mapper;
 
-  @Inject
-  Tracer tracer;
-
-  @Inject
-  EncryptionUtil encryptionUtil;
-
   @WithSpan("ConfigFileLoader.onStart")
   public void onStart(@Observes StartupEvent event, Vertx vertx, Mutiny.SessionFactory factory) {
     // Create a new Vertx context for Hibernate Reactive
