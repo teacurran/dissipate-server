@@ -19,6 +19,7 @@ import java.util.UUID;
     JOIN FETCH sv.session
     LEFT JOIN FETCH sv.email
     LEFT JOIN FETCH sv.phone
+    LEFT JOIN FETCH sv.session.account
     WHERE sv.session.id = :sid
     """)
 @NamedQuery(name = SessionValidation.QUERY_BY_SID_TOKEN,

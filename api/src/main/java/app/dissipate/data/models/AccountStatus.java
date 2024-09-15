@@ -1,7 +1,7 @@
 package app.dissipate.data.models;
 
 public enum AccountStatus {
-  PENDING,
+  ANONYMOUS,
   ACTIVE,
   DISABLED,
   SUSPENDED,

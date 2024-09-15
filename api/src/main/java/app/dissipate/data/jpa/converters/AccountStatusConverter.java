@@ -12,7 +12,7 @@ public class AccountStatusConverter implements AttributeConverter<AccountStatus,
   @Override
   public String convertToDatabaseColumn(AccountStatus type) {
     if (type == null) {
-      return AccountStatus.PENDING.name();
+      return AccountStatus.ANONYMOUS.name();
     }
     return type.name();
   }

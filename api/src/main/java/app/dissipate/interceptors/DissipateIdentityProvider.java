@@ -1,5 +1,6 @@
 package app.dissipate.interceptors;
 
+import app.dissipate.data.models.AccountStatus;
 import app.dissipate.data.models.Session;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -30,13 +31,20 @@ public class DissipateIdentityProvider implements IdentityProvider<TokenAuthenti
     Span otel = Span.current();
     String token = request.getToken().getToken();
     otel.setAttribute("token", token);
-    return Session.findBySidValidated(token)
+    return Session.findBySid(token)
       .onFailure().invoke(t -> LOGGER.error("session not found", t))
       .onItem().transform(session -> {
         if (session != null) {
-          return QuarkusSecurityIdentity.builder()
-            .setPrincipal(new QuarkusPrincipal(token))
-            .addRole("user").build();
+           QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder()
+            .setPrincipal(new QuarkusPrincipal(token));
+
+           if (session.account != null && AccountStatus.ACTIVE.equals(session.account.status)) {
+             builder.addRole("user");
+           }
+
+           builder.addAttribute("session", session);
+
+           return builder.build();
         } else {
           otel.addEvent("session not found");
           return null;

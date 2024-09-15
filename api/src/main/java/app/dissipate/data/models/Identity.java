@@ -11,12 +11,27 @@ import java.util.List;
 import java.util.Locale;
 
 @Entity
-@Table(name = "identities")
+@Table(name = "identities", indexes = {
+  @Index(name = "uidx_identity_username_normalized", columnList = "usernameNormalized", unique = true)
+})
+@NamedQuery(name = Identity.QUERY_BY_USERNAME, query = """
+  SELECT i
+  FROM Identity i
+  WHERE i.usernameNormalized = :username
+  """)
 public class Identity extends DefaultPanacheEntityWithTimestamps {
+
+  public static final String ID_GENERATOR_KEY = "Identity";
+
+  public static final String QUERY_BY_USERNAME = "Identity.findByUsername";
 
   @ConfigProperty(name = "encryption.key")
   @Transient
   String key;
+
+  public String username;
+
+  public String usernameNormalized;
 
   public String name;
 

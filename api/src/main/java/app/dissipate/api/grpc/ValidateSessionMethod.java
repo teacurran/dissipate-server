@@ -1,11 +1,13 @@
 package app.dissipate.api.grpc;
 
 import app.dissipate.data.models.AccountEmail;
+import app.dissipate.data.models.AccountStatus;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.grpc.ValidateSessionRequest;
 import app.dissipate.grpc.ValidateSessionResponse;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.services.LocalizationService;
+import app.dissipate.utils.EncryptionUtil;
 import io.grpc.Status;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.smallrye.mutiny.Uni;
@@ -25,6 +27,9 @@ public class ValidateSessionMethod {
 
   @Inject
   LocalizationService localizationService;
+
+  @Inject
+  EncryptionUtil encryptionUtil;
 
   @WithSpan("ValidateSessionMethod")
   public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) {
@@ -66,7 +71,14 @@ public class ValidateSessionMethod {
     if (sv.email == null) {
       return Uni.createFrom().voidItem();
     }
-    return sv.email.markValidated().onItem().transformToUni(v -> Uni.createFrom().voidItem());
+    return sv.email.markValidated().onItem().transform(accountEmail -> {
+      // if account was anonymous, mark it as active
+      if (accountEmail.account != null && AccountStatus.ANONYMOUS.equals(accountEmail.account.status)) {
+        accountEmail.account.status = AccountStatus.ACTIVE;
+        return accountEmail.account.persistAndFlush(encryptionUtil);
+      }
+      return Uni.createFrom().voidItem();
+    }).onItem().transformToUni(v -> Uni.createFrom().voidItem());
   }
 
   public Uni<Void> checkForExistingValidatedEmail(String email) {

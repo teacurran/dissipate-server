@@ -14,6 +14,14 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "sessions")
+@NamedQuery(name = Session.QUERY_BY_SID,
+  query = """
+    SELECT DISTINCT s
+    FROM Session s
+    LEFT JOIN FETCH s.account a
+    LEFT JOIN FETCH s.identity i
+    WHERE s.id = :sid
+    """)
 @NamedQuery(name = Session.QUERY_BY_SID_VALIDATED,
   query = """
     SELECT DISTINCT s
@@ -26,6 +34,7 @@ import java.util.UUID;
     """)
 public class Session  extends PanacheEntityBase {
 
+  public static final String QUERY_BY_SID = "Session.findBySid";
   public static final String QUERY_BY_SID_VALIDATED = "Session.findBySidValidated";
 
   @Id
@@ -34,6 +43,9 @@ public class Session  extends PanacheEntityBase {
 
   @ManyToOne
   public Account account;
+
+  @ManyToOne
+  public Account anonymousAccount;
 
   @ManyToOne
   public Identity identity;
@@ -46,6 +58,8 @@ public class Session  extends PanacheEntityBase {
   public Instant updated;
 
   public Instant ended;
+
+  public boolean loggedIn;
 
   @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
   public List<SessionValidation> validations = new ArrayList<>();
@@ -60,6 +74,10 @@ public class Session  extends PanacheEntityBase {
   @SuppressWarnings("unchecked")
   public Uni<Session> persistAndFlush() {
     return super.persistAndFlush();
+  }
+
+  public static Uni<Session> findBySid(String sid) {
+    return find("#" + Session.QUERY_BY_SID, Parameters.with("sid", UUID.fromString(sid))).firstResult();
   }
 
   public static Uni<Session> findBySidValidated(String sid) {

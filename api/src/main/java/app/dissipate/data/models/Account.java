@@ -113,7 +113,7 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
                                                        EncryptionUtil encryptionUtil) {
     Account account = new Account();
     account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
-    account.status = AccountStatus.PENDING;
+    account.status = AccountStatus.ANONYMOUS;
     account.locale = locale;
     return account.persistAndFlush(encryptionUtil);
   }
@@ -124,7 +124,7 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
                                                        EncryptionUtil encryptionUtil) {
     Account account = new Account();
     account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
-    account.status = AccountStatus.PENDING;
+    account.status = AccountStatus.ANONYMOUS;
     account.locale = locale;
     return account.persistAndFlush(encryptionUtil).onItem().transformToUni(a -> {
       AccountEmail accountEmail = new AccountEmail();

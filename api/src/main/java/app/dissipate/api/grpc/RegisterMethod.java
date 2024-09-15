@@ -47,7 +47,6 @@ public class RegisterMethod {
   @Inject
   EncryptionUtil encryptionUtil;
 
-
   @WithSpan("RegisterMethod.register")
   public Uni<RegisterResponse> register(RegisterRequest request) {
     Span otel = Span.current();
