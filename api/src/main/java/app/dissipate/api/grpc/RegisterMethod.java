@@ -55,9 +55,9 @@ public class RegisterMethod {
 
     if (request.getEmail().isEmpty() && request.getPhoneNumber().isEmpty()) {
       Session session = new Session();
-      return session.persistAndFlush().onItem().transform(s -> {
-        return RegisterResponse.newBuilder().setSid(s.id.toString()).build();
-      });
+      return session.persistAndFlush().onItem().transform(s -> RegisterResponse.newBuilder()
+        .setResult(RegisterResponseResult.SessionCreated)
+        .setSid(s.id.toString()).build());
     }
 
     if (!request.getEmail().isEmpty()) {
@@ -66,7 +66,8 @@ public class RegisterMethod {
           if (accountEmail != null) {
             LOGGER.infov("email already exists: {0}", email);
             otel.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
-            return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+            //return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+            return Uni.createFrom().failure(localizationService.getApiException(locale, Status.ALREADY_EXISTS, AUTH_EMAIL_INVALID));
           }
 
           return Account.createNewAnonymousAccount(locale, email, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
@@ -90,11 +91,11 @@ public class RegisterMethod {
       ).onFailure().call(t -> {
         otel.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
         otel.recordException(t, Attributes.of(EXCEPTION_ESCAPED, true));
-        return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+        return Uni.createFrom().failure(t);
       });
     }
 
-    return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+    return Uni.createFrom().failure(new IllegalArgumentException("phone number not supported yet"));
   }
 
   @WithSession

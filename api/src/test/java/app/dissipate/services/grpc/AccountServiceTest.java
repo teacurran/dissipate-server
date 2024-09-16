@@ -8,6 +8,7 @@ import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.ValidateSessionRequest;
 import io.grpc.Metadata;
+import io.grpc.StatusRuntimeException;
 import io.quarkiverse.mailpit.test.Mailbox;
 import io.quarkiverse.mailpit.test.model.Message;
 import io.quarkus.grpc.GrpcClient;
@@ -75,44 +76,27 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   }
 
   @Test
-  void shouldRejectEmptyEmails() {
+  void shouldAllowAnonymousSessions() {
     CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
 
-    RegisterRequest request = RegisterRequest.newBuilder().build();
+    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder().build())
+      .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-    Assertions.assertThrows(ExecutionException.class, () -> {
-      client.register(request)
-        .onFailure().invoke(message::obtrudeException)
-        .subscribe().with(reply -> {
-          message.complete(reply);
-          throw new RuntimeException("Should not have reached here");
-        });
-
-      message.get().wait();
-    });
-
-
-    Assertions.assertThrows(ExecutionException.class, () ->
-      message.get(5, TimeUnit.SECONDS));
+    RegisterResponse response = subscriber.awaitItem().getItem();
+    Assertions.assertEquals("SessionCreated", response.getResult().toString());
+    Assertions.assertNotNull(response.getSid());
   }
 
   @Test
-  @TestReactiveTransaction
   void shouldValidateEmail(UniAsserter asserter) throws InterruptedException {
     String email = "test-" + new Random().nextInt() + "X-invalid-email.co.uk";
 
     // one way to test
     // doesn't work with reactive transactions
-    //  UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
-    //      .setEmail(email).build())
-    //    .subscribe().withSubscriber(UniAssertSubscriber.create());
-    //  subscriber.awaitFailure().assertFailedWith(StatusRuntimeException.class, "INVALID_ARGUMENT: The email address is invalid.");
-
-    // another way to test
-    asserter.assertFailedWith(() -> client.register(RegisterRequest.newBuilder().setEmail(email).build()), (cve) -> {
-      Assertions.assertEquals("INVALID_ARGUMENT: The email address is invalid.", cve.getMessage());
-    });
-
+    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
+        .setEmail(email).build())
+      .subscribe().withSubscriber(UniAssertSubscriber.create());
+    subscriber.awaitFailure().assertFailedWith(StatusRuntimeException.class, "INVALID_ARGUMENT: The email address is invalid.");
   }
 
   @Test
@@ -171,11 +155,9 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   void shouldThrowExceptionWithoutToken() {
     CompletableFuture<String> message = new CompletableFuture<>();
 
-    client.register(RegisterRequest.newBuilder().build())
+    client.getSession(GetSessionRequest.newBuilder().build())
       .onFailure().invoke(message::obtrudeException)
-      .subscribe().with(reply -> message
-        .complete(reply.toString())
-      );
+      .subscribe().with(reply -> message.complete(reply.toString()));
 
     Assertions.assertThrows(ExecutionException.class, () ->
       message.get(5, TimeUnit.SECONDS));

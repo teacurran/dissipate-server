@@ -42,6 +42,7 @@ Hosting:
 ## Some things I've been trying:
   
 ```java
+
   // way of using CompletableFuture to test async code
   @Test
   void registerByEmail(UniAsserter asserter) {
@@ -58,7 +59,19 @@ Hosting:
     Assertions.assertThrows(ExecutionException.class, () ->
       message.get(5, TimeUnit.SECONDS));
   }
+  
+  @Test
+  void registerByEmail(UniAsserter asserter) {
+    String email = "test-" + new Random().nextInt() + "X-invalid-email.co.uk";
 
+    //  one way to test
+    //  doesn 't work with reactive transactions
+    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
+        .setEmail(email).build())
+      .subscribe().withSubscriber(UniAssertSubscriber.create());
+    subscriber.awaitFailure().assertFailedWith(StatusRuntimeException.class, "INVALID_ARGUMENT: The email address is invalid.");
+  }
+  
   // UniAaserter can be used to test a Reactive db transaction
   // within this method, database tranasactions will work, but grpc client calls will not
   @Test
