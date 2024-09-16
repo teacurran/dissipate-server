@@ -51,40 +51,50 @@ public class RegisterMethod {
   public Uni<RegisterResponse> register(RegisterRequest request) {
     Span otel = Span.current();
     Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
-
     otel.addEvent("register user", Attributes.of(AttributeKey.stringKey("request"), request.toString()));
 
-    return validateEmail(request.getEmail()).onItem().transformToUni(email ->
-      AccountEmail.findByEmailValidated(email).onItem().transformToUni(accountEmail -> {
-        if (accountEmail != null) {
-          LOGGER.infov("email already exists: {0}", email);
-          otel.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
-          return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
-        }
+    if (request.getEmail().isEmpty() && request.getPhoneNumber().isEmpty()) {
+      Session session = new Session();
+      return session.persistAndFlush().onItem().transform(s -> {
+        return RegisterResponse.newBuilder().setSid(s.id.toString()).build();
+      });
+    }
 
-        return Account.createNewAnonymousAccount(locale, email, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
-          Session session = new Session();
-          session.account = a;
-          return session.persistAndFlush().onItem().transformToUni(s -> {
-            SessionValidation sessionValidation = new SessionValidation();
-            sessionValidation.session = s;
-            sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
-            sessionValidation.email = a.emails.get(0);
-            sessionValidation.token = StringUtil.generateRandomString(6);
-            return sessionValidation.persistAndFlush()
-              .onItem().transformToUni(sv -> delayedJobService.createDelayedJob(sv)
-                .onItem().transformToUni(dj -> Uni.createFrom().item(
-                  RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).setSid(s.id.toString()).build()
-                ))
-              );
+    if (!request.getEmail().isEmpty()) {
+      return validateEmail(request.getEmail()).onItem().transformToUni(email ->
+        AccountEmail.findByEmailValidated(email).onItem().transformToUni(accountEmail -> {
+          if (accountEmail != null) {
+            LOGGER.infov("email already exists: {0}", email);
+            otel.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
+            return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+          }
+
+          return Account.createNewAnonymousAccount(locale, email, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
+            Session session = new Session();
+            session.account = a;
+            return session.persistAndFlush().onItem().transformToUni(s -> {
+              SessionValidation sessionValidation = new SessionValidation();
+              sessionValidation.session = s;
+              sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+              sessionValidation.email = a.emails.get(0);
+              sessionValidation.token = StringUtil.generateRandomString(6);
+              return sessionValidation.persistAndFlush()
+                .onItem().transformToUni(sv -> delayedJobService.createDelayedJob(sv)
+                  .onItem().transformToUni(dj -> Uni.createFrom().item(
+                    RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).setSid(s.id.toString()).build()
+                  ))
+                );
+            });
           });
-        });
-      })
-    ).onFailure().call(t -> {
-      otel.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
-      otel.recordException(t, Attributes.of(EXCEPTION_ESCAPED, true));
-      return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
-    });
+        })
+      ).onFailure().call(t -> {
+        otel.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
+        otel.recordException(t, Attributes.of(EXCEPTION_ESCAPED, true));
+        return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
+      });
+    }
+
+    return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
   }
 
   @WithSession
