@@ -12,9 +12,9 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 
 import java.util.Locale;
 
@@ -22,6 +22,8 @@ import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_TOKEN_INVALID;
 
 @ApplicationScoped
 public class GetSessionMethod {
+
+  private static final Logger LOGGER = Logger.getLogger(GetSessionMethod.class);
 
   @Inject
   DelayedJobService delayedJobService;
@@ -39,11 +41,11 @@ public class GetSessionMethod {
   CurrentIdentityAssociation identity;
 
   @WithSpan("GetSessionMethod.handler")
-  @RolesAllowed("user")
   @WithSession
   public Uni<GetSessionResponse> handler(GetSessionRequest request) {
     return identity.getDeferredIdentity().onItem().transformToUni(si -> {
-      if (si == null) {
+      LOGGER.info("GetSessionMethod.handler: " + si.getPrincipal());
+      if (si == null || si.getPrincipal() == null) {
         Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
         return Uni.createFrom().failure(localizationService.getApiException(locale, Status.NOT_FOUND, AUTH_TOKEN_INVALID));
       }
