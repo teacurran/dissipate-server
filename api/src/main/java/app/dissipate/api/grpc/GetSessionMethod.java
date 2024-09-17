@@ -45,7 +45,7 @@ public class GetSessionMethod {
   public Uni<GetSessionResponse> handler(GetSessionRequest request) {
     return identity.getDeferredIdentity().onItem().transformToUni(si -> {
       LOGGER.info("GetSessionMethod.handler: " + si.getPrincipal());
-      if (si == null || si.getPrincipal() == null) {
+      if (si.isAnonymous()) {
         Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
         return Uni.createFrom().failure(localizationService.getApiException(locale, Status.NOT_FOUND, AUTH_TOKEN_INVALID));
       }

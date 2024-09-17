@@ -76,8 +76,8 @@ public class Session  extends PanacheEntityBase {
     return super.persistAndFlush();
   }
 
-  public static Uni<Session> findBySid(String sid) {
-    return find("#" + Session.QUERY_BY_SID, Parameters.with("sid", UUID.fromString(sid))).firstResult();
+  public static Uni<Session> findBySid(UUID sid) {
+    return find("#" + Session.QUERY_BY_SID, Parameters.with("sid", sid)).firstResult();
   }
 
   public static Uni<Session> findBySidValidated(String sid) {
