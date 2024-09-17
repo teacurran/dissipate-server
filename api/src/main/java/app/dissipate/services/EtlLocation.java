@@ -46,9 +46,12 @@ public class EtlLocation {
 
   @WithSpan
   public Uni<List<CountryJson>> parseLocationFile(InputStream file) {
-    return Uni.createFrom().<List<CountryJson>>item(Unchecked.supplier(
-        () -> mapper.readValue(file, mapper.getTypeFactory().constructCollectionType(List.class, CountryJson.class))))
+    return Uni.createFrom().item(Unchecked.supplier(() -> parseJson(file)))
       .onFailure().recoverWithUni(e -> Uni.createFrom().failure(new EtlException("Failed to parse JSON", e)));
+  }
+
+  private List<CountryJson> parseJson(InputStream file) throws IOException {
+    return mapper.readValue(file, mapper.getTypeFactory().constructCollectionType(List.class, CountryJson.class));
   }
 
   @WithSpan
