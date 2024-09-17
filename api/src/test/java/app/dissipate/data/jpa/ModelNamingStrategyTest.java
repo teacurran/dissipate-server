@@ -17,28 +17,27 @@ class ModelNamingStrategyTest {
 
   @Test
   void classToTableName_NullInput() {
-    Identifier result = namingStrategy.classToTableName(null, jdbcEnvironment);
-    assertNull(result);
+    assertNull(convertClassToTableName(null));
   }
 
   @Test
   void classToTableName_SimpleCamelCase() {
-    Identifier input = Identifier.toIdentifier("SimpleClassName");
-    Identifier result = namingStrategy.classToTableName(input, jdbcEnvironment);
-    assertEquals("simple_class_name", result.getText());
+    assertEquals("simple_class_name", convertClassToTableName("SimpleClassName"));
   }
 
   @Test
   void classToTableName_ComplexCamelCase() {
-    Identifier input = Identifier.toIdentifier("ComplexClassNameWithMultipleParts");
-    Identifier result = namingStrategy.classToTableName(input, jdbcEnvironment);
-    assertEquals("complex_class_name_with_multiple_parts", result.getText());
+    assertEquals("complex_class_name_with_multiple_parts", convertClassToTableName("ComplexClassNameWithMultipleParts"));
   }
 
   @Test
   void classToTableName_InputWithDots() {
-    Identifier input = Identifier.toIdentifier("com.example.ClassName");
+    assertEquals("com_example_class_name", convertClassToTableName("com.example.ClassName"));
+  }
+
+  private String convertClassToTableName(String className) {
+    Identifier input = className == null ? null : Identifier.toIdentifier(className);
     Identifier result = namingStrategy.classToTableName(input, jdbcEnvironment);
-    assertEquals("com_example_class_name", result.getText());
+    return result == null ? null : result.getText();
   }
 }

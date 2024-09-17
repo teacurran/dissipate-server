@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EmailAuthJobHandler implements DelayedJobHandler {
@@ -71,7 +70,7 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
         try {
           //String imageHead = loadResourceAsBase64("images/server_farm_2_m.png");
           String css = loadResourceAsString("css/email.css");
-          byte imageHead[] = loadResourceAsBytes("images/server_farm_2_m.png");
+          byte[] imageHead = loadResourceAsBytes("images/server_farm_2_m.png");
 
           return Templates.otp(i18n,
               sessionValidation.token,
@@ -102,22 +101,21 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
       }
 
       return Uni.createFrom().voidItem();
-    }).onFailure(IllegalArgumentException.class).recoverWithUni(t -> {
-      return Uni.createFrom().failure(new DelayedJobException(true, t.getMessage()));
-    });
+    }).onFailure(IllegalArgumentException.class)
+      .recoverWithUni(t -> Uni.createFrom().failure(new DelayedJobException(true, t.getMessage())));
   }
 
   private String loadResourceAsString(String resourcePath) throws IOException, URISyntaxException {
-    return Files.readAllLines(
+    return String.join("\n", Files.readAllLines(
       Paths.get(Thread.currentThread().getContextClassLoader().getResource(resourcePath).toURI()), StandardCharsets.UTF_8
-    ).stream().collect(Collectors.joining("\n"));
+    ));
   }
 
   private byte[] loadResourceAsBytes(String resourcePath) throws IOException, URISyntaxException {
     return Files.readAllBytes(Paths.get(getClass().getClassLoader().getResource(resourcePath).toURI()));
   }
   public String loadResourceAsBase64(String resourcePath) throws IOException, URISyntaxException {
-    byte resource[] = loadResourceAsBytes(resourcePath);
+    byte[] resource = loadResourceAsBytes(resourcePath);
     return java.util.Base64.getEncoder().encodeToString(resource);
   }
 }
