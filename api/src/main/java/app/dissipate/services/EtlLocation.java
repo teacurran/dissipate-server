@@ -57,12 +57,10 @@ public class EtlLocation {
 
   @WithSpan
   public Uni<Void> loadWorldLocations() {
-    try {
-      String zipFilePath = "db/seeds/countries-states-cities.json.zip";
+    String zipFilePath = "db/seeds/countries-states-cities.json.zip";
 
-      ZipFile zipFile = new ZipFile(new File(Thread.currentThread().getContextClassLoader().getResource(zipFilePath).toURI()), OPEN_READ);
-      ZipEntry entry = zipFile.getEntry("countries-states-cities.json");
-      InputStream is = zipFile.getInputStream(entry);
+    try (ZipFile zipFile = new ZipFile(new File(Thread.currentThread().getContextClassLoader().getResource(zipFilePath).toURI()), OPEN_READ);
+         InputStream is = zipFile.getInputStream(zipFile.getEntry("countries-states-cities.json"))) {
 
       return parseLocationFile(is).onItem().transformToUni(countryJsons -> {
         LOGGER.infov("Loading {0} countries", countryJsons.size());
@@ -90,10 +88,7 @@ public class EtlLocation {
           // Geometry not working
           // country.location = point(WGS84, g(Double.parseDouble(countryJson.longitude), Double.parseDouble(countryJson.latitude)));
 
-          return Panache.getSession().onItem().transformToUni(session -> session.merge(country)
-            .onItem().transformToUni(c -> processStates(session, countryJson.states, c)
-              .replaceWith(processTranslations(session, countryJson.translations, c)
-                .replaceWith(processTimezones(session, countryJson.timezones, c)))));
+          return Panache.getSession().onItem().transformToUni(session -> session.merge(country).onItem().transformToUni(c -> processStates(session, countryJson.states, c).replaceWith(processTranslations(session, countryJson.translations, c).replaceWith(processTimezones(session, countryJson.timezones, c)))));
         }).collect().asList().replaceWith(Uni.createFrom().nullItem());
       });
     } catch (IOException | URISyntaxException e) {
@@ -103,58 +98,53 @@ public class EtlLocation {
 
   @WithSpan
   public Uni<Void> processStates(Mutiny.Session session, List<StateJson> states, Country country) {
-    return Multi.createFrom().iterable(states)
-      .onItem().transformToUniAndConcatenate(stateJson -> {
-        State state = new State();
-        state.id = String.valueOf(stateJson.id);
-        state.name = stateJson.name;
-        state.country = country;
-        return session.merge(state)
-          .onItem().transformToUni(s -> processCities(session, stateJson.cities, s, country));
-      }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+    return Multi.createFrom().iterable(states).onItem().transformToUniAndConcatenate(stateJson -> {
+      State state = new State();
+      state.id = String.valueOf(stateJson.id);
+      state.name = stateJson.name;
+      state.country = country;
+      return session.merge(state).onItem().transformToUni(s -> processCities(session, stateJson.cities, s, country));
+    }).collect().asList().replaceWith(Uni.createFrom().nullItem());
   }
 
   @WithSpan
   public Uni<Void> processCities(Mutiny.Session session, List<CityJson> cities, State state, Country country) {
-    return Multi.createFrom().iterable(cities)
-      .onItem().transformToUniAndConcatenate(cityJson -> {
-        City city = new City();
-        city.id = String.valueOf(cityJson.id);
-        city.state = state;
-        city.country = country;
-        city.name = cityJson.name;
-        return session.merge(city);
-      }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+    return Multi.createFrom().iterable(cities).onItem().transformToUniAndConcatenate(cityJson -> {
+      City city = new City();
+      city.id = String.valueOf(cityJson.id);
+      city.state = state;
+      city.country = country;
+      city.name = cityJson.name;
+      return session.merge(city);
+    }).collect().asList().replaceWith(Uni.createFrom().nullItem());
   }
 
   @WithSpan
   public Uni<Void> processTranslations(Mutiny.Session session, List<CountryTranslationJson> translations, Country country) {
-    return Multi.createFrom().iterable(translations)
-      .onItem().transformToUniAndConcatenate(translationJson -> {
-        CountryTranslation countryTranslation = new CountryTranslation();
-        countryTranslation.id = country.id + "-" + translationJson.language;
-        countryTranslation.country = country;
-        countryTranslation.locale = Locale.forLanguageTag(translationJson.language);
-        countryTranslation.name = translationJson.translation;
-        return session.merge(countryTranslation);
-      }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+    return Multi.createFrom().iterable(translations).onItem().transformToUniAndConcatenate(translationJson -> {
+      CountryTranslation countryTranslation = new CountryTranslation();
+      countryTranslation.id = country.id + "-" + translationJson.language;
+      countryTranslation.country = country;
+      countryTranslation.locale = Locale.forLanguageTag(translationJson.language);
+      countryTranslation.name = translationJson.translation;
+      return session.merge(countryTranslation);
+    }).collect().asList().replaceWith(Uni.createFrom().nullItem());
   }
 
   @WithSpan
   public Uni<Void> processTimezones(Mutiny.Session session, List<TimezoneJson> timezones, Country country) {
-    return Multi.createFrom().iterable(timezones)
-      .onItem().transformToUniAndConcatenate(timezoneJson -> {
-        TimeZone tz = TimeZone.getTimeZone(timezoneJson.zoneName);
-        return CountryTimezone.findByCountryTimezone(country, tz).onItem().transformToUni(ct -> {
-          if (ct == null) {
-            CountryTimezone countryTimezone = new CountryTimezone();
-            countryTimezone.id = snowflakeIdGenerator.generate(CountryTimezone.ID_GENERATOR_KEY);
-            countryTimezone.country = country;
-            countryTimezone.timezone = tz;
-            return session.merge(countryTimezone);
-          }
-          return Uni.createFrom().nullItem();
-        });
-      }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+    return Multi.createFrom().iterable(timezones).onItem().transformToUniAndConcatenate(timezoneJson -> {
+      TimeZone tz = TimeZone.getTimeZone(timezoneJson.zoneName);
+      return CountryTimezone.findByCountryTimezone(country, tz).onItem().transformToUni(ct -> {
+        if (ct == null) {
+          CountryTimezone countryTimezone = new CountryTimezone();
+          countryTimezone.id = snowflakeIdGenerator.generate(CountryTimezone.ID_GENERATOR_KEY);
+          countryTimezone.country = country;
+          countryTimezone.timezone = tz;
+          return session.merge(countryTimezone);
+        }
+        return Uni.createFrom().nullItem();
+      });
+    }).collect().asList().replaceWith(Uni.createFrom().nullItem());
   }
 }
