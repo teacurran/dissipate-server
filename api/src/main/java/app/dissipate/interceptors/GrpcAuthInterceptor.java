@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class GrpcAuthInterceptor implements ServerInterceptor {
 
+    @SuppressWarnings("java:S119")
     @Override
     @WithSpan("grpc-auth-interceptor")
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> serverCallHandler) {

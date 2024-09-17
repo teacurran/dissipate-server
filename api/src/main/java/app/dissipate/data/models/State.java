@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.geolatte.geom.C2D;
 import org.geolatte.geom.Point;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public class State extends DefaultPanacheEntityWithTimestamps {
 
   public String name;
   public String stateCode;
-  public Point location;
+  public Point<C2D> location;
   public String type;
 
   @ManyToOne

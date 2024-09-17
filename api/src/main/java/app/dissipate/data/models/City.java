@@ -2,8 +2,8 @@ package app.dissipate.data.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.geolatte.geom.C2D;
 import org.geolatte.geom.Point;
 
 @Entity
@@ -17,5 +17,5 @@ public class City extends DefaultPanacheEntityWithTimestamps {
 
   public String name;
 
-  public Point location;
+  public Point<C2D> location;
 }

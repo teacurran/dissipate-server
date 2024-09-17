@@ -1,6 +1,7 @@
 package app.dissipate.data.models;
 
 import jakarta.persistence.*;
+import org.geolatte.geom.C2D;
 import org.geolatte.geom.Point;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public class Country extends DefaultPanacheEntityWithTimestamps {
   public String nationality;
 
   @Column(columnDefinition="Geometry")
-  public Point location;
+  public Point<C2D> location;
   public String emoji;
   public String emojiU;
 

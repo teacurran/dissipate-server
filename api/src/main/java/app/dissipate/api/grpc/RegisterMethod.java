@@ -66,7 +66,6 @@ public class RegisterMethod {
           if (accountEmail != null) {
             LOGGER.infov("email already exists: {0}", email);
             otel.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
-            //return Uni.createFrom().item(RegisterResponse.newBuilder().setResult(RegisterResponseResult.Error).build());
             return Uni.createFrom().failure(localizationService.getApiException(locale, Status.ALREADY_EXISTS, AUTH_EMAIL_INVALID));
           }
 

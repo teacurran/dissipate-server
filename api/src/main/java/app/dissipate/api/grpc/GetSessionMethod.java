@@ -8,16 +8,13 @@ import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.LocalizationService;
 import app.dissipate.utils.EncryptionUtil;
 import io.grpc.Status;
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
-import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.jboss.logging.Logger;
 
 import java.util.Locale;
 
@@ -25,8 +22,6 @@ import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_TOKEN_INVALID;
 
 @ApplicationScoped
 public class GetSessionMethod {
-
-  private static final Logger LOGGER = Logger.getLogger(GetSessionMethod.class);
 
   @Inject
   DelayedJobService delayedJobService;

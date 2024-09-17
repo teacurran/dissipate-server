@@ -13,7 +13,6 @@ import io.quarkiverse.mailpit.test.Mailbox;
 import io.quarkiverse.mailpit.test.model.Message;
 import io.quarkus.grpc.GrpcClient;
 import io.quarkus.grpc.GrpcClientUtils;
-import io.quarkus.test.TestReactiveTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.callback.QuarkusTestAfterEachCallback;
 import io.quarkus.test.junit.callback.QuarkusTestBeforeTestExecutionCallback;

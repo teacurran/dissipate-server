@@ -57,17 +57,14 @@ message RegisterRequest {
 }
 
 enum RegisterResponseResult {
-  Error = 0;
-  SessionCreated = 1;
-  EmailSent = 2;
-  PhoneSent = 3;
+  SessionCreated = 0;
+  EmailSent = 1;
+  PhoneSent = 2;
 }
 
 message RegisterResponse {
   RegisterResponseResult result = 1;
-
   optional string sid = 2;
-  optional ApiError error = 3;
 }
 
 message RunEtlLocationRequest {

@@ -88,11 +88,10 @@ public class ServerInstance {
         return Uni.createFrom().failure(new NullPointerException("markAbandonedServersAsShutdown returned null."));
       }
       return result;
-    }).subscribe().with(v -> {
-      LOGGER.info("marked " + v + " servers as abandoned.");
-    }, failure -> {
-      LOGGER.error("Second transaction failed.", failure);
-    }));
+    }).subscribe().with(
+      v -> LOGGER.info("marked " + v + " servers as abandoned."),
+      failure -> LOGGER.error("Second transaction failed.", failure)
+    ));
 
     return Uni.createFrom().nullItem();
   }
@@ -124,12 +123,6 @@ public class ServerInstance {
     }).subscribe().with(v -> {
     }));
 
-//    if (server != null) {
-//      Server.byId(server.id).onItem().ifNotNull().call(s -> {
-//        s.seen = LocalDateTime.now();
-//        return s.persistAndFlush();
-//      });
-//    }
     return Uni.createFrom().nullItem();
   }
 

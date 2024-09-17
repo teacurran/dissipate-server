@@ -243,6 +243,8 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- OpenAPI Generator for creating a mailpit client for testing -->
       <plugin>
         <groupId>org.openapitools</groupId>
         <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -259,8 +261,6 @@
                 <apiPackage>app.dissipate.test.mailpit.api</apiPackage>
                 <modelPackage>app.dissipate.test.mailpit.model</modelPackage>
                 <invokerPackage>app.dissipate.test.mailpit</invokerPackage>
-
-                <!-- <sourceFolder>target/generated-test-sources/mailpit</sourceFolder> -->
                 <output>${project.build.directory}/generated-test-sources</output>
                 <library>resteasy</library>
                 <useJakartaEe>true</useJakartaEe>
@@ -270,6 +270,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${compiler-plugin.version}</version>

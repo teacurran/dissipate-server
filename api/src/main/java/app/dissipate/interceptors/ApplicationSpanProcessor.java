@@ -11,25 +11,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 @RegisterForReflection
 public class ApplicationSpanProcessor implements SpanProcessor {
 
-//  This results in an infinite loop because the ServerInstance class is injected
-//  @Inject
-//  Server server;
-
-//  final Server server;
-
-//  public ApplicationSpanProcessor(Server server) {
-//    this.server = server;
-//  }
-
-
   @Override
   public void onStart(Context context, ReadWriteSpan span) {
-//    span.setAttribute("server.instance", server.instanceNumber);
-//    span.setAttribute("server.started", OTEL_DATE_TIME_FORMATTER.format(server.launched));
-
-    span.setAttribute("server.instance", "56");
-    span.setAttribute("server.started", "2024-01-01T00:00:00Z");
-
+    // the goal here was to inject server.instanceNumber into every span
+    // I can't get it working because if I inject Server, that itself creates a span and it goes into an infinite loop
   }
 
   @Override

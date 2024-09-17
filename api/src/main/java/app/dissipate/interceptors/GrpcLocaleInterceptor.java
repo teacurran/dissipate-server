@@ -21,6 +21,7 @@ public class GrpcLocaleInterceptor implements ServerInterceptor {
   @Inject
   LocalizationService localizationService;
 
+  @SuppressWarnings("java:S119")
   @Override
   @WithSpan("GrpcLocaleInterceptor")
   public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {

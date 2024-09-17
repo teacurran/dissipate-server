@@ -17,6 +17,7 @@ public class DissipateSpanExporter implements SpanProcessor {
 
   @Override
   public void onStart(Context parentContext, ReadWriteSpan span) {
+    // no-op span processor
   }
 
   @Override
@@ -26,6 +27,7 @@ public class DissipateSpanExporter implements SpanProcessor {
 
   @Override
   public void onEnd(ReadableSpan span) {
+    // no-op span processor
   }
 
   @Override
