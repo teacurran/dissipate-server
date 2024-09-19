@@ -61,6 +61,8 @@ public class Session  extends PanacheEntityBase {
 
   public boolean loggedIn;
 
+  public String clientIp;
+
   @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
   public List<SessionValidation> validations = new ArrayList<>();
 

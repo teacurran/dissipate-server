@@ -28,6 +28,11 @@ public class Post extends DefaultPanacheEntityWithTimestamps {
 
   public String caption;
 
+  @ManyToOne
+  public Post replyTo;
+
   @OneToMany(mappedBy = "post")
   List<PostAsset> postAssets = new ArrayList<>();
+
+  String defaultReaction;
 }

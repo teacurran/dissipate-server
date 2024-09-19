@@ -2,7 +2,7 @@ package app.dissipate.api.grpc;
 
 import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.*;
-import app.dissipate.interceptors.GrpcAuthInterceptor;
+import app.dissipate.interceptors.GrpcSecurityInterceptor;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
@@ -14,7 +14,7 @@ import jakarta.inject.Inject;
 import javax.annotation.security.RolesAllowed;
 
 @GrpcService
-@RegisterInterceptor(GrpcAuthInterceptor.class)
+@RegisterInterceptor(GrpcSecurityInterceptor.class)
 @RegisterInterceptor(GrpcLocaleInterceptor.class)
 public class DissipateServiceImpl implements DissipateService {
 

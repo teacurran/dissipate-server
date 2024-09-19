@@ -9,10 +9,12 @@ import app.dissipate.grpc.RegisterRequest;
 import app.dissipate.grpc.RegisterResponse;
 import app.dissipate.grpc.RegisterResponseResult;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
+import app.dissipate.interceptors.GrpcSecurityInterceptor;
 import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.LocalizationService;
 import app.dissipate.utils.EncryptionUtil;
 import app.dissipate.utils.StringUtil;
+import io.grpc.Context;
 import io.grpc.Status;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -55,6 +57,7 @@ public class RegisterMethod {
 
     if (request.getEmail().isEmpty() && request.getPhoneNumber().isEmpty()) {
       Session session = new Session();
+      session.clientIp = GrpcSecurityInterceptor.CLIENT_IP_KEY.get();
       return session.persistAndFlush().onItem().transform(s -> RegisterResponse.newBuilder()
         .setResult(RegisterResponseResult.SessionCreated)
         .setSid(s.id.toString()).build());
