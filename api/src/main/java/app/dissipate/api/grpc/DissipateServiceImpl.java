@@ -7,6 +7,7 @@ import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 
@@ -58,6 +59,11 @@ public class DissipateServiceImpl implements DissipateService {
   @WithSession
   public Uni<ValidateSessionResponse> validateSession(ValidateSessionRequest request) throws ApiException {
     return validateSessionMethod.validateSession(request);
+  }
+
+  @Override
+  public Multi<GetChatsResponse> getChats(GetChatsRequest request) {
+    return null;
   }
 }
 
