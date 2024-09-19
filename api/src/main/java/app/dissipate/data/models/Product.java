@@ -22,7 +22,7 @@ public class Product extends DefaultPanacheEntityWithTimestamps {
   public BigDecimal price;
 
   @OneToMany(mappedBy = "product")
-  public List<ProductPriceVarition> priceVaritions;
+  public List<ProductPriceVaration> productPriceVarations;
 
   public String name;
 
