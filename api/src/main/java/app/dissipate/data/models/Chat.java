@@ -10,10 +10,10 @@ import java.util.List;
 @Table(name = "chats")
 public class Chat extends DefaultPanacheEntityWithTimestamps {
 
-  @OneToMany
+  @OneToMany(mappedBy = "chat")
   public List<ChatParticipant> participants;
 
-  @OneToMany
+  @OneToMany(mappedBy = "chat")
   public List<ChatEvent> events;
 
 }

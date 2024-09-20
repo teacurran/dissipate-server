@@ -21,6 +21,6 @@ public class State extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   public Country country;
 
-  @OneToMany
+  @OneToMany(mappedBy = "state")
   public List<City> cities;
 }

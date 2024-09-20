@@ -5,7 +5,9 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "chat_events")
+@Table(name = "chat_events", indexes = {
+  @Index(columnList = "chat_id,created")
+})
 public class ChatEvent extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   public Chat chat;
