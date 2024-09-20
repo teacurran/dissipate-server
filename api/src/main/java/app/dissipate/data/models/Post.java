@@ -1,9 +1,6 @@
 package app.dissipate.data.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +23,23 @@ public class Post extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   public IdentityAvatar identityAvatar;
 
-  public String caption;
-
   @ManyToOne
   public Post replyTo;
+
+  @Column(nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT FALSE")
+  public boolean deleted;
+
+  @Column(length = 4)
+  String defaultReactionEmoji;
+
+  public String caption;
+
+  String body;
 
   @OneToMany(mappedBy = "post")
   List<PostAsset> postAssets = new ArrayList<>();
 
-  String defaultReaction;
+  @OneToMany(mappedBy = "post")
+  List<ContentReview> contentReviews = new ArrayList<>();
+
 }

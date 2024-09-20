@@ -19,7 +19,6 @@ import java.time.Instant;
     FROM AccountEmail
     WHERE email = :email
     AND validated IS NOT NULL
-    AND deleted = false
     """)
 public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
 

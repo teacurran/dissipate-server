@@ -23,9 +23,6 @@ public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBa
   @UpdateTimestamp
   public Instant updated;
 
-  @Column(nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT FALSE")
-  public boolean deleted;
-
   public String toString() {
     String var10000 = this.getClass().getSimpleName();
     return var10000 + "<" + this.id + ">";
