@@ -8,16 +8,18 @@ import jakarta.persistence.Table;
 @Table(name = "content_reviews")
 public class ContentReview extends DefaultPanacheEntityWithTimestamps {
 
+  public FlagContentType type;
+
   @ManyToOne
   public Post post;
 
   @ManyToOne
   public ChatEvent chatEvent;
 
-  public ContentReviewResult result;
-
   @ManyToOne
   public Identity identity;
+
+  public ContentReviewResult result;
 
   public boolean bot;
 }
