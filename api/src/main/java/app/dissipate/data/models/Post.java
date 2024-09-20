@@ -32,8 +32,10 @@ public class Post extends DefaultPanacheEntityWithTimestamps {
   @Column(length = 4)
   String defaultReactionEmoji;
 
+  @Column(columnDefinition = "TEXT")
   public String caption;
 
+  @Column(columnDefinition = "TEXT")
   String body;
 
   @OneToMany(mappedBy = "post")

@@ -1,5 +1,6 @@
 package app.dissipate.data.models;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -12,8 +13,12 @@ public class ContentReviewComment extends DefaultPanacheEntityWithTimestamps {
   public Post post;
 
   @ManyToOne
+  public ChatEvent chatEvent;
+
+  @ManyToOne
   public Identity identity;
 
+  @Column(columnDefinition = "TEXT")
   public String comment;
 
 }

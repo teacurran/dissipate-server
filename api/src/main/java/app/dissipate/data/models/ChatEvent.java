@@ -15,7 +15,7 @@ public class ChatEvent extends DefaultPanacheEntityWithTimestamps {
 
   public ChatEventType type;
 
-  @Lob
+  @Column(columnDefinition = "TEXT")
   public String message;
 
   @OneToMany(mappedBy = "event",
