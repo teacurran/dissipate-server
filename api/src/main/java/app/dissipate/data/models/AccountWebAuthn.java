@@ -42,7 +42,7 @@ public class AccountWebAuthn extends DefaultPanacheEntityWithTimestamps {
   /**
    * The list of X509 certificates encoded as base64url.
    */
-  @OneToMany(mappedBy = "webAuthnCredential")
+  @OneToMany(mappedBy = "accountWebAuthn")
   public List<WebAuthnCertificate> x5c = new ArrayList<>();
 
   public String fmt;
