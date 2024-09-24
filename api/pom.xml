@@ -69,27 +69,6 @@
       <artifactId>quarkus-grpc</artifactId>
       <version>${version.quarkus}</version>
     </dependency>
-    <!--
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-client-jackson</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-jackson</artifactId>
-      <version>${version.quarkus}</version>
-    </dependency>
-    -->
-    <!--
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-resteasy-client</artifactId>
-    </dependency>
-    -->
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-client</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.openapitools</groupId>
       <artifactId>jackson-databind-nullable</artifactId>
@@ -277,34 +256,6 @@
           </execution>
         </executions>
       </plugin>
-
-      <!-- OpenAPI Generator for creating a mailpit client for testing -->
-      <plugin>
-        <groupId>org.openapitools</groupId>
-        <artifactId>openapi-generator-maven-plugin</artifactId>
-        <version>7.8.0</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>generate</goal>
-            </goals>
-            <configuration>
-              <inputSpec>${project.basedir}/src/test/resources/openapi/mailpit.swagger.json</inputSpec>
-              <generatorName>java</generatorName>
-              <configOptions>
-                <apiPackage>app.dissipate.test.mailpit.api</apiPackage>
-                <modelPackage>app.dissipate.test.mailpit.model</modelPackage>
-                <invokerPackage>app.dissipate.test.mailpit</invokerPackage>
-                <output>${project.build.directory}/generated-test-sources</output>
-                <library>resteasy</library>
-                <useJakartaEe>true</useJakartaEe>
-                <cleanupOutput>true</cleanupOutput>
-              </configOptions>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${compiler-plugin.version}</version>

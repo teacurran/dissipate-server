@@ -136,7 +136,6 @@ public class DelayedJobService {
     });
   }
 
-  @Transactional
   @WithSpan("DelayedJobService.getDelayedJobToWorkOn")
   public Uni<DelayedJob> getDelayedJobToWorkOn(String id) {
     return DelayedJob.byId(id).onItem().transformToUni(dj -> {

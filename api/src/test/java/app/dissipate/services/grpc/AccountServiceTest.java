@@ -151,10 +151,14 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
 
   @Test
   @Order(2)
-  void shouldThrowExceptionWithoutToken() {
+  void shouldThrowExceptionWithInvalidToken() {
     CompletableFuture<String> message = new CompletableFuture<>();
 
-    client.getSession(GetSessionRequest.newBuilder().build())
+    Metadata headers = new Metadata();
+    headers.put(AuthenticationConstants.AUTH_HEADER_KEY, "invalid-token");
+    DissipateService authedClient = GrpcClientUtils.attachHeaders(client, headers);
+
+    authedClient.getSession(GetSessionRequest.newBuilder().build())
       .onFailure().invoke(message::obtrudeException)
       .subscribe().with(reply -> message.complete(reply.toString()));
 
