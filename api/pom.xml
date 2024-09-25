@@ -163,21 +163,22 @@
       <version>1.7.0</version>
     </dependency>
     <dependency>
-      <groupId>org.mvnpm</groupId>
-      <artifactId>bootstrap</artifactId>
-      <version>5.3.3</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mvnpm</groupId>
-      <artifactId>bootstrap-icons</artifactId>
-      <version>1.11.3</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-web-dependency-locator</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.mvnpm</groupId>
+      <artifactId>primevue</artifactId>
+      <version>4.0.7</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mvnpm</groupId>
+      <artifactId>vue</artifactId>
+      <version>3.5.8</version>
+      <scope>provided</scope>
+    </dependency>
+
 
     <dependency>
       <groupId>io.quarkiverse.mailpit</groupId>
@@ -230,6 +231,14 @@
       <id>central</id>
       <name>Maven Central</name>
       <url>https://repo1.maven.org/maven2</url>
+    </repository>
+    <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>mvnpm.org</id>
+      <name>mvnpm</name>
+      <url>https://repo.mvnpm.org/maven2</url>
     </repository>
   </repositories>
   <build>
