@@ -158,6 +158,11 @@
       <version>3.0.18</version>
     </dependency>
     <dependency>
+      <groupId>io.quarkiverse.web-bundler</groupId>
+      <artifactId>quarkus-web-bundler</artifactId>
+      <version>1.7.0</version>
+    </dependency>
+    <dependency>
       <groupId>org.mvnpm</groupId>
       <artifactId>bootstrap</artifactId>
       <version>5.3.3</version>
