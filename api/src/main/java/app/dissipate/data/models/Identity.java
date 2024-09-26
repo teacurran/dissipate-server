@@ -80,7 +80,7 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
   )
   List<IdentityFollow> followers = new ArrayList<>();
 
-  public Uni<Account> persistAndFlush(EncryptionUtil encryptionUtil) {
+  public Uni<Identity> persistAndFlush(EncryptionUtil encryptionUtil) {
     encryptFields(encryptionUtil);
     return super.persistAndFlush();
   }

@@ -11,7 +11,7 @@ import "google/protobuf/timestamp.proto";
 
 service DissipateService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
-  rpc CreateHandle(CreateHandleRequest) returns (CreateHandleResponse) {}
+  rpc CreateIdentity(CreateIdentityRequest) returns (CreateIdentityResponse) {}
   rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {}
   rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {}
   rpc RunEtlLocation(RunEtlLocationRequest) returns (RunEtlLocationResponse) {}
@@ -31,15 +31,17 @@ message ApiError {
   string message = 2;
 }
 
-message CreateHandleRequest {
-  string handle = 1;
+message CreateIdentityRequest {
+  string username = 1;
+  string name = 2;
 }
 
-message CreateHandleResponse {
-  string id = 1;
-  string handle = 2;
-  google.protobuf.Timestamp created = 3;
-  google.protobuf.Timestamp last_seen = 4;
+message CreateIdentityResponse {
+  string sid = 1;
+  string iid = 2;
+  string username = 3;
+  string name = 4;
+  google.protobuf.Timestamp created = 5;
 }
 
 message GetChatsRequest {

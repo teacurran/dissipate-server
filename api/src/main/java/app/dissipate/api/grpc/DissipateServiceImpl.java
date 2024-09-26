@@ -31,9 +31,8 @@ public class DissipateServiceImpl implements DissipateService {
   RunEtlLocationMethod runEtlLocationMethod;
 
   @Override
-  @WithSession
-  public Uni<CreateHandleResponse> createHandle(CreateHandleRequest request) {
-    return Uni.createFrom().item(CreateHandleResponse.newBuilder().setHandle(request.getHandle()).build());
+  public Uni<CreateIdentityResponse> createIdentity(CreateIdentityRequest request) {
+    return null;
   }
 
   @Override

@@ -9,14 +9,11 @@ import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.jboss.logging.Logger;
 
 import javax.annotation.security.RolesAllowed;
 
 @ApplicationScoped
 public class GetSessionMethod {
-
-  private static final Logger LOGGER = Logger.getLogger(GetSessionMethod.class);
 
   @Inject
   CurrentIdentityAssociation identity;
