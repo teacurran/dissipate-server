@@ -45,9 +45,6 @@ public class Session  extends PanacheEntityBase {
   public Account account;
 
   @ManyToOne
-  public Account anonymousAccount;
-
-  @ManyToOne
   public Identity identity;
 
   @CreationTimestamp
