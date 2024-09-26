@@ -6,19 +6,14 @@ import app.dissipate.data.models.Session;
 import app.dissipate.grpc.CreateIdentityRequest;
 import app.dissipate.grpc.CreateIdentityResponse;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
-import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.LocalizationService;
 import app.dissipate.utils.EncryptionUtil;
 import io.grpc.Status;
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
-import io.vertx.ext.mail.mailencoder.EmailAddress;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.jboss.logging.Logger;
 
 import java.util.Locale;
 
@@ -26,11 +21,6 @@ import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_EMAIL_INVALID;
 
 @ApplicationScoped
 public class CreateIdentityMethod {
-
-  private static final Logger LOGGER = Logger.getLogger(CreateIdentityMethod.class);
-
-  @Inject
-  DelayedJobService delayedJobService;
 
   @Inject
   LocalizationService localizationService;
