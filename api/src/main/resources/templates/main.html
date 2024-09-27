@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="{inject:i18n.get()}">
-<head>
-  <title>{#insert title /}</title>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<HTML lang="{inject:i18n.get()}">
+<HEAD>
+  <TITLE>{#insert title /}</TITLE>
+  <META charset="UTF-8"></META>
+  <META name="viewport" content="width=device-width, initial-scale=1.0"></META>
     {#bundle /}
   {#insert moreStyles /}
-  <link rel="shortcut icon" type="image/png" href="/static/images/favicon.svg"/>
+  <LINK rel="shortcut icon" type="image/png" href="/static/images/favicon.svg"></LINK>
   {#insert moreScripts /}
-</head>
-<body hx-headers='{"{inject:csrf.headerName}":"{inject:csrf.token}"}'>
+</HEAD>
+<BODY hx-headers='{"{inject:csrf.headerName}":"{inject:csrf.token}"}'>
   {#insert /}
-</body>
-</html>
+</BODY>
+</HTML>

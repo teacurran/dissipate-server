@@ -1,0 +1,45 @@
+{#include main.html }
+  {#title}Complete registration{/title}
+  {#moreScripts}
+    <script src="/q/webauthn/webauthn.js" type="text/javascript" charset="UTF-8"></script>
+  {/moreScripts}
+
+  {#form uri:Login.complete(registerResponse.sid)}
+
+
+  {/form}
+
+  <script type="text/javascript">
+    const webAuthn = new WebAuthn({
+      callbackPath: '/q/webauthn/callback',
+      registerPath: '/q/webauthn/register',
+      loginPath: '/q/webauthn/login'
+    });
+
+    const registerButton = document.getElementById('webauthn');
+
+    registerButton.onclick = () => {
+      requireFields('username', 'firstname', 'lastname')
+        .then(fields => {
+          return  webAuthn
+            .registerOnly({
+              name: fields[0],
+              displayName: fields[1] + " " + fields[2]
+            })
+        }).then(body => {
+        document.getElementById('webAuthnId').value = body.id;
+        document.getElementById('webAuthnRawId').value = body.rawId;
+        document.getElementById('webAuthnResponseAttestationObject').value = body.response.attestationObject;
+        document.getElementById('webAuthnResponseClientDataJSON').value = body.response.clientDataJSON;
+        document.getElementById('webAuthnType').value = body.type;
+        document.getElementById('password').disabled = true;
+        document.getElementById('password2').disabled = true;
+      })
+        .catch(err => {
+          console.log('registration failed');
+          console.error(err);
+        });
+    };
+  </script>
+
+{/include}

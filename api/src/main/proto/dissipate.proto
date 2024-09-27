@@ -10,13 +10,12 @@ import "google/protobuf/timestamp.proto";
 // import "buf/validate/validate.proto";
 
 service DissipateService {
-  rpc Register(RegisterRequest) returns (RegisterResponse) {}
   rpc CreateIdentity(CreateIdentityRequest) returns (CreateIdentityResponse) {}
-  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {}
-  rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {}
-  rpc RunEtlLocation(RunEtlLocationRequest) returns (RunEtlLocationResponse) {}
-
   rpc GetChats(GetChatsRequest) returns (stream GetChatsResponse) {}
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {}
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  rpc RunEtlLocation(RunEtlLocationRequest) returns (RunEtlLocationResponse) {}
+  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {}
 }
 
 enum AccountStatus {

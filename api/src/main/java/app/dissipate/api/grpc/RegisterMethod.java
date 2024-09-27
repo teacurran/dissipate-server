@@ -14,13 +14,13 @@ import app.dissipate.services.DelayedJobService;
 import app.dissipate.services.LocalizationService;
 import app.dissipate.utils.EncryptionUtil;
 import app.dissipate.utils.StringUtil;
-import io.grpc.Context;
 import io.grpc.Status;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
+import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
 import io.vertx.ext.mail.mailencoder.EmailAddress;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -49,6 +49,9 @@ public class RegisterMethod {
   @Inject
   EncryptionUtil encryptionUtil;
 
+  @Inject
+  CurrentIdentityAssociation identity;
+
   @WithSpan("RegisterMethod.register")
   public Uni<RegisterResponse> register(RegisterRequest request) {
     Span otel = Span.current();
@@ -72,21 +75,26 @@ public class RegisterMethod {
             return Uni.createFrom().failure(localizationService.getApiException(locale, Status.ALREADY_EXISTS, AUTH_EMAIL_INVALID));
           }
 
-          return Account.createNewAnonymousAccount(locale, email, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
-            Session session = new Session();
-            session.account = a;
-            return session.persistAndFlush().onItem().transformToUni(s -> {
-              SessionValidation sessionValidation = new SessionValidation();
-              sessionValidation.session = s;
-              sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
-              sessionValidation.email = a.emails.get(0);
-              sessionValidation.token = StringUtil.generateRandomString(6);
-              return sessionValidation.persistAndFlush()
-                .onItem().transformToUni(sv -> delayedJobService.createDelayedJob(sv)
-                  .onItem().transformToUni(dj -> Uni.createFrom().item(
-                    RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).setSid(s.id.toString()).build()
-                  ))
-                );
+          return identity.getDeferredIdentity().onItem().transformToUni(si -> {
+            return Account.createNewAnonymousAccount(locale, email, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
+              Session session = si.getAttribute("session");
+              if (session == null) {
+                session = new Session();
+              }
+              session.account = a;
+              return session.persistAndFlush().onItem().transformToUni(s -> {
+                SessionValidation sessionValidation = new SessionValidation();
+                sessionValidation.session = s;
+                sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+                sessionValidation.email = a.emails.get(0);
+                sessionValidation.token = StringUtil.generateRandomString(6);
+                return sessionValidation.persistAndFlush()
+                  .onItem().transformToUni(sv -> delayedJobService.createDelayedJob(sv)
+                    .onItem().transformToUni(dj -> Uni.createFrom().item(
+                      RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).setSid(s.id.toString()).build()
+                    ))
+                  );
+              });
             });
           });
         })
