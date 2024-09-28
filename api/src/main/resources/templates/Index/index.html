@@ -11,7 +11,9 @@
       {#form uri:Login.register()}
         <fieldset>
           <legend>Register</legend>
-            {#input name = "email" /}
+          {#formElement name="email" label="Email"}
+              {#input name="email" /}
+          {/formElement}
           <button type="submit" class="btn btn-primary">Register</button>
         </fieldset>
       {/form}
