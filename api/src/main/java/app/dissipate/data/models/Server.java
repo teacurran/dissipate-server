@@ -24,7 +24,7 @@ import java.time.ZoneOffset;
 @NamedQuery(name = Server.QUERY_FIND_FIRST_UNUSED_SERVER,
   query = "from Server where isShutdown=true")
 @NamedQuery(name = Server.QUERY_MARK_ABANDONED_SERVERS_AS_SHUTDOWN,
-  query = "update Server set isShutdown=true, status=:status where seen < :seen")
+  query = "update Server set isShutdown=true, status=:status where seen < :seen AND isShutdown=false")
 public class Server extends PanacheEntityBase {
 
   public static final String QUERY_FIND_FIRST_UNUSED_SERVER = "Server.findFirstUnusedServer";
