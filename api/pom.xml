@@ -146,7 +146,13 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-qute-deployment</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkiverse.quinoa</groupId>
+      <artifactId>quarkus-quinoa</artifactId>
+      <version>2.4.9</version>
+    </dependency>
 
+    <!--
     <dependency>
       <groupId>io.quarkiverse.renarde</groupId>
       <artifactId>quarkus-renarde</artifactId>
@@ -157,52 +163,7 @@
       <artifactId>quarkus-renarde-security</artifactId>
       <version>3.0.18</version>
     </dependency>
-    <dependency>
-      <groupId>io.quarkiverse.web-bundler</groupId>
-      <artifactId>quarkus-web-bundler</artifactId>
-      <version>1.7.1</version>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-web-dependency-locator</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.mvnpm</groupId>
-      <artifactId>primevue</artifactId>
-      <version>4.0.7</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mvnpm</groupId>
-      <artifactId>vue</artifactId>
-      <version>3.5.10</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mvnpm</groupId>
-      <artifactId>bootstrap</artifactId>
-      <version>5.3.1</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mvnpm.at.popperjs</groupId>
-      <artifactId>core</artifactId>
-      <version>2.11.8</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mvnpm</groupId>
-      <artifactId>bootstrap-icons</artifactId>
-      <version>1.10.5</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mvnpm</groupId>
-      <artifactId>htmx.org</artifactId>
-      <version>1.9.11</version>
-      <scope>provided</scope>
-    </dependency>
-
+    -->
 
     <dependency>
       <groupId>io.quarkiverse.mailpit</groupId>
@@ -255,14 +216,6 @@
       <id>central</id>
       <name>Maven Central</name>
       <url>https://repo1.maven.org/maven2</url>
-    </repository>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>mvnpm.org</id>
-      <name>mvnpm</name>
-      <url>https://repo.mvnpm.org/maven2</url>
     </repository>
   </repositories>
   <build>
