@@ -60,6 +60,9 @@ services:
       QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://main-db:5432/dissipate
       QUARKUS_DATASOURCE_USERNAME: dissipate
       QUARKUS_DATASOURCE_PASSWORD: dissipate
+      QUARKUS_DATASOURCE_READDB_REACTIVE_URL: vertx-reactive:postgresql://read-db:5432/dissipate
+      QUARKUS_DATASOURCE_READDB_USERNAME: dissipate
+      QUARKUS_DATASOURCE_READDB_PASSWORD: dissipate
       QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
       QUARKUS_HTTP_HOST: 0.0.0.0
       QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
