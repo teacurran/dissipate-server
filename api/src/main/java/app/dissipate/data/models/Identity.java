@@ -2,6 +2,7 @@ package app.dissipate.data.models;
 
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -24,6 +25,7 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
   public static final String ID_GENERATOR_KEY = "Identity";
 
   public static final String QUERY_BY_USERNAME = "Identity.findByUsername";
+
 
   @ConfigProperty(name = "encryption.key")
   @Transient
@@ -79,6 +81,10 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
     orphanRemoval = true
   )
   List<IdentityFollow> followers = new ArrayList<>();
+
+  public static Uni<Identity> findById(Object id) {
+    return Identity.findById(id);
+  }
 
   public Uni<Identity> persistAndFlush(EncryptionUtil encryptionUtil) {
     encryptFields(encryptionUtil);

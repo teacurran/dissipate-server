@@ -11,6 +11,7 @@ import "google/protobuf/timestamp.proto";
 
 service DissipateService {
   rpc CreateIdentity(CreateIdentityRequest) returns (CreateIdentityResponse) {}
+  rpc ChangeIdentity(ChangeIdentityRequest) returns (ChangeIdentityResponse) {}
   rpc GetChats(GetChatsRequest) returns (stream GetChatsResponse) {}
   rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {}
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
@@ -36,6 +37,18 @@ message CreateIdentityRequest {
 }
 
 message CreateIdentityResponse {
+  string sid = 1;
+  string iid = 2;
+  string username = 3;
+  string name = 4;
+  google.protobuf.Timestamp created = 5;
+}
+
+message ChangeIdentityRequest {
+  string iid = 1;
+}
+
+message ChangeIdentityResponse {
   string sid = 1;
   string iid = 2;
   string username = 3;

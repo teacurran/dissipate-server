@@ -30,9 +30,20 @@ public class DissipateServiceImpl implements DissipateService {
   @Inject
   RunEtlLocationMethod runEtlLocationMethod;
 
+  @Inject
+  CreateIdentityMethod createIdentityMethod;
+
+  @Inject
+  ChangeIdentityMethod changeIdentityMethod;
+
   @Override
   public Uni<CreateIdentityResponse> createIdentity(CreateIdentityRequest request) {
-    return null;
+    return createIdentityMethod.create(request);
+  }
+
+  @Override
+  public Uni<ChangeIdentityResponse> changeIdentity(ChangeIdentityRequest request) {
+    return changeIdentityMethod.change(request);
   }
 
   @Override
