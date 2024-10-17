@@ -9,9 +9,8 @@ import io.quarkus.grpc.RegisterInterceptor;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-
-import javax.annotation.security.RolesAllowed;
 
 @GrpcService
 @RegisterInterceptor(GrpcSecurityInterceptor.class)
