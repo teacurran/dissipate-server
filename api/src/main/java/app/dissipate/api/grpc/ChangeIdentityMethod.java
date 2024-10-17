@@ -36,7 +36,7 @@ public class ChangeIdentityMethod {
   CurrentIdentityAssociation identityAssociation;
 
   @WithSpan("CreateIdentityMethod.create")
-  public Uni<CreateIdentityResponse> change(ChangeIdentityRequest request) {
+  public Uni<ChangeIdentityResponse> change(ChangeIdentityRequest request) {
     return identityAssociation.getDeferredIdentity().onItem().transformToUni(si -> {
       Session session = si.getAttribute("session");
 
@@ -47,7 +47,7 @@ public class ChangeIdentityMethod {
 
       Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
 
-      Identity.findById(request.getIid()).onItem().transform(i -> {
+      return Identity.findById(request.getIid()).onItem().transformToUni(i -> {
         if (i == null) {
           return Uni.createFrom().failure(localizationService.getApiException(locale, Status.PERMISSION_DENIED, AUTH_EMAIL_INVALID));
         }
@@ -62,9 +62,6 @@ public class ChangeIdentityMethod {
           .setUsername(i.username)
           .setName(i.name).build());
       });
-
     });
   }
-
-
 }

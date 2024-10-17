@@ -4,6 +4,7 @@ import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Version;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -22,6 +23,9 @@ public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBa
 
   @UpdateTimestamp
   public Instant updated;
+
+  @Version
+  public Long version;
 
   public String toString() {
     String var10000 = this.getClass().getSimpleName();

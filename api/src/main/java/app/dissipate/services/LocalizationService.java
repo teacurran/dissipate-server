@@ -11,7 +11,7 @@ import java.util.ResourceBundle;
 @ApplicationScoped
 public class LocalizationService {
 
-  Map<Locale, ResourceBundle> bundles;
+  final Map<Locale, ResourceBundle> bundles;
 
   public static final Locale DEFAULT_LOCALE = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
