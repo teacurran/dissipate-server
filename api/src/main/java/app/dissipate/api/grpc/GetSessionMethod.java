@@ -7,7 +7,6 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -18,7 +17,6 @@ public class GetSessionMethod {
   CurrentIdentityAssociation identity;
 
   @WithSpan("GetSessionMethod.handler")
-  @RolesAllowed("user")
   @WithSession
   public Uni<GetSessionResponse> handler(GetSessionRequest request) {
     return identity.getDeferredIdentity().onItem().transformToUni(si -> {

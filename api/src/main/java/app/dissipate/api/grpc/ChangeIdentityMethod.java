@@ -5,7 +5,6 @@ import app.dissipate.data.models.Identity;
 import app.dissipate.data.models.Session;
 import app.dissipate.grpc.ChangeIdentityRequest;
 import app.dissipate.grpc.ChangeIdentityResponse;
-import app.dissipate.grpc.CreateIdentityResponse;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.services.LocalizationService;
 import app.dissipate.utils.EncryptionUtil;
