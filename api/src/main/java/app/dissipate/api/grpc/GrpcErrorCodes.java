@@ -1,5 +1,8 @@
 package app.dissipate.api.grpc;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class GrpcErrorCodes {
 
   public static final String AUTH_EMAIL_INVALID  = "error.auth.email.invalid";
