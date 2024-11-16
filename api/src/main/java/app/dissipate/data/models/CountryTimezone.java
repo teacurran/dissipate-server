@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 import java.util.TimeZone;
 
 @Entity
-@Table(name = "country_timezones", indexes = {@Index(name = "idx_country_timezone_country", columnList = "country"), @Index(name = "idx_country_timezone", columnList = "country, timezone"),})
+@Table(name = "country_timezones", indexes = {@Index(name = "idx_country_timezone_country", columnList = "country_id"), @Index(name = "idx_country_timezone", columnList = "country_id, timezone"),})
 @NamedQuery(name = CountryTimezone.QUERY_FIND_BY_COUNTRY_TIMEZONE, query = """
   FROM CountryTimezone ct
   WHERE ct.country = :country
@@ -19,6 +19,7 @@ public class CountryTimezone extends DefaultPanacheEntityWithTimestamps {
   public static final String QUERY_FIND_BY_COUNTRY_TIMEZONE = "CountryTimezone.findByCountryTimezone";
 
   @ManyToOne
+  @JoinColumn(name = "country_id")
   public Country country;
 
   public TimeZone timezone;
