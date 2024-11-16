@@ -26,11 +26,6 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
 
   public static final String QUERY_BY_USERNAME = "Identity.findByUsername";
 
-
-  @ConfigProperty(name = "encryption.key")
-  @Transient
-  String key;
-
   public String username;
 
   public String usernameNormalized;
