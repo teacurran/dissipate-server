@@ -27,6 +27,10 @@ public class LocalizationService {
   }
 
   public ResourceBundle getBundle(Locale locale) {
+    // without this, compile with native profile fails
+    if (bundles == null) {
+      init();
+    }
     if (!bundles.containsKey(locale)) {
       return bundles.get(DEFAULT_LOCALE);
     }
