@@ -18,12 +18,12 @@
     <version.kotlin>1.7.10</version.kotlin>
     <version.os-maven-plugin>1.7.1</version.os-maven-plugin>
     <version.postgres.driver>42.4.1</version.postgres.driver>
-    <version.quarkus>3.16.2</version.quarkus>
+    <version.quarkus>3.16.4</version.quarkus>
   </properties>
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.quarkus</groupId>
+        <groupId>io.quarkus.platform</groupId>
         <artifactId>quarkus-bom</artifactId>
         <version>${version.quarkus}</version>
         <type>pom</type>
