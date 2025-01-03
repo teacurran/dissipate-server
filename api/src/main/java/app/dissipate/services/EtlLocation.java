@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static java.util.zip.ZipFile.OPEN_READ;
@@ -58,41 +59,45 @@ public class EtlLocation {
   public Uni<Void> loadWorldLocations() {
     String zipFilePath = "db/seeds/countries-states-cities.json.zip";
 
-    try (ZipFile zipFile = new ZipFile(new File(Thread.currentThread().getContextClassLoader().getResource(zipFilePath).toURI()), OPEN_READ);
-         InputStream is = zipFile.getInputStream(zipFile.getEntry("countries-states-cities.json"))) {
+    try {
+      File zipFile = new File(Thread.currentThread().getContextClassLoader().getResource(zipFilePath).toURI());
+      try (ZipFile zip = new ZipFile(zipFile, OPEN_READ)) {
+        ZipEntry entry = zip.getEntry("countries-states-cities.json");
+        try (InputStream is = zip.getInputStream(entry)) {
+          return parseLocationFile(is).onItem().transformToUni(countryJsons -> {
+            LOGGER.infov("Loading {0} countries", countryJsons.size());
 
-      return parseLocationFile(is).onItem().transformToUni(countryJsons -> {
-        LOGGER.infov("Loading {0} countries", countryJsons.size());
+            return Multi.createFrom().iterable(countryJsons).onItem().transformToUniAndConcatenate(countryJson -> {
+              Country country = new Country();
+              country.id = String.valueOf(countryJson.id);
+              country.capital = countryJson.capital;
+              country.currency = countryJson.currency;
+              country.currencyName = countryJson.currencyName;
+              country.currencySymbol = countryJson.currencySymbol;
+              country.emoji = countryJson.emoji;
+              country.emojiU = countryJson.emojiUnicode;
+              country.iso2 = countryJson.iso2;
+              country.iso3 = countryJson.iso3;
+              country.name = countryJson.name;
+              country.nationality = countryJson.nationality;
+              country.nativeName = countryJson.nativeName;
+              country.phoneCode = countryJson.phoneCode;
+              country.region = countryJson.region;
+              country.regionId = countryJson.regionId;
+              country.subregion = countryJson.subregion;
+              country.subregionId = countryJson.subregionId;
 
-        return Multi.createFrom().iterable(countryJsons).onItem().transformToUniAndConcatenate(countryJson -> {
-          Country country = new Country();
-          country.id = String.valueOf(countryJson.id);
-          country.capital = countryJson.capital;
-          country.currency = countryJson.currency;
-          country.currencyName = countryJson.currencyName;
-          country.currencySymbol = countryJson.currencySymbol;
-          country.emoji = countryJson.emoji;
-          country.emojiU = countryJson.emojiUnicode;
-          country.iso2 = countryJson.iso2;
-          country.iso3 = countryJson.iso3;
-          country.name = countryJson.name;
-          country.nationality = countryJson.nationality;
-          country.nativeName = countryJson.nativeName;
-          country.phoneCode = countryJson.phoneCode;
-          country.region = countryJson.region;
-          country.regionId = countryJson.regionId;
-          country.subregion = countryJson.subregion;
-          country.subregionId = countryJson.subregionId;
+              // Geometry not working
+              // country.location = point(WGS84, g(Double.parseDouble(countryJson.longitude), Double.parseDouble(countryJson.latitude)));
 
-          // Geometry not working
-          // country.location = point(WGS84, g(Double.parseDouble(countryJson.longitude), Double.parseDouble(countryJson.latitude)));
-
-          return Panache.getSession().onItem().transformToUni(session -> session.merge(country)
-            .onItem().transformToUni(c -> processStates(session, countryJson.states, c)
-              .replaceWith(processTranslations(session, countryJson.translations, c)
-                .replaceWith(processTimezones(session, countryJson.timezones, c)))));
-        }).collect().asList().replaceWith(Uni.createFrom().nullItem());
-      });
+              return Panache.getSession().onItem().transformToUni(session -> session.merge(country)
+                .onItem().transformToUni(c -> processStates(session, countryJson.states, c)
+                  .replaceWith(processTranslations(session, countryJson.translations, c)
+                    .replaceWith(processTimezones(session, countryJson.timezones, c)))));
+            }).collect().asList().replaceWith(Uni.createFrom().nullItem());
+          });
+        }
+      }
     } catch (IOException | URISyntaxException e) {
       return Uni.createFrom().failure(e);
     }

@@ -13,7 +13,7 @@ public class EtlLocationJobHandler implements DelayedJobHandler {
   EtlLocation etlLocation;
 
   @Override
-  @WithSpan("EmailAuthJobHandler.run")
+  @WithSpan("EtlLocationJobHandler.run")
   public Uni<Void> run(String actorId) {
     return etlLocation.loadWorldLocations();
   }
