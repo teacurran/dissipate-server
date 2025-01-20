@@ -46,13 +46,13 @@ public class EtlLocation {
   ObjectMapper mapper;
 
   @WithSpan
-  public Uni<List<CountryJson>> parseLocationFile(InputStream file) {
-    return Uni.createFrom().item(Unchecked.supplier(() -> parseJson(file)))
+  public Uni<List<CountryJson>> parseLocationFile(byte[] data) {
+    return Uni.createFrom().item(Unchecked.supplier(() -> parseJson(data)))
       .onFailure().recoverWithUni(e -> Uni.createFrom().failure(new EtlException("Failed to parse JSON", e)));
   }
 
-  private List<CountryJson> parseJson(InputStream file) throws IOException {
-    return mapper.readValue(file, mapper.getTypeFactory().constructCollectionType(List.class, CountryJson.class));
+  private List<CountryJson> parseJson(byte[] data) throws IOException {
+    return mapper.readValue(data, mapper.getTypeFactory().constructCollectionType(List.class, CountryJson.class));
   }
 
   @WithSpan
@@ -64,7 +64,8 @@ public class EtlLocation {
       try (ZipFile zip = new ZipFile(zipFile, OPEN_READ)) {
         ZipEntry entry = zip.getEntry("countries-states-cities.json");
         try (InputStream is = zip.getInputStream(entry)) {
-          return parseLocationFile(is).onItem().transformToUni(countryJsons -> {
+          byte[] data = is.readAllBytes();
+          return parseLocationFile(data).onItem().transformToUni(countryJsons -> {
             LOGGER.infov("Loading {0} countries", countryJsons.size());
 
             return Multi.createFrom().iterable(countryJsons).onItem().transformToUniAndConcatenate(countryJson -> {
