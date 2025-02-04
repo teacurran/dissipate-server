@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -60,7 +61,7 @@ public class EtlLocation {
     String zipFilePath = "db/seeds/countries-states-cities.json.zip";
 
     try {
-      File zipFile = new File(Thread.currentThread().getContextClassLoader().getResource(zipFilePath).toURI());
+      File zipFile = new File(Objects.requireNonNull( Thread.currentThread().getContextClassLoader().getResource(zipFilePath)).toURI());
       try (ZipFile zip = new ZipFile(zipFile, OPEN_READ)) {
         ZipEntry entry = zip.getEntry("countries-states-cities.json");
         try (InputStream is = zip.getInputStream(entry)) {
