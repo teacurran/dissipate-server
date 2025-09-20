@@ -44,7 +44,7 @@ public class ModelNamingStrategy extends PhysicalNamingStrategySnakeCaseImpl {
         }
       }
 
-      return Identifier.toIdentifier(builder.toString(), name.isQuoted());
+      return Identifier.toIdentifier(builder.toString().toLowerCase(), name.isQuoted());
     }
 
     private boolean needsUnderscore(char before, char current, char after) {
