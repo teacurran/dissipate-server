@@ -4,8 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import io.vertx.ext.auth.webauthn.Authenticator;
-import io.vertx.ext.auth.webauthn.PublicKeyCredential;
+// WebAuthn imports removed - need to refactor for Quarkus 3.26
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +36,7 @@ public class AccountWebAuthn extends DefaultPanacheEntityWithTimestamps {
   /**
    * The algorithm used for the public credential
    */
-  public PublicKeyCredential alg;
+  public String alg; // Changed from PublicKeyCredential to String for Quarkus 3.26
 
   /**
    * The list of X509 certificates encoded as base64url.
@@ -51,34 +50,12 @@ public class AccountWebAuthn extends DefaultPanacheEntityWithTimestamps {
     // Default constructor
   }
 
+  // TODO: Refactor this constructor for Quarkus 3.26 WebAuthn API
+  // The Authenticator class from io.vertx.ext.auth.webauthn is no longer available
+  // This constructor needs to be updated based on the new WebAuthn implementation
+  /*
   public AccountWebAuthn(Authenticator authenticator, Account account) {
-    aaguid = authenticator.getAaguid();
-    if(authenticator.getAttestationCertificates() != null)
-      alg = authenticator.getAttestationCertificates().getAlg();
-    counter = authenticator.getCounter();
-    credentialId = authenticator.getCredID();
-    fmt = authenticator.getFmt();
-    publicKey = authenticator.getPublicKey();
-
-    // type is always public-key
-    //type = authenticator.getType();
-
-    // we have to look up the account by 'username' here
-    //    account = Account.findBySrcId();
-    //    userName = authenticator.getUserName();
-
-    if(authenticator.getAttestationCertificates() != null
-      && authenticator.getAttestationCertificates().getX5c() != null) {
-      for (String x5c : authenticator.getAttestationCertificates().getX5c()) {
-        WebAuthnCertificate cert = new WebAuthnCertificate();
-        cert.x5c = x5c;
-        cert.accountWebAuthn = this;
-        this.x5c.add(cert);
-      }
-    }
-    this.account = account;
-
-
-    // account.webAuthnCredential = this;
+    // Previous implementation commented out - needs refactoring
   }
+  */
 }

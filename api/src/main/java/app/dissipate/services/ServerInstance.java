@@ -8,7 +8,7 @@ import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Context;
@@ -39,7 +39,7 @@ public class ServerInstance {
   ZoneOffset zoneOffset;
 
   @Inject
-  HttpConfiguration httpConfiguration;
+  VertxHttpConfig httpConfiguration;
 
   @Produces
   @Named("currentServer")
@@ -132,8 +132,8 @@ public class ServerInstance {
     server.launched = LocalDateTime.now().toInstant(zoneOffset);
     server.seen = LocalDateTime.now().toInstant(zoneOffset);
     server.status = ServerStatus.ACTIVE;
-    server.hostname = httpConfiguration.host;
-    server.port = httpConfiguration.port;
+    server.hostname = httpConfiguration.host();
+    server.port = httpConfiguration.port();
     server.isShutdown = false;
     server.token = UUID.randomUUID().toString();
     return server.persistAndFlush();
@@ -148,8 +148,8 @@ public class ServerInstance {
       server.launched = LocalDateTime.now().toInstant(zoneOffset);
       server.seen = LocalDateTime.now().toInstant(zoneOffset);
       server.status = ServerStatus.ACTIVE;
-      server.hostname = httpConfiguration.host;
-      server.port = httpConfiguration.port;
+      server.hostname = httpConfiguration.host();
+      server.port = httpConfiguration.port();
       server.isShutdown = false;
       server.token = UUID.randomUUID().toString();
       return server.persistAndFlush();

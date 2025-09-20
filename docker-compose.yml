@@ -97,7 +97,7 @@ services:
       -c hot_standby_feedback=on
       -c log_statement=all
     volumes:
-      - ./docker-compose/00_init_replication.sql:/docker-entrypoint-initdb.d/00_init_replication.sql
+      # - ./docker-compose/00_init_replication.sql:/docker-entrypoint-initdb.d/00_init_replication.sql
       - main-db:/var/lib/postgresql/data
     ports:
       - "5433:5432"
@@ -107,39 +107,39 @@ services:
       timeout: 5s
       retries: 5
 
-  read-db:
-    image: postgis/postgis
-    user: postgres
-    restart: always
-    environment:
-      PGUSER: replicator
-      PGPASSWORD: replicator_password
-    command: |
-      bash -c "
-      if [ -z \"$(ls -A /var/lib/postgresql/data)\" ]; then
-        until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=main-db --port=5432
-        do
-          echo 'Waiting for primary to connect...'
-          sleep 1s
-        done
-        echo 'Backup done, starting replica...'
-        chmod 0700 /var/lib/postgresql/data
-      else
-        echo 'Data directory is not empty, skipping backup...'
-      fi
-      postgres
-          "
-    depends_on:
-      - main-db
-    volumes:
-      - read-db:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"
-    healthcheck:
-      test: 'pg_isready -U dissipate --dbname=postgres'
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  #  read-db:
+  #    image: postgis/postgis
+  #    user: postgres
+  #    restart: always
+  #    environment:
+  #      PGUSER: replicator
+  #      PGPASSWORD: replicator_password
+  #    command: |
+  #      bash -c "
+  #      if [ -z \"$(ls -A /var/lib/postgresql/data)\" ]; then
+  #        until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=main-db --port=5432
+  #        do
+  #          echo 'Waiting for primary to connect...'
+  #          sleep 1s
+  #        done
+  #        echo 'Backup done, starting replica...'
+  #        chmod 0700 /var/lib/postgresql/data
+  #      else
+  #        echo 'Data directory is not empty, skipping backup...'
+  #      fi
+  #      postgres
+  #          "
+  #    depends_on:
+  #      - main-db
+  #    volumes:
+  #      - read-db:/var/lib/postgresql/data
+  #    ports:
+  #      - "5434:5432"
+  #    healthcheck:
+  #      test: 'pg_isready -U dissipate --dbname=postgres'
+  #      interval: 10s
+  #      timeout: 5s
+  #      retries: 5
 
   # Jaeger
   jaeger:

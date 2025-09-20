@@ -1,6 +1,5 @@
 package app.dissipate.data.jpa;
 
-import io.quarkus.test.junit.QuarkusTest;
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.junit.jupiter.api.Test;
@@ -9,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 
-@QuarkusTest
 class ModelNamingStrategyTest {
 
   private final ModelNamingStrategy namingStrategy = new ModelNamingStrategy();

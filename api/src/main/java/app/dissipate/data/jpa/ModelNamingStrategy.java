@@ -1,11 +1,11 @@
 package app.dissipate.data.jpa;
 
-import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
 import org.hibernate.boot.model.naming.Identifier;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.jvnet.inflector.Noun;
 
-public class ModelNamingStrategy extends CamelCaseToUnderscoresNamingStrategy {
+public class ModelNamingStrategy extends PhysicalNamingStrategySnakeCaseImpl {
 
     @Override
     public Identifier toPhysicalTableName(Identifier name, JdbcEnvironment jdbcEnvironment) {
@@ -21,9 +21,9 @@ public class ModelNamingStrategy extends CamelCaseToUnderscoresNamingStrategy {
             final String lastWord = tableName.substring(tableName.lastIndexOf("_") + 1);
             final String prefix = tableName.substring(0, tableName.lastIndexOf("_"));
             final String combined = String.format("%s_%s", prefix, Noun.pluralOf(lastWord));
-            return this.getIdentifier(Noun.pluralOf(combined), name.isQuoted(), jdbcEnvironment);
+            return super.toPhysicalTableName(Identifier.toIdentifier(Noun.pluralOf(combined), name.isQuoted()), jdbcEnvironment);
         } else {
-            return this.getIdentifier(Noun.pluralOf(tableName), name.isQuoted(), jdbcEnvironment);
+            return super.toPhysicalTableName(Identifier.toIdentifier(Noun.pluralOf(tableName), name.isQuoted()), jdbcEnvironment);
         }
     }
 
@@ -44,7 +44,7 @@ public class ModelNamingStrategy extends CamelCaseToUnderscoresNamingStrategy {
         }
       }
 
-      return getIdentifier(builder.toString(), name.isQuoted(), jdbcEnvironment);
+      return Identifier.toIdentifier(builder.toString(), name.isQuoted());
     }
 
     private boolean needsUnderscore(char before, char current, char after) {
