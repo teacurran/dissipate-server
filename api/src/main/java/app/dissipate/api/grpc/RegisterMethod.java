@@ -30,7 +30,6 @@ import org.jboss.logging.Logger;
 import java.util.Locale;
 
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_EMAIL_INVALID;
-import static io.opentelemetry.semconv.ExceptionAttributes.EXCEPTION_ESCAPED;
 
 @ApplicationScoped
 public class RegisterMethod {
@@ -100,7 +99,7 @@ public class RegisterMethod {
         })
       ).onFailure().call(t -> {
         otel.addEvent("error registering user", Attributes.of(AttributeKey.stringKey("error"), t.getMessage()));
-        otel.recordException(t, Attributes.of(EXCEPTION_ESCAPED, true));
+        otel.recordException(t, Attributes.of(AttributeKey.booleanKey("exception.escaped"), true));
         return Uni.createFrom().failure(t);
       });
     }
