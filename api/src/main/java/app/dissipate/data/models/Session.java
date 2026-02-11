@@ -32,10 +32,20 @@ import java.util.UUID;
     AND s.ended IS NULL
     AND sv.validated IS NOT NULL
     """)
-public class Session  extends PanacheEntityBase {
+@NamedQuery(name = Session.QUERY_FIND_CONNECTED_BY_IDENTITY_IDS,
+  query = """
+    SELECT s
+    FROM Session s
+    JOIN FETCH s.connectedServer
+    WHERE s.identity.id IN :identityIds
+    AND s.connectedServer IS NOT NULL
+    AND s.ended IS NULL
+    """)
+public class Session extends PanacheEntityBase {
 
   public static final String QUERY_BY_SID = "Session.findBySid";
   public static final String QUERY_BY_SID_VALIDATED = "Session.findBySidValidated";
+  public static final String QUERY_FIND_CONNECTED_BY_IDENTITY_IDS = "Session.findConnectedByIdentityIds";
 
   @Id
   @GeneratedValue
@@ -60,6 +70,9 @@ public class Session  extends PanacheEntityBase {
 
   public String clientIp;
 
+  @ManyToOne
+  public Server connectedServer;
+
   @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
   public List<SessionValidation> validations = new ArrayList<>();
 
@@ -81,5 +94,10 @@ public class Session  extends PanacheEntityBase {
 
   public static Uni<Session> findBySidValidated(String sid) {
     return find("#" + Session.QUERY_BY_SID_VALIDATED, Parameters.with("sid", UUID.fromString(sid))).firstResult();
+  }
+
+  public static Uni<List<Session>> findConnectedByIdentityIds(List<String> identityIds) {
+    return find("#" + Session.QUERY_FIND_CONNECTED_BY_IDENTITY_IDS,
+      Parameters.with("identityIds", identityIds)).list();
   }
 }

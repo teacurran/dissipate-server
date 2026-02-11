@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option java_package = "app.dissipate.grpc.internal";
+option java_outer_classname = "DissipateInternalProtos";
+option optimize_for = SPEED;
+option java_multiple_files = true;
+
+service DissipateInternalService {
+  rpc NotifyChatUpdate(NotifyChatUpdateRequest) returns (NotifyChatUpdateResponse) {}
+  rpc Ping(PingRequest) returns (PingResponse) {}
+}
+
+message NotifyChatUpdateRequest {
+  string server_token = 1;
+  string chat_id = 2;
+  string sender_identity_id = 3;
+  repeated string session_ids = 4;
+  string triggering_event_id = 5;
+}
+
+message NotifyChatUpdateResponse {
+  int32 delivered_count = 1;
+}
+
+message PingRequest {
+  string server_token = 1;
+}
+
+message PingResponse {
+  int64 server_id = 1;
+  int64 uptime_seconds = 2;
+}
