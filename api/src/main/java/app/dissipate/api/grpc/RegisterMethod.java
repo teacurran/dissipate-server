@@ -76,10 +76,7 @@ public class RegisterMethod {
 
           return identity.getDeferredIdentity().onItem().transformToUni(si -> {
             return Account.createNewAnonymousAccount(locale, email, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
-              Session session = si.getAttribute("session");
-              if (session == null) {
-                session = new Session();
-              }
+              Session session = new Session();
               session.account = a;
               return session.persistAndFlush().onItem().transformToUni(s -> {
                 SessionValidation sessionValidation = new SessionValidation();

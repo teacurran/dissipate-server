@@ -35,6 +35,18 @@ x-api-base: &api-base
     -DdebugHost=0.0.0.0
 
 services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+    volumes:
+      - ./docker-compose/keycloak:/opt/keycloak/data/import
+    ports:
+      - "8180:8080"
+
   api:
     image: api-server
     build:
@@ -44,6 +56,7 @@ services:
       - main-db
       - main-db-migrations
       - jaeger
+      - keycloak
     volumes:
       - ./api:/app
       - ~/.config/gcloud:/tmp/.config/gcloud
@@ -66,6 +79,7 @@ services:
       QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
       QUARKUS_HTTP_HOST: 0.0.0.0
       QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/dissipate
     command:
       mvn
       quarkus:dev

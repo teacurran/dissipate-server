@@ -46,7 +46,6 @@ public class DissipateServiceImpl implements DissipateService {
   }
 
   @Override
-  @WithSession
   @RolesAllowed("user")
   public Uni<GetSessionResponse> getSession(GetSessionRequest request) {
     return getSessionMethod.handler(request);
