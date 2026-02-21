@@ -7,25 +7,25 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.native - -t quarkus/getting-started .
+# docker build -f api/src/main/docker/Dockerfile.native -t dissipate-server .
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 quarkus/getting-started
+# docker run -i --rm -p 8080:8080 dissipate-server
 #
 ###
-FROM softinstigate/graalvm-maven AS builder
+FROM ghcr.io/graalvm/graalvm-community:21 AS builder
 WORKDIR /app
 
-# COPY ./.env /usr/src/app/
+RUN microdnf install -y maven && microdnf clean all
+
 COPY ./pom.xml /app/
-COPY ./src /app/src
+COPY ./api/pom.xml /app/api/
+COPY ./api/src /app/api/src
 
-# RUN mvn -f /app/pom.xml -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
-RUN mvn -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies clean package -Pnative
+RUN cd /app && mvn -B -pl api -am de.qaware.maven:go-offline-maven-plugin:resolve-dependencies clean package -Pnative -DskipTests
 
-#FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
-FROM quay.io/quarkus/quarkus-micro-image:1.0
+FROM quay.io/quarkus/quarkus-micro-image:2.0
 
 WORKDIR /app
 
@@ -33,17 +33,7 @@ RUN chown 1001 /app \
     && chmod "g+rwX" /app \
     && chown 1001:root /app
 
-# COPY --chown=1001 --from=builder /app/target/quarkus-app/lib/ /app/lib/
-# COPY --chown=1001 --from=builder /app/target/quarkus-app/*.jar /app/
-# COPY --chown=1001 --from=builder /app/target/quarkus-app/app/ /app/app/
-# COPY --chown=1001 --from=builder /app/target/quarkus-app/quarkus/ /app/quarkus/
-COPY --chown=1001 --from=builder /app/target/*-runner /app/application
-
-#WORKDIR /work/
-#RUN chown 1001 /work \
-#    && chmod "g+rwX" /work \
-#    && chown 1001:root /work
-#COPY --chown=1001:root target/*-runner /work/application
+COPY --chown=1001 --from=builder /app/api/target/*-runner /app/application
 
 USER 1001
 
