@@ -37,11 +37,11 @@ jobs:
 
       - name: Compile
         working-directory: api
-        run: mvn -B compile -DskipTests -Dquarkus.quinoa.enabled=false
+        run: mvn -B compile -DskipTests -Dquarkus.quinoa=false
 
       - name: Run tests
         working-directory: api
-        run: mvn -B verify -Dquarkus.quinoa.enabled=false
+        run: mvn -B verify -Dquarkus.quinoa=false
 
   sonarcloud:
     name: SonarCloud Analysis
@@ -75,7 +75,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dquarkus.quinoa.enabled=false \
+            -Dquarkus.quinoa=false \
             -DskipITs=false \
             -Dsonar.projectKey=teacurran_dissipate-server \
             -Dsonar.organization=appi \
