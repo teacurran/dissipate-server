@@ -36,10 +36,12 @@ jobs:
           cache: maven
 
       - name: Compile
-        run: mvn -B compile -DskipTests -pl api -am
+        working-directory: api
+        run: mvn -B compile -DskipTests
 
       - name: Run tests
-        run: mvn -B verify -pl api -am
+        working-directory: api
+        run: mvn -B verify
 
   sonarcloud:
     name: SonarCloud Analysis
@@ -67,18 +69,18 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Build, Test with Coverage, and SonarCloud Scan
+        working-directory: api
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -pl api -am \
             -DskipITs=false \
             -Dsonar.projectKey=teacurran_dissipate-server \
             -Dsonar.organization=appi \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.coverage.jacoco.xmlReportPaths=api/target/site/jacoco/jacoco.xml \
-            -Dsonar.java.binaries=api/target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.java.binaries=target/classes \
             -Dsonar.java.source=21
 
   docker-build:

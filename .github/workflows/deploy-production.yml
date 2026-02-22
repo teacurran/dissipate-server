@@ -119,7 +119,8 @@ jobs:
           sudo wg-quick up wg0
           ping -c 3 10.50.0.20
 
-      - name: Run Flyway database migrations
+      - name: Run MyBatis database migrations
+        working-directory: api-db
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
@@ -127,11 +128,21 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          echo "Running Flyway migrations for production environment..."
-          mvn -B flyway:migrate -pl api \
-            -Dflyway.url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME} \
-            -Dflyway.user=${DB_USER} \
-            -Dflyway.password=${DB_PASSWORD}
+          echo "Running MyBatis migrations for production environment..."
+          cat > src/main/resources/db/environments/production.properties <<PROPS
+          time_zone=GMT+0:00
+          driver=org.postgresql.Driver
+          url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+          username=${DB_USER}
+          password=${DB_PASSWORD}
+          send_full_script=true
+          delimiter=;
+          full_line_delimiter=false
+          auto_commit=false
+          ignore_warnings=true
+          changelog=CHANGELOG
+          PROPS
+          mvn -B migrations:up -Dmigration.env=production
 
       - name: Setup SSH
         run: |

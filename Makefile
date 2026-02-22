@@ -17,8 +17,8 @@ start:
 stop:
 	docker compose down
 
-flyway:
-	cd api && mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/dissipate -Dflyway.user=tea -Dflyway.password=
+migrate:
+	cd api-db && mvn migrations:up -Dmigration.env=development
 
 test:
 	docker compose up --exit-code-from integration-tests main-db integration-tests
