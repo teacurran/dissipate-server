@@ -1,6 +1,7 @@
 package app.dissipate.data.models;
 
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.converters.EncryptedStringConverter;
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
@@ -30,19 +31,34 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   public Locale locale;
 
+  // PII columns are encrypted at rest via EncryptedStringConverter (AES-GCM).
+  // Java type remains String; persisted as BYTEA. Column names are *_enc to force a
+  // migration that drops any pre-existing plaintext rather than silently double-encoding.
+  @Convert(converter = EncryptedStringConverter.class)
+  @Column(name = "first_name_enc", columnDefinition = "BYTEA")
   public String firstName;
 
+  @Convert(converter = EncryptedStringConverter.class)
+  @Column(name = "last_name_enc", columnDefinition = "BYTEA")
   public String lastName;
 
+  @Convert(converter = EncryptedStringConverter.class)
+  @Column(name = "address1_enc", columnDefinition = "BYTEA")
   public String address1;
 
+  @Convert(converter = EncryptedStringConverter.class)
+  @Column(name = "address2_enc", columnDefinition = "BYTEA")
   public String address2;
 
+  @Convert(converter = EncryptedStringConverter.class)
+  @Column(name = "city_enc", columnDefinition = "BYTEA")
   public String city;
 
   @ManyToOne
   public State state;
 
+  @Convert(converter = EncryptedStringConverter.class)
+  @Column(name = "postal_code_enc", columnDefinition = "BYTEA")
   public String postalCode;
 
   @ManyToOne

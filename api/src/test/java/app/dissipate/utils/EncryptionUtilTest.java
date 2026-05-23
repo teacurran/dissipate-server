@@ -31,4 +31,14 @@ public class EncryptionUtilTest {
     assertNotNull(hash, "Generated hash should not be null");
     assertEquals(20, hash.length, "Generated hash should be 20 bytes long");
   }
+
+  @Test
+  void encryptDecrypt_ShouldRoundTrip() {
+    String key = "test-key-only-for-unit-tests";
+    String plaintext = "sensitive value";
+    byte[] cipher = encryptionUtil.encrypt(plaintext, key);
+    assertNotNull(cipher, "Encrypted output should not be null");
+    String roundTripped = encryptionUtil.decrypt(cipher, key);
+    assertEquals(plaintext, roundTripped, "decrypt(encrypt(x)) should equal x");
+  }
 }
