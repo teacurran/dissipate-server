@@ -88,7 +88,7 @@ public class ValidateSessionMethod {
       return Uni.createFrom().voidItem();
     }
     Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
-    return AccountEmail.findByEmailValidated(email).onItem().transformToUni(accountEmail -> {
+    return AccountEmail.findByValidatedEmail(email).onItem().transformToUni(accountEmail -> {
       LOGGER.debug("accountEmail: " + accountEmail);
       if (accountEmail != null) {
         return Uni.createFrom().failure(localizationService.getApiException(locale, Status.NOT_FOUND, AUTH_TOKEN_INVALID));
