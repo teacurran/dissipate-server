@@ -12,6 +12,7 @@ import io.quarkus.vertx.http.runtime.CurrentRequestProducer;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;
@@ -34,6 +35,9 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
 
   @Inject
   CurrentRequestProducer currentRequestProducer;
+
+  @ConfigProperty(name = "dissipate.email-auth.from", defaultValue = "admin@hallofjustice.net")
+  String fromAddress;
 
   @CheckedTemplate
   static class Templates {
@@ -76,17 +80,17 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
               sessionValidation.token,
               sessionValidation.email.email,
               css)
-            .from("admin@hallofjustice.net")
+            .from(fromAddress)
             .to(sessionValidation.email.email)
             .subject(i18n.getString("auth.email.otp.subject"))
             .addInlineAttachment("header.png", imageHead, "image/png", "header")
             .send()
-            .onFailure().invoke(t -> {
-              LOGGER.error("Failed to send email", t);
-            })
-            .onItem().invoke(() -> {
-              Span.current().addEvent("Email sent");
-            })
+            .onItem().invoke(() -> Span.current().addEvent("Email sent"))
+            .onFailure().invoke(t -> LOGGER.error("Failed to send email", t))
+            // Propagate transient failures so DelayedJobService can retry; the
+            // outer onFailure() in this method converts argument errors into
+            // fatal DelayedJobException, all other failures bubble up and the
+            // delayed-job service handles backoff/max-retries.
             ;
 
         } catch (IOException | URISyntaxException e) {
