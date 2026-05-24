@@ -39,7 +39,7 @@ public class ChatNotificationService {
   @Inject
   NodeConnectionManager nodeConnectionManager;
 
-  public void fireNotification(String chatId, String senderIdentityId, String eventId) {
+  public void fireNotification(Long chatId, Long senderIdentityId, Long eventId) {
     String payload = chatId + "|" + senderIdentityId + "|" + eventId;
     bus.publish(CHAT_UPDATE_EVENT, payload);
   }
@@ -54,9 +54,17 @@ public class ChatNotificationService {
       return Uni.createFrom().voidItem();
     }
 
-    String chatId = parts[0];
-    String senderIdentityId = parts[1];
-    String eventId = parts[2];
+    Long chatId;
+    Long senderIdentityId;
+    Long eventId;
+    try {
+      chatId = Long.parseLong(parts[0]);
+      senderIdentityId = Long.parseLong(parts[1]);
+      eventId = Long.parseLong(parts[2]);
+    } catch (NumberFormatException e) {
+      LOGGER.errorv("Invalid chat update payload (non-numeric id): {0}", payload);
+      return Uni.createFrom().voidItem();
+    }
 
     LOGGER.debugv("Processing chat notification for chat {0}, event {1}", chatId, eventId);
 
@@ -67,7 +75,7 @@ public class ChatNotificationService {
           return Uni.createFrom().voidItem();
         }
 
-        List<String> identityIds = participants.stream()
+        List<Long> identityIds = participants.stream()
           .map(p -> p.identity.id)
           .toList();
 
@@ -83,7 +91,7 @@ public class ChatNotificationService {
       });
   }
 
-  private Uni<Void> dispatchToNodes(List<Session> sessions, String chatId, String senderIdentityId, String eventId) {
+  private Uni<Void> dispatchToNodes(List<Session> sessions, Long chatId, Long senderIdentityId, Long eventId) {
     Map<Long, List<Session>> sessionsByServer = sessions.stream()
       .collect(Collectors.groupingBy(s -> s.connectedServer.id));
 
@@ -106,21 +114,21 @@ public class ChatNotificationService {
     return Uni.combine().all().unis(dispatches).discardItems();
   }
 
-  private Uni<Void> dispatchLocal(List<String> sessionIds, String chatId, String senderIdentityId, String eventId) {
+  private Uni<Void> dispatchLocal(List<String> sessionIds, Long chatId, Long senderIdentityId, Long eventId) {
     LOGGER.debugv("Dispatching chat update locally to {0} sessions", sessionIds.size());
     String jsonPayload = buildJsonPayload(chatId, senderIdentityId, eventId);
     return webSocketSessionManager.sendToLocalSessions(sessionIds, jsonPayload);
   }
 
-  private Uni<Void> dispatchRemote(Server targetServer, List<String> sessionIds, String chatId, String senderIdentityId, String eventId) {
+  private Uni<Void> dispatchRemote(Server targetServer, List<String> sessionIds, Long chatId, Long senderIdentityId, Long eventId) {
     LOGGER.debugv("Dispatching chat update to remote server {0} for {1} sessions", targetServer.id, sessionIds.size());
 
     NotifyChatUpdateRequest request = NotifyChatUpdateRequest.newBuilder()
       .setServerToken(targetServer.token)
-      .setChatId(chatId)
-      .setSenderIdentityId(senderIdentityId)
+      .setChatId(toBase36(chatId))
+      .setSenderIdentityId(toBase36(senderIdentityId))
       .addAllSessionIds(sessionIds)
-      .setTriggeringEventId(eventId)
+      .setTriggeringEventId(toBase36(eventId))
       .build();
 
     return nodeConnectionManager.sendNotification(targetServer, request)
@@ -131,16 +139,15 @@ public class ChatNotificationService {
       });
   }
 
-  private String buildJsonPayload(String chatId, String senderIdentityId, String eventId) {
+  private String buildJsonPayload(Long chatId, Long senderIdentityId, Long eventId) {
     return "{\"type\":\"chat_update\""
-      + ",\"chatId\":\"" + escapeJson(chatId) + "\""
-      + ",\"senderIdentityId\":\"" + escapeJson(senderIdentityId) + "\""
-      + ",\"eventId\":\"" + escapeJson(eventId) + "\""
+      + ",\"chatId\":\"" + toBase36(chatId) + "\""
+      + ",\"senderIdentityId\":\"" + toBase36(senderIdentityId) + "\""
+      + ",\"eventId\":\"" + toBase36(eventId) + "\""
       + "}";
   }
 
-  private static String escapeJson(String value) {
-    if (value == null) return "";
-    return value.replace("\\", "\\\\").replace("\"", "\\\"");
+  private static String toBase36(Long id) {
+    return id == null ? "" : Long.toString(id, 36);
   }
 }

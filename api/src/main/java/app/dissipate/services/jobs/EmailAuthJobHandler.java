@@ -49,7 +49,7 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
 
   @Override
   @WithSpan("EmailAuthJobHandler.run")
-  public Uni<Void> run(String actorId) {
+  public Uni<Void> run(Long actorId) {
     return SessionValidation.byId(actorId).onItem().transformToUni(sessionValidation -> {
       if (sessionValidation == null) {
         LOGGER.error("SessionValidation not found: " + actorId);

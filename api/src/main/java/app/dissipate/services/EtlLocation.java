@@ -71,7 +71,7 @@ public class EtlLocation {
 
             return Multi.createFrom().iterable(countryJsons).onItem().transformToUniAndConcatenate(countryJson -> {
               Country country = new Country();
-              country.id = String.valueOf(countryJson.id);
+              country.id = (long) countryJson.id;
               country.capital = countryJson.capital;
               country.currency = countryJson.currency;
               country.currencyName = countryJson.currencyName;
@@ -110,7 +110,7 @@ public class EtlLocation {
     return Multi.createFrom().iterable(states)
       .onItem().transformToUniAndConcatenate(stateJson -> {
         State state = new State();
-        state.id = String.valueOf(stateJson.id);
+        state.id = (long) stateJson.id;
         state.name = stateJson.name;
         state.country = country;
         return session.merge(state)
@@ -123,7 +123,7 @@ public class EtlLocation {
     return Multi.createFrom().iterable(cities)
       .onItem().transformToUniAndConcatenate(cityJson -> {
         City city = new City();
-        city.id = String.valueOf(cityJson.id);
+        city.id = (long) cityJson.id;
         city.state = state;
         city.country = country;
         city.name = cityJson.name;
@@ -136,7 +136,7 @@ public class EtlLocation {
     return Multi.createFrom().iterable(translations)
       .onItem().transformToUniAndConcatenate(translationJson -> {
         CountryTranslation countryTranslation = new CountryTranslation();
-        countryTranslation.id = country.id + "-" + translationJson.language;
+        countryTranslation.id = snowflakeIdGenerator.generate(CountryTranslation.ID_GENERATOR_KEY);
         countryTranslation.country = country;
         countryTranslation.locale = Locale.forLanguageTag(translationJson.language);
         countryTranslation.name = translationJson.translation;

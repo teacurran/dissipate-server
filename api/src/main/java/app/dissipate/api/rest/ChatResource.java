@@ -6,6 +6,7 @@ import app.dissipate.data.models.ChatEvent;
 import app.dissipate.data.models.ChatEventType;
 import app.dissipate.data.models.Session;
 import app.dissipate.services.ChatNotificationService;
+import app.dissipate.utils.SnowflakeId;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
@@ -37,7 +38,7 @@ public class ChatResource {
   @Produces(MediaType.APPLICATION_JSON)
   @WithTransaction
   public Uni<Response> sendMessage(
-    @PathParam("chatId") String chatId,
+    @PathParam("chatId") @SnowflakeId Long chatId,
     @HeaderParam("Authorization") String authorization,
     SendMessageRequest body
   ) {
@@ -92,7 +93,7 @@ public class ChatResource {
                 chatNotificationService.fireNotification(chatId, session.identity.id, e.id)
               )
               .onItem().transform(e ->
-                Response.ok("{\"eventId\":\"" + e.id + "\"}").build()
+                Response.ok("{\"eventId\":\"" + Long.toString(e.id, 36) + "\"}").build()
               );
           });
       });

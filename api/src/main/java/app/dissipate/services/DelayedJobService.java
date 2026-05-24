@@ -54,7 +54,7 @@ public class DelayedJobService {
   @ConfigProperty(name = "dissipate.delayed-job.max-attempts", defaultValue = "3")
   int maxAttempts;
 
-  public Uni<DelayedJob> createDelayedJob(String actorId, DelayedJobQueue queue, Instant runAt) {
+  public Uni<DelayedJob> createDelayedJob(Long actorId, DelayedJobQueue queue, Instant runAt) {
     return DelayedJob.createDelayedJob(actorId, queue, runAt, snowflakeIdGenerator)
       .onItem().invoke(dj -> {
         if (dj == null) {
@@ -83,7 +83,7 @@ public class DelayedJobService {
   @WithSession
   @ConsumeEvent(DELAYED_JOB_RUN)
   @WithSpan("DelayedJobService.handleDelayedJobRun")
-  public Uni<Void> run(String id) {
+  public Uni<Void> run(Long id) {
     return getDelayedJobToWorkOn(id)
       .onItem()
       .ifNotNull()
@@ -174,7 +174,7 @@ public class DelayedJobService {
   }
 
   @WithSpan("DelayedJobService.getDelayedJobToWorkOn")
-  public Uni<DelayedJob> getDelayedJobToWorkOn(String id) {
+  public Uni<DelayedJob> getDelayedJobToWorkOn(Long id) {
     return DelayedJob.byId(id).onItem().transformToUni(dj -> {
       if (dj == null) {
         LOGGER.error("DelayedJob not found: " + id);

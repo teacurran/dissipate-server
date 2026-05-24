@@ -31,14 +31,20 @@ public class ChangeIdentityMethod {
       String subject = si.getPrincipal().getName();
       Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
 
-      return Identity.findById(request.getIid()).onItem().transformToUni(i -> {
+      final Long iid;
+      try {
+        iid = Long.parseLong(request.getIid(), 36);
+      } catch (NumberFormatException e) {
+        return Uni.createFrom().failure(localizationService.getApiException(locale, Status.PERMISSION_DENIED, AUTH_EMAIL_INVALID));
+      }
+      return Identity.findById(iid).onItem().transformToUni(i -> {
         if (i == null) {
           return Uni.createFrom().failure(localizationService.getApiException(locale, Status.PERMISSION_DENIED, AUTH_EMAIL_INVALID));
         }
 
         // TODO: validate identity ownership via account linking once implemented
         return Uni.createFrom().item(ChangeIdentityResponse.newBuilder()
-          .setIid(i.id)
+          .setIid(Long.toString(i.id, 36))
           .setSid(subject)
           .setUsername(i.username)
           .setName(i.name).build());
