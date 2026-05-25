@@ -96,7 +96,7 @@ jobs:
           ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dquarkus.quinoa=false \
             -DskipITs=false \
-            -Dsonar.projectKey=dissipate-server \
+            -Dsonar.projectKey=dissipate-api \
             -Dsonar.host.url=https://sonar.villagecompute.com \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml,target/jacoco-report/jacoco.xml \
             -Dsonar.java.binaries=target/classes \
