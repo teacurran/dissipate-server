@@ -31,12 +31,22 @@ import java.util.UUID;
     WHERE sv.session.id = :sid
     AND sv.token = :token
     """)
+@NamedQuery(name = SessionValidation.QUERY_BY_ID,
+  query = """
+    FROM SessionValidation sv
+    JOIN FETCH sv.session
+    LEFT JOIN FETCH sv.session.account
+    LEFT JOIN FETCH sv.email
+    LEFT JOIN FETCH sv.phone
+    WHERE sv.id = :id
+    """)
 public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
   public static final String ID_GENERATOR_KEY = "SessionValidation";
 
   public static final String QUERY_BY_SID = "SessionValidation.findBySid";
   public static final String QUERY_BY_SID_TOKEN = "SessionValidation.findBySidToken";
+  public static final String QUERY_BY_ID = "SessionValidation.findById";
 
   @ManyToOne
   public Session session;
@@ -64,7 +74,9 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
   }
 
   public static Uni<SessionValidation> byId(String id) {
-    return findById(id);
+    // Eagerly fetch related rows so callers running outside a Hibernate session
+    // (e.g. background job handlers) can dereference session/account/email/phone.
+    return find("#" + QUERY_BY_ID, Parameters.with("id", id)).firstResult();
   }
 
   public static Uni<SessionValidation> findBySid(String sid) {

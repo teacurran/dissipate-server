@@ -18,7 +18,7 @@ import io.vertx.mutiny.core.eventbus.EventBus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import java.time.Instant;
@@ -44,6 +44,16 @@ public class DelayedJobService {
   @Inject
   DelayedJobHandlers jobHandlers;
 
+  /**
+   * Maximum send attempts before the job is permanently failed.
+   *
+   * <p>Applied to every queue (currently EMAIL_AUTH, PHONE_AUTH, URL_CRAWL,
+   * ETL_LOCATION). Set via {@code dissipate.delayed-job.max-attempts}; default
+   * 3 matches the brief for OTP delivery.</p>
+   */
+  @ConfigProperty(name = "dissipate.delayed-job.max-attempts", defaultValue = "3")
+  int maxAttempts;
+
   public Uni<DelayedJob> createDelayedJob(String actorId, DelayedJobQueue queue, Instant runAt) {
     return DelayedJob.createDelayedJob(actorId, queue, runAt, snowflakeIdGenerator)
       .onItem().invoke(dj -> {
@@ -55,7 +65,15 @@ public class DelayedJobService {
   }
 
   public Uni<DelayedJob> createDelayedJob(SessionValidation sessionValidation) {
-    return createDelayedJob(sessionValidation.id, DelayedJobQueue.EMAIL_AUTH, sessionValidation.created);
+    // Choose the right queue based on which side-effect the validation needs.
+    // Phone numbers route through PHONE_AUTH (SMS handler is TODO), everything
+    // else (including the no-side-effect case) falls through to EMAIL_AUTH so
+    // the EmailAuthJobHandler can no-op safely if neither email nor phone is
+    // set on the row.
+    DelayedJobQueue queue = sessionValidation.phone != null
+      ? DelayedJobQueue.PHONE_AUTH
+      : DelayedJobQueue.EMAIL_AUTH;
+    return createDelayedJob(sessionValidation.id, queue, sessionValidation.created);
   }
 
   public Uni<DelayedJob> createDelayedJob(Url url) {
@@ -81,8 +99,15 @@ public class DelayedJobService {
 
         DelayedJobHandler handler = jobHandlers.get(dj.queue);
         if (handler == null) {
-          LOGGER.error("No handler found for queue: " + dj.queue);
-          return Uni.createFrom().voidItem();
+          LOGGER.error("No handler found for queue: " + dj.queue + " (job " + dj.id + ")");
+          // Mark the job permanently failed; without this it would keep being
+          // picked up by the scheduler every 30s.
+          dj.complete = true;
+          dj.completedAt = Instant.now();
+          dj.completedWithFailure = true;
+          dj.failureReason = "No handler registered for queue " + dj.queue;
+          dj.lastRunBy = currentServer;
+          return dj.unlock().onItem().transformToUni(v -> Uni.createFrom().voidItem());
         }
         return handler.run(dj.actorId)
           .onItem().transformToUni(v -> {
@@ -104,6 +129,18 @@ public class DelayedJobService {
                 dj.completedWithFailure = true;
               }
               dj.failureReason = dje.getMessage();
+            } else {
+              dj.failureReason = t.getMessage();
+            }
+
+            // Stop polling once max attempts reached; otherwise the row would
+            // loop forever and starve the scheduler.
+            if (!dj.completedWithFailure && dj.attempts >= maxAttempts) {
+              LOGGER.warnv("delayed job {0} exceeded max attempts ({1}); marking permanently failed",
+                dj.id, maxAttempts);
+              dj.complete = true;
+              dj.completedAt = Instant.now();
+              dj.completedWithFailure = true;
             }
 
             if (!dj.completedWithFailure) {
