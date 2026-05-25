@@ -23,9 +23,26 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   public AccountStatus status;
 
+  /**
+   * Legacy PBKDF2 password hash. New accounts use {@link #passwordHashStr}
+   * (Argon2id, PHC-format). Retained so existing accounts can still log in
+   * during the transition; rehashed to Argon2id on the next successful login.
+   */
   public byte[] passwordHash;
 
+  /**
+   * Legacy salt for {@link #passwordHash}. Not used by Argon2id hashes — the
+   * salt is embedded in {@link #passwordHashStr}.
+   */
   public byte[] passwordSalt;
+
+  /**
+   * Self-describing Argon2id PHC-format password hash, e.g.
+   * {@code $argon2id$v=19$m=19456,t=2,p=1$<salt-b64>$<hash-b64>}.
+   * Populated for all newly-set passwords. When non-null, takes precedence
+   * over {@link #passwordHash}.
+   */
+  public String passwordHashStr;
 
   public String timezone;
 
@@ -107,17 +124,44 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   @WithSpan
   public void hashFields(EncryptionUtil eu) {
     if (this.password != null) {
-      byte[] saltBytes;
-      if (this.passwordSalt == null) {
-        saltBytes = eu.generateSalt16Byte();
-      } else {
-        saltBytes = this.passwordSalt;
-      }
-
-      this.passwordHash = eu.generatePkcs552tHash(this.password, saltBytes);
+      // New passwords are hashed with Argon2id and stored in PHC format.
+      // The legacy PBKDF2 fields are cleared so verification routes through
+      // the Argon2id path going forward.
+      this.passwordHashStr = eu.hashPassword(this.password);
+      this.passwordHash = null;
+      this.passwordSalt = null;
       this.password = null;
-      this.passwordSalt = saltBytes;
     }
+  }
+
+  /**
+   * Verify a plaintext password against this account's stored hash.
+   *
+   * Routes to Argon2id when {@link #passwordHashStr} is populated, otherwise
+   * falls back to the legacy PBKDF2 hash. On a successful match the result's
+   * {@code needsRehash} flag indicates the caller should call
+   * {@link #rehashPassword(EncryptionUtil, String)} and persist.
+   */
+  @WithSpan
+  public EncryptionUtil.VerifyResult verifyPassword(EncryptionUtil eu, String plaintext) {
+    if (this.passwordHashStr != null) {
+      return eu.verifyPassword(plaintext, this.passwordHashStr);
+    }
+    if (this.passwordHash != null && this.passwordSalt != null) {
+      return eu.verifyLegacyPbkdf2(plaintext, this.passwordHash, this.passwordSalt);
+    }
+    return new EncryptionUtil.VerifyResult(false, false);
+  }
+
+  /**
+   * Re-hash {@code plaintext} with current Argon2id parameters and clear the
+   * legacy PBKDF2 fields. Caller is responsible for persisting.
+   */
+  @WithSpan
+  public void rehashPassword(EncryptionUtil eu, String plaintext) {
+    this.passwordHashStr = eu.hashPassword(plaintext);
+    this.passwordHash = null;
+    this.passwordSalt = null;
   }
 
   public static Uni<Account> findBySrcId(String srcId) {
