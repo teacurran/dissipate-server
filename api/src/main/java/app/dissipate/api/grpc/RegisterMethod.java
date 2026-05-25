@@ -67,7 +67,7 @@ public class RegisterMethod {
 
     if (!request.getEmail().isEmpty()) {
       return validateEmail(request.getEmail()).onItem().transformToUni(email ->
-        AccountEmail.findByEmailValidated(email).onItem().transformToUni(accountEmail -> {
+        AccountEmail.findByValidatedEmail(email).onItem().transformToUni(accountEmail -> {
           if (accountEmail != null) {
             LOGGER.infov("email already exists: {0}", email);
             otel.addEvent("email already exists", Attributes.of(AttributeKey.stringKey("email"), email));
