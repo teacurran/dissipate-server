@@ -93,7 +93,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
             -Dquarkus.quinoa=false \
             -DskipITs=false \
             -Dsonar.projectKey=dissipate-api \
