@@ -30,7 +30,7 @@ public class ChatParticipant extends DefaultPanacheEntityWithTimestamps {
 
   public ChatParticipantType type;
 
-  public static Uni<List<ChatParticipant>> findOtherParticipants(String chatId, String excludeIdentityId) {
+  public static Uni<List<ChatParticipant>> findOtherParticipants(Long chatId, Long excludeIdentityId) {
     return find("#" + QUERY_FIND_OTHER_PARTICIPANTS,
       Parameters.with("chatId", chatId).and("excludeIdentityId", excludeIdentityId)).list();
   }

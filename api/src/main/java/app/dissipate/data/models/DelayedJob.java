@@ -1,6 +1,10 @@
 package app.dissipate.data.models;
 
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.utils.SnowflakeBase36Deserializer;
+import app.dissipate.utils.SnowflakeBase36Serializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.quarkus.hibernate.reactive.panache.PanacheQuery;
 import io.quarkus.panache.common.Parameters;
@@ -39,8 +43,14 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
 
   public DelayedJobQueue queue;
 
-  @Column(columnDefinition = "VARCHAR(16)", length = 16)
-  public String actorId;
+  /**
+   * Snowflake ID of the entity being processed by this job (e.g. SessionValidation, Url).
+   * Stored as BIGINT; serialized as base-36 over JSON for parity with entity ids.
+   */
+  @Column(columnDefinition = "BIGINT")
+  @JsonSerialize(using = SnowflakeBase36Serializer.class)
+  @JsonDeserialize(using = SnowflakeBase36Deserializer.class)
+  public Long actorId;
 
   @Column(columnDefinition = "TEXT")
   public String lastError;
@@ -67,11 +77,11 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   public Server lastRunBy;
 
-  public static Uni<DelayedJob> byId(String id) {
+  public static Uni<DelayedJob> byId(Long id) {
     return findById(id);
   }
 
-  public static Uni<DelayedJob> createDelayedJob(String actorId,
+  public static Uni<DelayedJob> createDelayedJob(Long actorId,
                                                  DelayedJobQueue queue,
                                                  Instant runAt,
                                                  SnowflakeIdGenerator snowflakeIdGenerator) {

@@ -14,7 +14,7 @@ public class EtlLocationJobHandler implements DelayedJobHandler {
 
   @Override
   @WithSpan("EtlLocationJobHandler.run")
-  public Uni<Void> run(String actorId) {
+  public Uni<Void> run(Long actorId) {
     return etlLocation.loadWorldLocations();
   }
 }

@@ -9,7 +9,7 @@ public class UrlCrawlJobHandler implements DelayedJobHandler {
 
   @Override
   @WithSpan("EmailAuthJobHandler.run")
-  public Uni<Void> run(String actorId) {
+  public Uni<Void> run(Long actorId) {
     return Uni.createFrom().voidItem();
   }
 }

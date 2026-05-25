@@ -96,7 +96,7 @@ public class Session extends PanacheEntityBase {
     return find("#" + Session.QUERY_BY_SID_VALIDATED, Parameters.with("sid", UUID.fromString(sid))).firstResult();
   }
 
-  public static Uni<List<Session>> findConnectedByIdentityIds(List<String> identityIds) {
+  public static Uni<List<Session>> findConnectedByIdentityIds(List<Long> identityIds) {
     return find("#" + Session.QUERY_FIND_CONNECTED_BY_IDENTITY_IDS,
       Parameters.with("identityIds", identityIds)).list();
   }

@@ -35,7 +35,7 @@ public class CreateIdentityMethod {
       identity.name = request.getName();
       return identity.persistAndFlush(encryptionUtil)
         .onItem().transform(i -> CreateIdentityResponse.newBuilder()
-          .setIid(i.id)
+          .setIid(Long.toString(i.id, 36))
           .setSid(subject)
           .setUsername(i.username)
           .setName(i.name).build());

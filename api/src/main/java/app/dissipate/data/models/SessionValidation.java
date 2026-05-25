@@ -73,7 +73,7 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
     return super.persistAndFlush();
   }
 
-  public static Uni<SessionValidation> byId(String id) {
+  public static Uni<SessionValidation> byId(Long id) {
     // Eagerly fetch related rows so callers running outside a Hibernate session
     // (e.g. background job handlers) can dereference session/account/email/phone.
     return find("#" + QUERY_BY_ID, Parameters.with("id", id)).firstResult();
