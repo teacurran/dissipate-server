@@ -2,10 +2,8 @@ package app.dissipate.data.models;
 
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.*;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,19 +61,14 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
   )
   public List<IdentityOrganization> membershipApprovals = new ArrayList<>();
 
-  @OneToMany(
-    mappedBy = "identity",
-    cascade = CascadeType.ALL,
-    orphanRemoval = true
-  )
-  List<IdentityFollow> following = new ArrayList<>();
-
-  @OneToMany(
-    mappedBy = "identity2",
-    cascade = CascadeType.ALL,
-    orphanRemoval = true
-  )
-  List<IdentityFollow> followers = new ArrayList<>();
+  // NOTE: the following/followers relationships are intentionally NOT mapped
+  // here. The underlying tables are unbounded in production (a popular
+  // identity can have millions of followers) and a stray traversal of a
+  // List<IdentityFollow> would either OOM or throw LazyInitializationException
+  // under the reactive Hibernate session. Use the paged finders on
+  // {@link IdentityFollow} instead:
+  //   IdentityFollow.findFollowersOf(identity, limit, cursor)
+  //   IdentityFollow.findFollowingOf(identity, limit, cursor)
 
   public static Uni<Identity> findById(Object id) {
     return Identity.findById(id);
