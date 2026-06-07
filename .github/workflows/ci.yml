@@ -160,10 +160,10 @@ jobs:
     name: Build & Push Docker Image (Native)
     runs-on: ubuntu-latest
     needs: [backend-build, preflight]
-    # Only build on push, and only if Docker credentials are configured.
+    # Build on push (main/beta) and on PRs so deploy-pr.yml can resolve sha-<head_sha>.
     # The `secrets` context is NOT allowed in job-level `if:` expressions, so we
-    # gate on a `preflight` job output instead.
-    if: github.event_name == 'push' && needs.preflight.outputs.docker_enabled == 'true'
+    # gate on the `preflight` job's docker_enabled output instead.
+    if: (github.event_name == 'push' || github.event_name == 'pull_request') && needs.preflight.outputs.docker_enabled == 'true'
 
     steps:
       - name: Checkout code
