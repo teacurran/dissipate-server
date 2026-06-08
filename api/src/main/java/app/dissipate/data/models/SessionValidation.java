@@ -8,6 +8,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -40,13 +41,32 @@ import java.util.UUID;
     LEFT JOIN FETCH sv.phone
     WHERE sv.id = :id
     """)
+@NamedQuery(name = SessionValidation.QUERY_PENDING_BY_SESSION,
+  query = """
+    FROM SessionValidation sv
+    JOIN FETCH sv.session
+    LEFT JOIN FETCH sv.session.account
+    LEFT JOIN FETCH sv.email
+    LEFT JOIN FETCH sv.phone
+    WHERE sv.session.id = :sid
+    AND sv.validated IS NULL
+    ORDER BY sv.created DESC
+    """)
 public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
   public static final String ID_GENERATOR_KEY = "SessionValidation";
 
+  /** Time-to-live for a freshly issued OTP. Mirrors the "expires in 10 minutes" email copy. */
+  public static final Duration OTP_TTL = Duration.ofMinutes(10);
+  /** Maximum verify attempts for a single OTP before it is rejected outright. */
+  public static final int MAX_OTP_ATTEMPTS = 5;
+  /** Length of a generated OTP (alphanumeric, uppercased). */
+  public static final int OTP_LENGTH = 6;
+
   public static final String QUERY_BY_SID = "SessionValidation.findBySid";
   public static final String QUERY_BY_SID_TOKEN = "SessionValidation.findBySidToken";
   public static final String QUERY_BY_ID = "SessionValidation.findById";
+  public static final String QUERY_PENDING_BY_SESSION = "SessionValidation.findPendingBySession";
 
   @ManyToOne
   public Session session;
@@ -55,11 +75,22 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
   public Instant validated;
 
+  /** When this OTP expires; {@code null} for legacy rows issued before OTP hardening. */
+  public Instant expires;
+
+  /** Number of failed verify attempts against this OTP. */
+  public int attempts;
+
   @ManyToOne(fetch = FetchType.EAGER)
   public AccountEmail email;
 
   @ManyToOne(fetch = FetchType.EAGER)
   public AccountPhone phone;
+
+  /** True once the OTP has passed its expiry. Legacy rows (null expiry) never expire. */
+  public boolean isExpired(Instant now) {
+    return expires != null && now.isAfter(expires);
+  }
 
   @Override
   @SuppressWarnings("unchecked")
@@ -87,6 +118,15 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
   public static Uni<SessionValidation> findBySidToken(String sid, String token) {
     return find("#" + SessionValidation.QUERY_BY_SID_TOKEN,
       Parameters.with("sid", UUID.fromString(sid)).and("token", token.toUpperCase())).firstResult();
+  }
+
+  /**
+   * The most recent not-yet-validated OTP for a session, regardless of token. Lets the verify
+   * endpoint count attempts and check expiry even when the supplied code is wrong.
+   */
+  public static Uni<SessionValidation> findPendingBySession(String sid) {
+    return find("#" + SessionValidation.QUERY_PENDING_BY_SESSION,
+      Parameters.with("sid", UUID.fromString(sid))).firstResult();
   }
 
 }

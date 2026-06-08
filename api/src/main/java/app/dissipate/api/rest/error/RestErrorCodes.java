@@ -16,6 +16,17 @@ public final class RestErrorCodes {
   public static final String AUTH_IDENTITY_REQUIRED = "error.auth.identity.required";
   /** Requested resource does not exist (or is not visible to the caller). */
   public static final String NOT_FOUND = "error.not_found";
+
+  // Registration / OTP (auth.email.* keys are shared with the gRPC layer)
+  /** Email address is missing or malformed. */
+  public static final String AUTH_EMAIL_INVALID = "error.auth.email.invalid";
+  /** Email is already claimed by a validated account. */
+  public static final String AUTH_EMAIL_EXISTS = "error.auth.email.exists";
+  /** OTP is wrong, expired, or has exhausted its attempts. */
+  public static final String AUTH_OTP_INVALID = "error.auth.otp.invalid";
+  /** Phone-based registration is not implemented yet. */
+  public static final String AUTH_PHONE_UNSUPPORTED = "error.auth.phone.unsupported";
+
   /** Catch-all for unexpected server-side failures (no internals leaked to the client). */
   public static final String INTERNAL = "error.internal";
 
