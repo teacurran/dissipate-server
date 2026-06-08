@@ -5,6 +5,7 @@ import io.grpc.Status;
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -40,5 +41,17 @@ public class LocalizationService {
   public ApiException getApiException(Locale locale, Status status, String code) {
     ResourceBundle i18n = getBundle(locale);
     return new ApiException(status, code, i18n.getString(code));
+  }
+
+  /**
+   * Resolve a localized message by key for the given locale, formatting any {@link MessageFormat}
+   * placeholders with {@code args}. Used by the REST layer (gRPC uses {@link #getApiException}).
+   */
+  public String getMessage(Locale locale, String key, Object... args) {
+    String pattern = getBundle(locale).getString(key);
+    if (args == null || args.length == 0) {
+      return pattern;
+    }
+    return new MessageFormat(pattern, locale).format(args);
   }
 }
