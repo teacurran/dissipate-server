@@ -1,5 +1,6 @@
 package app.dissipate.services.auth;
 
+import app.dissipate.api.rest.dto.AuthLoginResponse;
 import app.dissipate.api.rest.dto.AuthRegisterResponse;
 import app.dissipate.api.rest.dto.AuthVerifyResponse;
 import app.dissipate.api.rest.error.ApiErrorFactory;
@@ -24,7 +25,9 @@ import io.vertx.ext.mail.mailencoder.EmailAddress;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -58,6 +61,17 @@ public class AuthService {
 
   @Inject
   ApiErrorFactory apiErrorFactory;
+
+  /** Consecutive password failures before the account is locked. */
+  @ConfigProperty(name = "dissipate.auth.max-failed-logins", defaultValue = "5")
+  int maxFailedLogins;
+
+  /** How long an account stays locked after exceeding {@link #maxFailedLogins}. */
+  @ConfigProperty(name = "dissipate.auth.lockout-duration", defaultValue = "15m")
+  Duration lockoutDuration;
+
+  /** HTTP 429 Too Many Requests — no {@link Response.Status} constant exists for it. */
+  private static final int HTTP_TOO_MANY_REQUESTS = 429;
 
   /**
    * Begin sign-up. With neither email nor phone, creates a bare anonymous session. With an email,
@@ -174,6 +188,111 @@ public class AuthService {
             .onItem().transform(a -> ok(new AuthVerifyResponse(sessionId.toString())));
         });
       });
+  }
+
+  /**
+   * Password login. Returns a generic failure for unknown email / no password / wrong password (no
+   * account enumeration), counts consecutive failures, and locks the account for
+   * {@link #lockoutDuration} after {@link #maxFailedLogins}. On success rehashes a legacy hash if
+   * needed, clears the lockout, and creates a fresh logged-in session whose id is the Bearer token.
+   */
+  @WithSpan("AuthService.login")
+  public Uni<Response> login(String email, String password, String clientIp, String userAgent) {
+    String normEmail = email == null ? "" : email.trim().toLowerCase();
+    if (normEmail.isEmpty() || password == null || password.isEmpty()) {
+      return Uni.createFrom().item(error(Response.Status.UNAUTHORIZED, RestErrorCodes.AUTH_LOGIN_FAILED));
+    }
+
+    return AccountEmail.findByValidatedEmailWithAccount(normEmail).onItem().transformToUni(ae -> {
+      Account account = ae != null ? ae.account : null;
+      Instant now = Instant.now();
+
+      if (account == null || (account.passwordHashStr == null && account.passwordHash == null)) {
+        return audit(AuditEventType.AUTH_LOGIN_FAILED, AuditOutcome.FAILURE,
+          account != null ? account.id : null, null, "AccountEmail", ae != null ? ae.id : null,
+          clientIp, userAgent, "no_account_or_password", null)
+          .onItem().transform(a -> error(Response.Status.UNAUTHORIZED, RestErrorCodes.AUTH_LOGIN_FAILED));
+      }
+
+      if (account.isLocked(now)) {
+        return audit(AuditEventType.AUTH_LOCKOUT, AuditOutcome.FAILURE, account.id, null, "Account", account.id,
+          clientIp, userAgent, "locked", null)
+          .onItem().transform(a -> apiErrorFactory.response(HTTP_TOO_MANY_REQUESTS, RestErrorCodes.AUTH_ACCOUNT_LOCKED));
+      }
+
+      EncryptionUtil.VerifyResult result = account.verifyPassword(encryptionUtil, password);
+      if (!result.matched()) {
+        account.failedLoginAttempts = account.failedLoginAttempts + 1;
+        boolean nowLocked = account.failedLoginAttempts >= maxFailedLogins;
+        if (nowLocked) {
+          account.lockedUntil = now.plus(lockoutDuration);
+        }
+        AuditEventType type = nowLocked ? AuditEventType.AUTH_LOCKOUT : AuditEventType.AUTH_LOGIN_FAILED;
+        String reason = nowLocked ? "locked_out" : "wrong_password";
+        return account.persistAndFlush(encryptionUtil)
+          .onItem().transformToUni(a -> audit(type, AuditOutcome.FAILURE, account.id, null, "Account", account.id,
+            clientIp, userAgent, reason, null))
+          .onItem().transform(a -> nowLocked
+            ? apiErrorFactory.response(HTTP_TOO_MANY_REQUESTS, RestErrorCodes.AUTH_ACCOUNT_LOCKED)
+            : error(Response.Status.UNAUTHORIZED, RestErrorCodes.AUTH_LOGIN_FAILED));
+      }
+
+      // Success: rehash legacy hashes, clear lockout, open a new logged-in session.
+      if (result.needsRehash()) {
+        account.rehashPassword(encryptionUtil, password);
+      }
+      account.failedLoginAttempts = 0;
+      account.lockedUntil = null;
+      return account.persistAndFlush(encryptionUtil).onItem().transformToUni(a -> {
+        Session session = new Session();
+        session.account = account;
+        session.loggedIn = true;
+        session.clientIp = clientIp;
+        return session.persistAndFlush().onItem().transformToUni(s ->
+          audit(AuditEventType.AUTH_LOGIN, AuditOutcome.SUCCESS, account.id, s.id, "Session", null,
+            clientIp, userAgent, null, "{\"method\":\"password\"}")
+            .onItem().transform(a2 -> ok(new AuthLoginResponse(s.id.toString()))));
+      });
+    });
+  }
+
+  /**
+   * Set or change the current account's password. When a password already exists, the correct
+   * {@code currentPassword} must be supplied. Clears any lockout on success.
+   */
+  @WithSpan("AuthService.setPassword")
+  public Uni<Response> setPassword(Account account, String currentPassword, String newPassword,
+                                   String clientIp, String userAgent) {
+    boolean hasExisting = account.passwordHashStr != null || account.passwordHash != null;
+    AuditEventType type = hasExisting ? AuditEventType.AUTH_PASSWORD_CHANGE : AuditEventType.AUTH_PASSWORD_SET;
+
+    if (hasExisting) {
+      if (currentPassword == null || currentPassword.isEmpty()
+        || !account.verifyPassword(encryptionUtil, currentPassword).matched()) {
+        return audit(type, AuditOutcome.FAILURE, account.id, null, "Account", account.id,
+          clientIp, userAgent, "wrong_current_password", null)
+          .onItem().transform(a -> error(Response.Status.FORBIDDEN, RestErrorCodes.AUTH_PASSWORD_INVALID));
+      }
+    }
+
+    account.password = newPassword; // hashed by persistAndFlush(encryptionUtil)
+    account.failedLoginAttempts = 0;
+    account.lockedUntil = null;
+    return account.persistAndFlush(encryptionUtil)
+      .onItem().transformToUni(a -> audit(type, AuditOutcome.SUCCESS, account.id, null, "Account", account.id,
+        clientIp, userAgent, null, null))
+      .onItem().transform(a -> Response.noContent().build());
+  }
+
+  /** End the given session and audit the logout. */
+  @WithSpan("AuthService.logout")
+  public Uni<Response> logout(Session session, String clientIp, String userAgent) {
+    session.ended = Instant.now();
+    Long accountId = session.account != null ? session.account.id : null;
+    return session.persistAndFlush()
+      .onItem().transformToUni(s -> audit(AuditEventType.AUTH_LOGOUT, AuditOutcome.SUCCESS, accountId, session.id,
+        "Session", null, clientIp, userAgent, null, null))
+      .onItem().transform(a -> Response.noContent().build());
   }
 
   // ---- helpers -------------------------------------------------------------

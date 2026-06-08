@@ -27,6 +27,14 @@ public final class RestErrorCodes {
   /** Phone-based registration is not implemented yet. */
   public static final String AUTH_PHONE_UNSUPPORTED = "error.auth.phone.unsupported";
 
+  // Password login
+  /** Email/password combination did not match (generic, to avoid account enumeration). */
+  public static final String AUTH_LOGIN_FAILED = "error.auth.login.failed";
+  /** Too many failed attempts; the account is temporarily locked. */
+  public static final String AUTH_ACCOUNT_LOCKED = "error.auth.account.locked";
+  /** The supplied current password is incorrect (password change). */
+  public static final String AUTH_PASSWORD_INVALID = "error.auth.password.invalid";
+
   /** Catch-all for unexpected server-side failures (no internals leaked to the client). */
   public static final String INTERNAL = "error.internal";
 

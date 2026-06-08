@@ -26,11 +26,12 @@ import java.util.UUID;
   query = """
     SELECT DISTINCT s
     FROM Session s
-    JOIN FETCH s.validations sv
+    LEFT JOIN FETCH s.validations sv
     LEFT JOIN FETCH s.identity i
+    LEFT JOIN FETCH s.account a
     WHERE s.id = :sid
     AND s.ended IS NULL
-    AND sv.validated IS NOT NULL
+    AND (s.loggedIn = true OR sv.validated IS NOT NULL)
     """)
 @NamedQuery(name = Session.QUERY_FIND_CONNECTED_BY_IDENTITY_IDS,
   query = """
