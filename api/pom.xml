@@ -11,7 +11,7 @@
   <properties>
     <compiler-plugin.version>3.13.0</compiler-plugin.version>
     <failsafe.useModulePath>false</failsafe.useModulePath>
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>25</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <surefire-plugin.version>3.5.2</surefire-plugin.version>
@@ -19,7 +19,7 @@
     <version.kotlin>1.7.10</version.kotlin>
     <version.os-maven-plugin>1.7.1</version.os-maven-plugin>
     <version.postgres.driver>42.7.9</version.postgres.driver>
-    <version.quarkus>3.31.2</version.quarkus>
+    <version.quarkus>3.36.1</version.quarkus>
   </properties>
 
   <dependencyManagement>
@@ -142,11 +142,11 @@
       <artifactId>quarkus-qute-deployment</artifactId>
       <version>${version.quarkus}</version>
     </dependency>
-    <dependency>
-      <groupId>io.quarkiverse.quinoa</groupId>
-      <artifactId>quarkus-quinoa</artifactId>
-      <version>2.7.1</version>
-    </dependency>
+    <!--
+      Quinoa (and the Vue webui under src/main/webui) is being moved out of the
+      api module into a dedicated `admin` module. Removed here so the backend
+      build no longer depends on a Node toolchain / frontend install.
+    -->
 
     <!--
     <dependency>

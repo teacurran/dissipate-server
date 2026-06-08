@@ -20,9 +20,11 @@ x-api-base: &api-base
     GCLOUD_PROJECT: "dissipate"
     GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
     QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://main-db:5432/dissipate
+    QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://main-db:5432/dissipate
     QUARKUS_DATASOURCE_USERNAME: dissipate
     QUARKUS_DATASOURCE_PASSWORD: dissipate
-    QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
+    # Migrations are authoritative (MyBatis, api-db); Hibernate only validates.
+    QUARKUS_HIBERNATE_ORM_SCHEMA_MANAGEMENT_STRATEGY: validate
     QUARKUS_HTTP_HOST: 0.0.0.0
     QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
     QUARKUS_MAILER_HOST: mailpit
@@ -71,12 +73,14 @@ services:
       REDIS_PASSWORD: 98puOInkjbO&YiubkBt8guhvjhvredrg
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/.config/gcloud/application_default_credentials.json
       QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://main-db:5432/dissipate
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://main-db:5432/dissipate
       QUARKUS_DATASOURCE_USERNAME: dissipate
       QUARKUS_DATASOURCE_PASSWORD: dissipate
       QUARKUS_DATASOURCE_READDB_REACTIVE_URL: vertx-reactive:postgresql://read-db:5432/dissipate
       QUARKUS_DATASOURCE_READDB_USERNAME: dissipate
       QUARKUS_DATASOURCE_READDB_PASSWORD: dissipate
-      QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
+      # Migrations are authoritative (MyBatis, api-db); Hibernate only validates.
+      QUARKUS_HIBERNATE_ORM_SCHEMA_MANAGEMENT_STRATEGY: validate
       QUARKUS_HTTP_HOST: 0.0.0.0
       QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/dissipate
@@ -175,23 +179,24 @@ services:
 #      - '6379:6379'
 #    command: redis-server --save 20 1 --loglevel warning --requirepass 98puOInkjbO&YiubkBt8guhvjhvredrg
 
+  # Runs the authoritative MyBatis migrations (api-db module) against main-db
+  # before the api service boots (api validates the schema, never mutates it).
+  # The whole repo is mounted so the api-db module is available; the `docker`
+  # environment (api-db/.../environments/docker.properties) targets main-db.
   main-db-migrations:
-    image: api-server
-    build:
-      context: ./api
-      dockerfile: src/main/docker/dev-jvm.dockerfile
+    image: maven:3.9-eclipse-temurin-25
     depends_on:
       - main-db
+    working_dir: /workspace
     volumes:
-      - ./api:/app
-      - maven_target:/app/target
-      - maven_cache:/app/.m2
+      - .:/workspace
+      - maven_cache:/root/.m2
     command:
       - mvn
-      - flyway:migrate
-      - -Dflyway.url=jdbc:postgresql://main-db:5432/dissipate
-      - -Dflyway.user=dissipate
-      - -Dflyway.password=dissipate
+      - -f
+      - api-db/pom.xml
+      - migration:up
+      - -Dmigration.env=docker
 
   mailpit:
     image: axllent/mailpit
