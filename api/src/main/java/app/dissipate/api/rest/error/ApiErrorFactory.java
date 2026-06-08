@@ -32,6 +32,11 @@ public class ApiErrorFactory {
   }
 
   public Response response(Response.Status status, String code, Object... args) {
+    return response(status.getStatusCode(), code, args);
+  }
+
+  /** Variant for status codes without a {@link Response.Status} constant (e.g. 429). */
+  public Response response(int status, String code, Object... args) {
     return Response.status(status)
       .type(MediaType.APPLICATION_JSON)
       .entity(body(code, args))

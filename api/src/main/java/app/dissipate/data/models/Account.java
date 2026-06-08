@@ -9,6 +9,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.persistence.*;
 import app.dissipate.exceptions.DissipateRuntimeException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -47,6 +48,12 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   public String timezone;
 
   public Locale locale;
+
+  /** Consecutive failed password-login attempts; reset to 0 on success. */
+  public int failedLoginAttempts;
+
+  /** When set and in the future, password login is locked out until this instant. */
+  public Instant lockedUntil;
 
   // PII columns are encrypted at rest via EncryptedStringConverter (AES-GCM).
   // Java type remains String; persisted as BYTEA. Column names are *_enc to force a
@@ -162,6 +169,11 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
     this.passwordHashStr = eu.hashPassword(plaintext);
     this.passwordHash = null;
     this.passwordSalt = null;
+  }
+
+  /** True while a lockout window is active. */
+  public boolean isLocked(Instant now) {
+    return lockedUntil != null && now.isBefore(lockedUntil);
   }
 
   public static Uni<Account> findBySrcId(String srcId) {
