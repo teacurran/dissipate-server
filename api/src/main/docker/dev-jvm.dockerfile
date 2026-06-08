@@ -77,7 +77,8 @@
 ###
 
 # debian needed for protoc to work. it isn't compiled for alpine.
-FROM maven:3.9-amazoncorretto-21-debian
+# Temurin 25 images are Ubuntu (debian-family, glibc) so protoc runs.
+FROM maven:3.9-eclipse-temurin-25
 
 # RUN apk add --update maven make protobuf-dev
 
