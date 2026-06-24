@@ -82,7 +82,7 @@ public class RegisterMethod {
                 SessionValidation sessionValidation = new SessionValidation();
                 sessionValidation.session = s;
                 sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
-                sessionValidation.email = a.emails.get(0);
+                sessionValidation.email = a.emails.getFirst();
                 sessionValidation.token = StringUtil.generateRandomString(6);
                 return sessionValidation.persistAndFlush()
                   .onItem().transformToUni(sv -> delayedJobService.createDelayedJob(sv)
