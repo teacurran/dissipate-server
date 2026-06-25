@@ -20,6 +20,13 @@ service AccountService {
   rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {
     option (dissipate.v1.policy) = {allow_unauthenticated: true, cost: 2};
   }
+
+  // Password login: exchanges email + password for a logged-in session id (the Bearer
+  // token for subsequent calls). Pre-authentication, so unauthenticated; weighted high
+  // because it runs Argon2id verification and is a brute-force target.
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (dissipate.v1.policy) = {allow_unauthenticated: true, cost: 10};
+  }
 }
 
 message RegisterRequest {
@@ -47,4 +54,14 @@ message ValidateSessionRequest {
 message ValidateSessionResponse {
   bool valid = 1;
   optional string error_message = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  // Session id to send as the Authorization: Bearer token on subsequent calls.
+  string sid = 1;
 }
