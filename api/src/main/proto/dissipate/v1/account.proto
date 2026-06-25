@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package dissipate.v1;
+
+option java_package = "app.dissipate.grpc.v1";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+import "dissipate/v1/common.proto";
+
+// Account lifecycle: registration and OTP/session validation. These are the
+// pre-authentication entry points, so they are unauthenticated.
+service AccountService {
+  // Begin registration: create an anonymous session, or send an email/phone OTP.
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (dissipate.v1.policy) = {allow_unauthenticated: true, cost: 5};
+  }
+
+  // Validate an OTP for a session (completes email/phone verification).
+  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {
+    option (dissipate.v1.policy) = {allow_unauthenticated: true, cost: 2};
+  }
+}
+
+message RegisterRequest {
+  optional string email = 1;
+  optional string phone_number = 2;
+}
+
+enum RegisterResponseResult {
+  REGISTER_RESPONSE_RESULT_UNSPECIFIED = 0;
+  REGISTER_RESPONSE_RESULT_SESSION_CREATED = 1;
+  REGISTER_RESPONSE_RESULT_EMAIL_SENT = 2;
+  REGISTER_RESPONSE_RESULT_PHONE_SENT = 3;
+}
+
+message RegisterResponse {
+  RegisterResponseResult result = 1;
+  optional string sid = 2;
+}
+
+message ValidateSessionRequest {
+  string sid = 1;
+  string otp = 2;
+}
+
+message ValidateSessionResponse {
+  bool valid = 1;
+  optional string error_message = 2;
+}

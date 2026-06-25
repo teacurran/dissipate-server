@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package dissipate.v1;
+
+option java_package = "app.dissipate.grpc.v1";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+import "google/protobuf/timestamp.proto";
+import "dissipate/v1/common.proto";
+
+// Current-session read; logout/list/revoke land here in later phases.
+service SessionService {
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {
+    option (dissipate.v1.policy) = {min_role: ROLE_USER, cost: 1};
+  }
+}
+
+message GetSessionRequest {}
+
+message GetSessionResponse {
+  string sid = 1;
+  string iid = 2;
+  AccountStatus status = 3;
+  google.protobuf.Timestamp created = 4;
+  google.protobuf.Timestamp last_seen = 5;
+}

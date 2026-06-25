@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package dissipate.v1;
+
+option java_package = "app.dissipate.grpc.v1";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+import "google/protobuf/descriptor.proto";
+
+// Per-method authorization + rate-limit policy. Read by the server interceptor
+// pipeline (authn -> authz -> rate-limit -> metrics) and enforced centrally, so
+// individual method impls never hand-roll these checks. Enforcement is wired in
+// Phase 1; these options are declared now so every method can carry its policy.
+extend google.protobuf.MethodOptions {
+  MethodPolicy policy = 50000;
+}
+
+message MethodPolicy {
+  // No authentication required at all (e.g. Register, ValidateSession). When
+  // true, min_role / scopes / allow_app are ignored.
+  bool allow_unauthenticated = 1;
+
+  // Whether third-party registered API apps (not just first-party end users)
+  // may call this method. Default false => end-user sessions only.
+  bool allow_app = 2;
+
+  // Resource:action scopes a third-party app must hold to call this method,
+  // e.g. "posts:write", "follows:read". Only meaningful when allow_app = true.
+  repeated string scopes = 3;
+
+  // Minimum end-user role required (ignored when allow_unauthenticated = true).
+  Role min_role = 4;
+
+  // Rate-limit weight for this method; 0 is treated as the default weight (1).
+  // Expensive methods (feeds, search) cost more than cheap ones (a like).
+  uint32 cost = 5;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_USER = 1;
+  ROLE_VERIFIED = 2;
+  ROLE_ADMIN = 3;
+}
+
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACCOUNT_STATUS_ANONYMOUS = 1;
+  ACCOUNT_STATUS_ACTIVE = 2;
+  ACCOUNT_STATUS_DISABLED = 3;
+  ACCOUNT_STATUS_SUSPENDED = 4;
+  ACCOUNT_STATUS_BANNED = 5;
+}
+
+message ApiError {
+  string code = 1;
+  string message = 2;
+}

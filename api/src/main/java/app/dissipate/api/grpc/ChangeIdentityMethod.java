@@ -1,8 +1,8 @@
 package app.dissipate.api.grpc;
 
 import app.dissipate.data.models.Identity;
-import app.dissipate.grpc.ChangeIdentityRequest;
-import app.dissipate.grpc.ChangeIdentityResponse;
+import app.dissipate.grpc.v1.ChangeIdentityRequest;
+import app.dissipate.grpc.v1.ChangeIdentityResponse;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.services.LocalizationService;
 import io.grpc.Status;
