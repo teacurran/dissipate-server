@@ -6,6 +6,7 @@ option java_package = "app.dissipate.grpc.v1";
 option java_multiple_files = true;
 option optimize_for = SPEED;
 
+import "buf/validate/validate.proto";
 import "dissipate/v1/common.proto";
 
 // Account lifecycle: registration and OTP/session validation. These are the
@@ -47,8 +48,8 @@ message RegisterResponse {
 }
 
 message ValidateSessionRequest {
-  string sid = 1;
-  string otp = 2;
+  string sid = 1 [(buf.validate.field).string.min_len = 1];
+  string otp = 2 [(buf.validate.field).string.min_len = 1];
 }
 
 message ValidateSessionResponse {

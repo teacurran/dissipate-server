@@ -127,6 +127,18 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
+      <!-- Override the Quarkus-managed 4.33.2: protovalidate 1.2.2's bundled build.buf.validate.*
+           classes are protobuf gencode 4.34.1, and the runtime must be >= the linked gencode. This
+           bump is forward-compatible with our own protoc-generated 4.33.2 code (runtime >= gencode). -->
+      <version>4.34.1</version>
+    </dependency>
+    <!-- Runtime message validation from proto-declared (buf.validate) constraints; enforced by
+         GrpcValidationInterceptor. The jar ships the compiled build.buf.validate.* runtime classes
+         and buf/validate/validate.proto (resolved for our imports via grpc scan-for-imports=all). -->
+    <dependency>
+      <groupId>build.buf</groupId>
+      <artifactId>protovalidate</artifactId>
+      <version>1.2.2</version>
     </dependency>
     <dependency>
       <groupId>io.opentelemetry.instrumentation</groupId>
