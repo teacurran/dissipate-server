@@ -24,6 +24,14 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   public AccountStatus status;
 
   /**
+   * First-party role used by the gRPC auth pipeline to enforce {@code MethodPolicy.min_role}.
+   * Stored as its name (VARCHAR); defaults to {@link AccountRole#USER} for every account.
+   */
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  public AccountRole role = AccountRole.USER;
+
+  /**
    * Legacy PBKDF2 password hash. New accounts use {@link #passwordHashStr}
    * (Argon2id, PHC-format). Retained so existing accounts can still log in
    * during the transition; rehashed to Argon2id on the next successful login.

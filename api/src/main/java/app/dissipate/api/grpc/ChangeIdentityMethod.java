@@ -1,5 +1,6 @@
 package app.dissipate.api.grpc;
 
+import app.dissipate.auth.PrincipalResolver;
 import app.dissipate.data.models.Identity;
 import app.dissipate.grpc.v1.ChangeIdentityRequest;
 import app.dissipate.grpc.v1.ChangeIdentityResponse;
@@ -7,7 +8,6 @@ import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.services.LocalizationService;
 import io.grpc.Status;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -23,12 +23,12 @@ public class ChangeIdentityMethod {
   LocalizationService localizationService;
 
   @Inject
-  CurrentIdentityAssociation identityAssociation;
+  PrincipalResolver principalResolver;
 
   @WithSpan("ChangeIdentityMethod.change")
   public Uni<ChangeIdentityResponse> change(ChangeIdentityRequest request) {
-    return identityAssociation.getDeferredIdentity().onItem().transformToUni(si -> {
-      String subject = si.getPrincipal().getName();
+    return principalResolver.authorize().onItem().transformToUni(principal -> {
+      String sid = principalResolver.session().id.toString();
       Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
 
       final Long iid;
@@ -45,7 +45,7 @@ public class ChangeIdentityMethod {
         // TODO: validate identity ownership via account linking once implemented
         return Uni.createFrom().item(ChangeIdentityResponse.newBuilder()
           .setIid(Long.toString(i.id, 36))
-          .setSid(subject)
+          .setSid(sid)
           .setUsername(i.username)
           .setName(i.name).build());
       });

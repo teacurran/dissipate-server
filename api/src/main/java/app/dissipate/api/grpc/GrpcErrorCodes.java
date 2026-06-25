@@ -9,6 +9,9 @@ public class GrpcErrorCodes {
   public static final String AUTH_EMAIL_EXISTS  = "error.auth.email.exists";
   public static final String AUTH_TOKEN_CONSUMED = "error.auth.token.consumed";
   public static final String AUTH_TOKEN_INVALID  = "error.auth.token.invalid";
+  public static final String AUTH_REQUIRED       = "error.auth.required";
+  public static final String AUTH_SESSION_INVALID = "error.auth.session.invalid";
+  public static final String AUTH_FORBIDDEN      = "error.auth.forbidden";
 
   private GrpcErrorCodes() {
     // class cannot be instantiated

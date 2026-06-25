@@ -1,12 +1,12 @@
 package app.dissipate.api.grpc;
 
+import app.dissipate.auth.PrincipalResolver;
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.models.Identity;
 import app.dissipate.grpc.v1.CreateIdentityRequest;
 import app.dissipate.grpc.v1.CreateIdentityResponse;
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -21,12 +21,12 @@ public class CreateIdentityMethod {
   EncryptionUtil encryptionUtil;
 
   @Inject
-  CurrentIdentityAssociation identityAssociation;
+  PrincipalResolver principalResolver;
 
   @WithSpan("CreateIdentityMethod.create")
   public Uni<CreateIdentityResponse> create(CreateIdentityRequest request) {
-    return identityAssociation.getDeferredIdentity().onItem().transformToUni(si -> {
-      String subject = si.getPrincipal().getName();
+    return principalResolver.authorize().onItem().transformToUni(principal -> {
+      String sid = principalResolver.session().id.toString();
 
       Identity identity = new Identity();
       identity.id = snowflakeIdGenerator.generate(Identity.ID_GENERATOR_KEY);
@@ -36,7 +36,7 @@ public class CreateIdentityMethod {
       return identity.persistAndFlush(encryptionUtil)
         .onItem().transform(i -> CreateIdentityResponse.newBuilder()
           .setIid(Long.toString(i.id, 36))
-          .setSid(subject)
+          .setSid(sid)
           .setUsername(i.username)
           .setName(i.name).build());
     });

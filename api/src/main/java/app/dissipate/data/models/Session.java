@@ -41,10 +41,22 @@ import java.util.UUID;
     AND s.connectedServer IS NOT NULL
     AND s.ended IS NULL
     """)
+@NamedQuery(name = Session.QUERY_BY_SID_AUTHENTICATED,
+  query = """
+    SELECT DISTINCT s
+    FROM Session s
+    JOIN FETCH s.validations sv
+    LEFT JOIN FETCH s.account a
+    LEFT JOIN FETCH s.identity i
+    WHERE s.id = :sid
+    AND s.ended IS NULL
+    AND sv.validated IS NOT NULL
+    """)
 public class Session extends PanacheEntityBase {
 
   public static final String QUERY_BY_SID = "Session.findBySid";
   public static final String QUERY_BY_SID_VALIDATED = "Session.findBySidValidated";
+  public static final String QUERY_BY_SID_AUTHENTICATED = "Session.findBySidAuthenticated";
   public static final String QUERY_FIND_CONNECTED_BY_IDENTITY_IDS = "Session.findConnectedByIdentityIds";
 
   @Id
@@ -94,6 +106,15 @@ public class Session extends PanacheEntityBase {
 
   public static Uni<Session> findBySidValidated(String sid) {
     return find("#" + Session.QUERY_BY_SID_VALIDATED, Parameters.with("sid", UUID.fromString(sid))).firstResult();
+  }
+
+  /**
+   * Resolve a live, validated session by its sid for the gRPC auth pipeline, eagerly fetching the
+   * owning account (for role checks) and the selected identity. Returns null when the sid maps to
+   * no live validated session; throws {@link IllegalArgumentException} on a malformed sid.
+   */
+  public static Uni<Session> findAuthenticatedBySid(String sid) {
+    return find("#" + Session.QUERY_BY_SID_AUTHENTICATED, Parameters.with("sid", UUID.fromString(sid))).firstResult();
   }
 
   public static Uni<List<Session>> findConnectedByIdentityIds(List<Long> identityIds) {
