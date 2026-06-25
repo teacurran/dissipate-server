@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package dissipate.v1;
+
+option java_package = "app.dissipate.grpc.v1";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+import "google/protobuf/timestamp.proto";
+import "dissipate/v1/common.proto";
+
+service ChatService {
+  // Server-streaming list of the caller's chats.
+  rpc GetChats(GetChatsRequest) returns (stream GetChatsResponse) {
+    option (dissipate.v1.policy) = {min_role: ROLE_USER, cost: 2};
+  }
+}
+
+message GetChatsRequest {}
+
+message GetChatsResponse {
+  string id = 1;
+  string subject = 2;
+  int32 message_count = 3;
+  int32 participant_count = 4;
+  google.protobuf.Timestamp last_message = 5;
+}

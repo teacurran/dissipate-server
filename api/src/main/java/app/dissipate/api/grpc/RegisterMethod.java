@@ -5,9 +5,9 @@ import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
-import app.dissipate.grpc.RegisterRequest;
-import app.dissipate.grpc.RegisterResponse;
-import app.dissipate.grpc.RegisterResponseResult;
+import app.dissipate.grpc.v1.RegisterRequest;
+import app.dissipate.grpc.v1.RegisterResponse;
+import app.dissipate.grpc.v1.RegisterResponseResult;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.interceptors.GrpcSecurityInterceptor;
 import app.dissipate.services.DelayedJobService;
@@ -61,7 +61,7 @@ public class RegisterMethod {
       Session session = new Session();
       session.clientIp = GrpcSecurityInterceptor.CLIENT_IP_KEY.get();
       return session.persistAndFlush().onItem().transform(s -> RegisterResponse.newBuilder()
-        .setResult(RegisterResponseResult.SessionCreated)
+        .setResult(RegisterResponseResult.REGISTER_RESPONSE_RESULT_SESSION_CREATED)
         .setSid(s.id.toString()).build());
     }
 
@@ -87,7 +87,7 @@ public class RegisterMethod {
                 return sessionValidation.persistAndFlush()
                   .onItem().transformToUni(sv -> delayedJobService.createDelayedJob(sv)
                     .onItem().transformToUni(dj -> Uni.createFrom().item(
-                      RegisterResponse.newBuilder().setResult(RegisterResponseResult.EmailSent).setSid(s.id.toString()).build()
+                      RegisterResponse.newBuilder().setResult(RegisterResponseResult.REGISTER_RESPONSE_RESULT_EMAIL_SENT).setSid(s.id.toString()).build()
                     ))
                   );
               });

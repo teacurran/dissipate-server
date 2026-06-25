@@ -2,8 +2,8 @@ package app.dissipate.api.grpc;
 
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.models.Identity;
-import app.dissipate.grpc.CreateIdentityRequest;
-import app.dissipate.grpc.CreateIdentityResponse;
+import app.dissipate.grpc.v1.CreateIdentityRequest;
+import app.dissipate.grpc.v1.CreateIdentityResponse;
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.security.identity.CurrentIdentityAssociation;

@@ -1,13 +1,14 @@
 package app.dissipate.services.grpc;
 
 import app.dissipate.constants.AuthenticationConstants;
-import app.dissipate.grpc.DissipateService;
-import app.dissipate.grpc.GetSessionRequest;
-import app.dissipate.grpc.GetSessionResponse;
-import app.dissipate.grpc.RegisterRequest;
-import app.dissipate.grpc.RegisterResponse;
-import app.dissipate.grpc.ValidateSessionRequest;
-import app.dissipate.grpc.ValidateSessionResponse;
+import app.dissipate.grpc.v1.AccountService;
+import app.dissipate.grpc.v1.GetSessionRequest;
+import app.dissipate.grpc.v1.GetSessionResponse;
+import app.dissipate.grpc.v1.RegisterRequest;
+import app.dissipate.grpc.v1.RegisterResponse;
+import app.dissipate.grpc.v1.SessionService;
+import app.dissipate.grpc.v1.ValidateSessionRequest;
+import app.dissipate.grpc.v1.ValidateSessionResponse;
 import io.grpc.Metadata;
 import io.grpc.StatusRuntimeException;
 import io.quarkiverse.mailpit.test.Mailbox;
@@ -49,8 +50,11 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
 
   private static final Logger LOGGER = Logger.getLogger(AccountServiceTest.class);
 
-  @GrpcClient("dissipate")
-  DissipateService client;
+  @GrpcClient("account")
+  AccountService accountClient;
+
+  @GrpcClient("session")
+  SessionService sessionClient;
 
   Mailbox mailbox = new Mailbox() {
     @Override
@@ -78,11 +82,11 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   void shouldAllowAnonymousSessions() {
     CompletableFuture<RegisterResponse> message = new CompletableFuture<>();
 
-    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder().build())
+    UniAssertSubscriber<RegisterResponse> subscriber = accountClient.register(RegisterRequest.newBuilder().build())
       .subscribe().withSubscriber(UniAssertSubscriber.create());
 
     RegisterResponse response = subscriber.awaitItem().getItem();
-    Assertions.assertEquals("SessionCreated", response.getResult().toString());
+    Assertions.assertEquals("REGISTER_RESPONSE_RESULT_SESSION_CREATED", response.getResult().toString());
     Assertions.assertNotNull(response.getSid());
   }
 
@@ -92,7 +96,7 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
 
     // one way to test
     // doesn't work with reactive transactions
-    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
+    UniAssertSubscriber<RegisterResponse> subscriber = accountClient.register(RegisterRequest.newBuilder()
         .setEmail(email).build())
       .subscribe().withSubscriber(UniAssertSubscriber.create());
     subscriber.awaitFailure().assertFailedWith(StatusRuntimeException.class, "INVALID_ARGUMENT: The email address is invalid.");
@@ -102,12 +106,12 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
   void registerByEmail() {
     String email = "create-" + new Random().nextInt() + "@grilledcheese.com";
 
-    UniAssertSubscriber<RegisterResponse> subscriber = client.register(RegisterRequest.newBuilder()
+    UniAssertSubscriber<RegisterResponse> subscriber = accountClient.register(RegisterRequest.newBuilder()
         .setEmail(email).build())
       .subscribe().withSubscriber(UniAssertSubscriber.create());
 
     RegisterResponse response = subscriber.awaitItem().getItem();
-    Assertions.assertEquals("EmailSent", response.getResult().toString());
+    Assertions.assertEquals("REGISTER_RESPONSE_RESULT_EMAIL_SENT", response.getResult().toString());
     Assertions.assertNotNull(response.getSid());
 
     Uni<Message> uniMessage = Multi.createBy()
@@ -142,7 +146,7 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
       .setOtp(emailOtp)
       .build();
 
-    UniAssertSubscriber<ValidateSessionResponse> validateSession = client.validateSession(vsr)
+    UniAssertSubscriber<ValidateSessionResponse> validateSession = accountClient.validateSession(vsr)
       .subscribe().withSubscriber(UniAssertSubscriber.create());
 
     ValidateSessionResponse validateSessionResponse = validateSession.awaitItem().getItem();
@@ -151,7 +155,7 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
 
     Metadata headers = new Metadata();
     headers.put(AuthenticationConstants.AUTH_HEADER_KEY, sid);
-    DissipateService authedClient = GrpcClientUtils.attachHeaders(client, headers);
+    SessionService authedClient = GrpcClientUtils.attachHeaders(sessionClient, headers);
 
     UniAssertSubscriber<GetSessionResponse> getSession = authedClient.getSession(GetSessionRequest.newBuilder().build())
       .subscribe().withSubscriber(UniAssertSubscriber.create());
@@ -167,7 +171,7 @@ class AccountServiceTest implements QuarkusTestAfterEachCallback, QuarkusTestBef
 
     Metadata headers = new Metadata();
     headers.put(AuthenticationConstants.AUTH_HEADER_KEY, "invalid-token");
-    DissipateService authedClient = GrpcClientUtils.attachHeaders(client, headers);
+    SessionService authedClient = GrpcClientUtils.attachHeaders(sessionClient, headers);
 
     authedClient.getSession(GetSessionRequest.newBuilder().build())
       .onFailure().invoke(message::obtrudeException)

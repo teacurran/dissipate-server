@@ -1,0 +1,19 @@
+# Single source of truth for protos is api/src/main/proto (Quarkus generates the
+# server-side Java/Mutiny from there). buf generates the Dart client + lints +
+# checks breaking changes against the same files. The internal node-to-node API is
+# excluded so it never leaks into the public client.
+# Docs: https://buf.build/docs/configuration/v2/buf-yaml
+version: v2
+modules:
+  - path: api/src/main/proto
+    name: buf.build/teacurran/dissipate
+    excludes:
+      - api/src/main/proto/internal
+deps:
+  - buf.build/bufbuild/protovalidate
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

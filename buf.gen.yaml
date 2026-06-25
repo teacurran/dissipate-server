@@ -1,0 +1,11 @@
+# buf generates ONLY the Dart client. Java/Mutiny stubs come from Quarkus's
+# generate-code (buf's remote Java plugins don't emit Quarkus Mutiny stubs).
+version: v2
+managed:
+  enabled: true
+plugins:
+  - remote: buf.build/protocolbuffers/dart:v21.1.2
+    out: schemas/gen/dart
+    opt:
+      # "grpc" option for gRPC service stubs (not just messages).
+      - grpc

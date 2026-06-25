@@ -1,7 +1,7 @@
 package app.dissipate.api.grpc;
 
-import app.dissipate.grpc.GetSessionRequest;
-import app.dissipate.grpc.GetSessionResponse;
+import app.dissipate.grpc.v1.GetSessionRequest;
+import app.dissipate.grpc.v1.GetSessionResponse;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;

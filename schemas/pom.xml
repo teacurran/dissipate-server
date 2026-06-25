@@ -26,6 +26,9 @@
             </goals>
 
             <configuration>
+              <!-- buf config (buf.yaml/buf.gen.yaml) lives at the repo root and
+                   points at api/src/main/proto; run buf from there. -->
+              <workingDirectory>${project.parent.basedir}</workingDirectory>
               <executable>buf</executable>
               <arguments>
                 <argument>generate</argument>

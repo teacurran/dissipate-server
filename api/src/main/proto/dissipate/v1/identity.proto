@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package dissipate.v1;
+
+option java_package = "app.dissipate.grpc.v1";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+import "google/protobuf/timestamp.proto";
+import "dissipate/v1/common.proto";
+
+// Identities are the public personas attached to an account.
+service IdentityService {
+  rpc CreateIdentity(CreateIdentityRequest) returns (CreateIdentityResponse) {
+    option (dissipate.v1.policy) = {min_role: ROLE_USER, cost: 3};
+  }
+
+  rpc ChangeIdentity(ChangeIdentityRequest) returns (ChangeIdentityResponse) {
+    option (dissipate.v1.policy) = {min_role: ROLE_USER, cost: 1};
+  }
+}
+
+message CreateIdentityRequest {
+  string username = 1;
+  string name = 2;
+}
+
+message CreateIdentityResponse {
+  string sid = 1;
+  string iid = 2;
+  string username = 3;
+  string name = 4;
+  google.protobuf.Timestamp created = 5;
+}
+
+message ChangeIdentityRequest {
+  string iid = 1;
+}
+
+message ChangeIdentityResponse {
+  string sid = 1;
+  string iid = 2;
+  string username = 3;
+  string name = 4;
+  google.protobuf.Timestamp created = 5;
+}
