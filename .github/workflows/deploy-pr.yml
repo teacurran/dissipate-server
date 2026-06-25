@@ -1,0 +1,400 @@
+name: Deploy PR Preview
+
+# Hostname pattern: pr<N>.preview.dissipate.villagecompute.com.
+# Wildcard *.preview.dissipate.villagecompute.com infra (Cloudflare DNS +
+# tunnel rule + ACM origin cert pack) is managed centrally in
+# villagecompute/infra/terraform/cloudflare-{dns,tunnel,acm}.tf. Cluster
+# nginx ingress controller dispatches by Host header.
+#
+# DB strategy: each PR runs MyBatis migrations into schema
+# `dissipate_pr_<N>` inside the shared preview database. App connects with
+# QUARKUS_DATASOURCE_REACTIVE_URL=...?currentSchema=dissipate_pr_<N>.
+# Cleanup drops the schema.
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types: [completed]
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to (re)deploy"
+        required: true
+      head_sha:
+        description: "Commit SHA to deploy (full SHA)"
+        required: true
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: dissipate-server
+  USE_WIREGUARD: ${{ secrets.USE_WIREGUARD || 'false' }}
+  PR_DOMAIN: preview.dissipate.villagecompute.com
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  context:
+    name: Resolve PR context
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'pull_request' &&
+       github.event.workflow_run.conclusion == 'success')
+    outputs:
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+      head_sha: ${{ steps.resolve.outputs.head_sha }}
+      action: ${{ steps.resolve.outputs.action }}
+    steps:
+      - id: resolve
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const event = context.eventName;
+            let prNumber, headSha, action;
+
+            if (event === 'workflow_run') {
+              const prs = context.payload.workflow_run.pull_requests || [];
+              if (prs.length === 0) {
+                core.info('CI run was not for a pull request — skipping.');
+                core.setOutput('action', 'skip');
+                return;
+              }
+              prNumber = prs[0].number;
+              headSha = context.payload.workflow_run.head_sha;
+              action = 'deploy';
+            } else if (event === 'pull_request') {
+              prNumber = context.payload.pull_request.number;
+              headSha = context.payload.pull_request.head.sha;
+              action = 'cleanup';
+            } else if (event === 'workflow_dispatch') {
+              prNumber = context.payload.inputs.pr_number;
+              headSha = context.payload.inputs.head_sha;
+              action = 'deploy';
+            }
+
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('head_sha', headSha);
+            core.setOutput('action', action);
+            core.info(`Resolved: action=${action} pr=${prNumber} sha=${headSha}`);
+
+  deploy:
+    name: Deploy preview
+    needs: [context]
+    if: needs.context.outputs.action == 'deploy'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pr-preview-deploys
+      cancel-in-progress: false
+    env:
+      PR_NUMBER: ${{ needs.context.outputs.pr_number }}
+      HEAD_SHA: ${{ needs.context.outputs.head_sha }}
+      DEPLOYMENT_NAMESPACE: dissipate-pr-${{ needs.context.outputs.pr_number }}
+      INGRESS_HOST: pr${{ needs.context.outputs.pr_number }}.preview.dissipate.villagecompute.com
+      SCHEMA_NAME: dissipate_pr_${{ needs.context.outputs.pr_number }}
+
+    steps:
+      - name: Checkout code at PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.HEAD_SHA }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Setup WireGuard
+        if: env.USE_WIREGUARD == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wireguard-tools
+
+          WG_ADDRESS=$(echo -n "${{ secrets.WIREGUARD_ADDRESS }}" | tr -d '[:space:]')
+          WG_PRIVATE_KEY=$(echo -n "${{ secrets.WIREGUARD_PRIVATE_KEY }}" | tr -d '[:space:]')
+          WG_PEER_PUBLIC_KEY=$(echo -n "${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }}" | tr -d '[:space:]')
+          WG_ENDPOINT=$(echo -n "${{ secrets.WIREGUARD_ENDPOINT }}" | tr -d '[:space:]')
+          WG_ALLOWED_IPS=$(echo -n "${{ secrets.WIREGUARD_ALLOWED_IPS }}" | tr -d '[:space:]')
+
+          sudo mkdir -p /etc/wireguard
+          sudo tee /etc/wireguard/wg0.conf > /dev/null <<EOF
+          [Interface]
+          Address = ${WG_ADDRESS}
+          PrivateKey = ${WG_PRIVATE_KEY}
+
+          [Peer]
+          PublicKey = ${WG_PEER_PUBLIC_KEY}
+          Endpoint = ${WG_ENDPOINT}
+          AllowedIPs = ${WG_ALLOWED_IPS}
+          PersistentKeepalive = 25
+          EOF
+          sudo chmod 600 /etc/wireguard/wg0.conf
+          sudo wg-quick up wg0
+          ping -c 3 10.50.0.20
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.K3S_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat >> ~/.ssh/config <<EOF
+          Host *
+            ServerAliveInterval 30
+            ServerAliveCountMax 10
+            TCPKeepAlive yes
+            ConnectionAttempts 3
+          EOF
+
+          if [ "${{ env.USE_WIREGUARD }}" == "true" ]; then
+            echo "Host 10.50.0.20" >> ~/.ssh/config
+            echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+            echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
+          else
+            echo "${{ secrets.K3S_HOST }} ssh-rsa ${{ secrets.K3S_HOST_KEY }}" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Create PR schema in preview DB
+        env:
+          PGHOST: ${{ secrets.DB_HOST_PREVIEW || secrets.DB_HOST }}
+          PGPORT: ${{ secrets.DB_PORT_PREVIEW || secrets.DB_PORT }}
+          PGDATABASE: ${{ secrets.DB_NAME_PREVIEW || 'dissipate_preview' }}
+          PGUSER: ${{ secrets.DB_USER_PREVIEW || 'dissipate_preview' }}
+          PGPASSWORD: ${{ secrets.DB_PASSWORD_PREVIEW }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql -v ON_ERROR_STOP=1 -c "CREATE SCHEMA IF NOT EXISTS ${SCHEMA_NAME};"
+
+      - name: Run MyBatis migrations into PR schema
+        working-directory: api-db
+        env:
+          DB_HOST: ${{ secrets.DB_HOST_PREVIEW || secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT_PREVIEW || secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME_PREVIEW || 'dissipate_preview' }}
+          DB_USER: ${{ secrets.DB_USER_PREVIEW || 'dissipate_preview' }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD_PREVIEW }}
+        run: |
+          cat > src/main/resources/db/environments/preview.properties <<PROPS
+          time_zone=GMT+0:00
+          driver=org.postgresql.Driver
+          url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?currentSchema=${SCHEMA_NAME}
+          username=${DB_USER}
+          password=${DB_PASSWORD}
+          send_full_script=true
+          delimiter=;
+          full_line_delimiter=false
+          auto_commit=false
+          ignore_warnings=true
+          changelog=CHANGELOG
+          PROPS
+          mvn -B migrations:up -Dmigration.env=preview
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Deploy with Ansible
+        env:
+          REGISTRY_USER: ${{ secrets.DOCKER_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_TAG: sha-${{ env.HEAD_SHA }}
+          K3S_HOST: ${{ env.USE_WIREGUARD == 'true' && '10.50.0.20' || secrets.K3S_HOST }}
+          K3S_USER: ${{ secrets.K3S_USER }}
+          QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://${{ secrets.DB_HOST_PREVIEW || secrets.DB_HOST }}:${{ secrets.DB_PORT_PREVIEW || secrets.DB_PORT }}/${{ secrets.DB_NAME_PREVIEW || 'dissipate_preview' }}
+          QUARKUS_DATASOURCE_USERNAME: ${{ secrets.DB_USER_PREVIEW || 'dissipate_preview' }}
+          QUARKUS_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD_PREVIEW }}
+          # Hibernate prefixes all generated SQL with this schema. Vert.x reactive
+          # PG client doesn't parse `search_path` from the URL, so we steer Hibernate
+          # at the ORM layer instead.
+          QUARKUS_HIBERNATE_ORM_DATABASE_DEFAULT_SCHEMA: ${{ env.SCHEMA_NAME }}
+          QUARKUS_OIDC_AUTH_SERVER_URL: https://auth.villagecompute.com/realms/dissipate-beta
+          QUARKUS_OIDC_CLIENT_ID: dissipate-app
+          INGRESS_HOST: ${{ env.INGRESS_HOST }}
+          DEPLOYMENT_NAMESPACE: ${{ env.DEPLOYMENT_NAMESPACE }}
+        run: |
+          cat > inventory.yml <<EOF
+          all:
+            hosts:
+              k3s_cluster:
+                ansible_host: ${K3S_HOST}
+                ansible_user: ${K3S_USER}
+                ansible_ssh_private_key_file: ~/.ssh/id_rsa
+                ansible_python_interpreter: /usr/bin/python3
+                ansible_ssh_common_args: '-o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4'
+                ansible_ssh_retries: 3
+          EOF
+
+          ansible-playbook -v \
+            -i inventory.yml \
+            -e "k8s_namespace=${DEPLOYMENT_NAMESPACE}" \
+            -e "quarkus_profile=prod" \
+            -e "replicas=1" \
+            -e "cpu_request=50m" \
+            -e "cpu_limit=500m" \
+            -e "memory_request=256Mi" \
+            -e "memory_limit=768Mi" \
+            ansible/deploy-dissipate.yml
+
+      - name: Smoke test (public URL via tunnel)
+        run: |
+          sleep 5
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+            "https://${INGRESS_HOST}/q/health/live")
+          echo "Public health: $STATUS (https://${INGRESS_HOST}/q/health/live)"
+          [ "$STATUS" = "200" ] || exit 1
+
+      - name: Disconnect WireGuard
+        if: always() && env.USE_WIREGUARD == 'true'
+        run: sudo wg-quick down wg0 || true
+
+      - name: Comment preview URL on PR
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = `https://${process.env.INGRESS_HOST}`;
+            const sha = process.env.HEAD_SHA.substring(0, 7);
+            const body = `Deployed PR preview at ${url} (sha ${sha})`;
+
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ env.PR_NUMBER }},
+            });
+            const existing = comments.data.find(c =>
+              c.user.type === 'Bot' && c.body.startsWith('Deployed PR preview at'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ env.PR_NUMBER }},
+                body,
+              });
+            }
+
+  cleanup:
+    name: Tear down preview
+    needs: [context]
+    if: needs.context.outputs.action == 'cleanup'
+    runs-on: ubuntu-latest
+    env:
+      DEPLOYMENT_NAMESPACE: dissipate-pr-${{ needs.context.outputs.pr_number }}
+      PR_NUMBER: ${{ needs.context.outputs.pr_number }}
+      SCHEMA_NAME: dissipate_pr_${{ needs.context.outputs.pr_number }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup WireGuard
+        if: env.USE_WIREGUARD == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wireguard-tools
+
+          WG_ADDRESS=$(echo -n "${{ secrets.WIREGUARD_ADDRESS }}" | tr -d '[:space:]')
+          WG_PRIVATE_KEY=$(echo -n "${{ secrets.WIREGUARD_PRIVATE_KEY }}" | tr -d '[:space:]')
+          WG_PEER_PUBLIC_KEY=$(echo -n "${{ secrets.WIREGUARD_PEER_PUBLIC_KEY }}" | tr -d '[:space:]')
+          WG_ENDPOINT=$(echo -n "${{ secrets.WIREGUARD_ENDPOINT }}" | tr -d '[:space:]')
+          WG_ALLOWED_IPS=$(echo -n "${{ secrets.WIREGUARD_ALLOWED_IPS }}" | tr -d '[:space:]')
+
+          sudo mkdir -p /etc/wireguard
+          sudo tee /etc/wireguard/wg0.conf > /dev/null <<EOF
+          [Interface]
+          Address = ${WG_ADDRESS}
+          PrivateKey = ${WG_PRIVATE_KEY}
+
+          [Peer]
+          PublicKey = ${WG_PEER_PUBLIC_KEY}
+          Endpoint = ${WG_ENDPOINT}
+          AllowedIPs = ${WG_ALLOWED_IPS}
+          PersistentKeepalive = 25
+          EOF
+          sudo chmod 600 /etc/wireguard/wg0.conf
+          sudo wg-quick up wg0
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.K3S_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat >> ~/.ssh/config <<EOF
+          Host *
+            ServerAliveInterval 30
+            ServerAliveCountMax 10
+            TCPKeepAlive yes
+            ConnectionAttempts 3
+          EOF
+          if [ "${{ env.USE_WIREGUARD }}" == "true" ]; then
+            echo "Host 10.50.0.20" >> ~/.ssh/config
+            echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+            echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
+          else
+            echo "${{ secrets.K3S_HOST }} ssh-rsa ${{ secrets.K3S_HOST_KEY }}" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Drop PR schema from preview DB
+        env:
+          PGHOST: ${{ secrets.DB_HOST_PREVIEW || secrets.DB_HOST }}
+          PGPORT: ${{ secrets.DB_PORT_PREVIEW || secrets.DB_PORT }}
+          PGDATABASE: ${{ secrets.DB_NAME_PREVIEW || 'dissipate_preview' }}
+          PGUSER: ${{ secrets.DB_USER_PREVIEW || 'dissipate_preview' }}
+          PGPASSWORD: ${{ secrets.DB_PASSWORD_PREVIEW }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS ${SCHEMA_NAME} CASCADE;"
+
+      - name: Run cleanup playbook
+        env:
+          K3S_HOST: ${{ env.USE_WIREGUARD == 'true' && '10.50.0.20' || secrets.K3S_HOST }}
+          K3S_USER: ${{ secrets.K3S_USER }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+          cat > inventory.yml <<EOF
+          all:
+            hosts:
+              k3s_cluster:
+                ansible_host: ${K3S_HOST}
+                ansible_user: ${K3S_USER}
+                ansible_ssh_private_key_file: ~/.ssh/id_rsa
+                ansible_python_interpreter: /usr/bin/python3
+                ansible_ssh_common_args: '-o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4'
+                ansible_ssh_retries: 3
+          EOF
+
+          ansible-playbook -v -i inventory.yml ansible/cleanup-dissipate.yml
+
+      - name: Disconnect WireGuard
+        if: always() && env.USE_WIREGUARD == 'true'
+        run: sudo wg-quick down wg0 || true
+
+      - name: Comment teardown on PR
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ env.PR_NUMBER }},
+              body: `Tore down PR preview (namespace ${process.env.DEPLOYMENT_NAMESPACE}, schema ${process.env.SCHEMA_NAME}).`,
+            });

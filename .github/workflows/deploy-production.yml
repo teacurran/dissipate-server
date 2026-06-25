@@ -166,35 +166,26 @@ jobs:
             echo "${{ secrets.K3S_HOST }} ssh-rsa ${{ secrets.K3S_HOST_KEY }}" >> ~/.ssh/known_hosts
           fi
 
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
       - name: Deploy with Ansible (Production Environment)
         env:
           REGISTRY_USER: ${{ secrets.DOCKER_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           IMAGE_TAG: sha-${{ github.event.workflow_run.head_sha || github.sha }}
-          ENVIRONMENT: production
           K3S_HOST: ${{ env.USE_WIREGUARD == 'true' && '10.50.0.20' || secrets.K3S_HOST }}
           K3S_USER: ${{ secrets.K3S_USER }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          KEYCLOAK_URL: https://auth.villagecompute.com
-          KEYCLOAK_REALM: dissipate
-          OIDC_CLIENT_ID: dissipate-app
-          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
-          S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
-          S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
-          S3_UPLOADS_BUCKET: dissipate-production-uploads-raw
-          S3_MEDIA_BUCKET: dissipate-production-media-derived
-          S3_REGION: us-east-1
-          S3_CDN_URL: ${{ secrets.S3_CDN_URL }}
+          QUARKUS_DATASOURCE_REACTIVE_URL: vertx-reactive:postgresql://${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/${{ secrets.DB_NAME }}
+          QUARKUS_DATASOURCE_USERNAME: ${{ secrets.DB_USER }}
+          QUARKUS_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          QUARKUS_OIDC_AUTH_SERVER_URL: https://auth.villagecompute.com/realms/dissipate
+          QUARKUS_OIDC_CLIENT_ID: dissipate-app
           INGRESS_HOST: api.dissipate.app
           DEPLOYMENT_NAMESPACE: ${{ env.DEPLOYMENT_NAMESPACE }}
         run: |
-          python -m pip install --upgrade pip
-          pip install ansible docker
-
           cat > inventory.yml <<EOF
           all:
             hosts:
@@ -207,17 +198,12 @@ jobs:
                 ansible_ssh_retries: 3
           EOF
 
-          # Clone infra repo for the Ansible playbook
-          git clone --depth 1 https://github.com/${{ github.repository_owner }}/villagecompute-infra.git /tmp/infra || true
-
-          # Use local playbook if infra repo not available
-          if [ -f /tmp/infra/ansible/deploy-dissipate.yml ]; then
-            ansible-playbook -v -i inventory.yml /tmp/infra/ansible/deploy-dissipate.yml
-          else
-            echo "Infra repo not available, deploying via kubectl directly..."
-            ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${K3S_USER}@${K3S_HOST} \
-              "kubectl set image deployment/dissipate-app dissipate=${REGISTRY_USER}/dissipate-server:${IMAGE_TAG} -n ${DEPLOYMENT_NAMESPACE}"
-          fi
+          ansible-playbook -v \
+            -i inventory.yml \
+            -e "k8s_namespace=${DEPLOYMENT_NAMESPACE}" \
+            -e "quarkus_profile=prod" \
+            -e "replicas=3" \
+            ansible/deploy-dissipate.yml
 
       - name: Wait for rollout completion
         env:

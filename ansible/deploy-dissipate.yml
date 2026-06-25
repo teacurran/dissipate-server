@@ -1,0 +1,252 @@
+---
+- name: Deploy dissipate-server to K3s
+  hosts: k3s_cluster
+  gather_facts: no
+  become: no
+  vars:
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') }}"
+    registry_user: "{{ lookup('env', 'REGISTRY_USER') }}"
+    registry_password: "{{ lookup('env', 'REGISTRY_PASSWORD') }}"
+
+    # Datasource — workflow passes a fully-constructed Vert.x reactive URL.
+    # For PR previews this includes `?currentSchema=dissipate_pr_<N>`.
+    datasource_reactive_url: "{{ lookup('env', 'QUARKUS_DATASOURCE_REACTIVE_URL') }}"
+    datasource_username: "{{ lookup('env', 'QUARKUS_DATASOURCE_USERNAME') }}"
+    datasource_password: "{{ lookup('env', 'QUARKUS_DATASOURCE_PASSWORD') }}"
+
+    # OIDC / Keycloak
+    oidc_auth_server_url: "{{ lookup('env', 'QUARKUS_OIDC_AUTH_SERVER_URL') }}"
+    oidc_client_id: "{{ lookup('env', 'QUARKUS_OIDC_CLIENT_ID') }}"
+
+    # Optional: Hibernate default schema. Set for PR previews (schema-per-PR),
+    # empty for beta/prod (data in `public`).
+    hibernate_default_schema: "{{ lookup('env', 'QUARKUS_HIBERNATE_ORM_DATABASE_DEFAULT_SCHEMA') | default('', true) }}"
+
+    # Namespace, profile, host — set via -e by the calling workflow.
+    k8s_namespace: "dissipate-beta"
+    quarkus_profile: "prod"
+    ingress_host: "{{ lookup('env', 'INGRESS_HOST') }}"
+
+    # Sizing — defaults suit beta/prod; PR previews override via -e.
+    replicas: "2"
+    cpu_request: "100m"
+    cpu_limit: "1000m"
+    memory_request: "512Mi"
+    memory_limit: "1Gi"
+
+    app_name: "dissipate-app"
+    container_name: "dissipate"
+    service_name: "dissipate-service"
+    ingress_name: "dissipate-ingress"
+
+  tasks:
+    - name: Locate kubectl
+      shell: |
+        if command -v kubectl &> /dev/null; then
+          echo "kubectl"
+        elif [ -f /usr/local/bin/kubectl ]; then
+          echo "/usr/local/bin/kubectl"
+        else
+          echo "NONE"
+        fi
+      register: kubectl_cmd
+      changed_when: false
+
+    - name: Set kubectl command
+      set_fact:
+        kubectl: "{{ kubectl_cmd.stdout }}"
+
+    - name: Fail if kubectl missing
+      fail:
+        msg: "kubectl not found on k3s host"
+      when: kubectl == "NONE"
+
+    - name: Ensure namespace exists
+      shell: "{{ kubectl }} create namespace {{ k8s_namespace }} --dry-run=client -o yaml | {{ kubectl }} apply -f -"
+
+    - name: Create Docker registry secret
+      shell: |
+        {{ kubectl }} create secret docker-registry docker-registry-secret \
+          --docker-server=docker.io \
+          --docker-username='{{ registry_user }}' \
+          --docker-password='{{ registry_password }}' \
+          --namespace={{ k8s_namespace }} \
+          --dry-run=client -o yaml | {{ kubectl }} apply -f -
+      no_log: true
+
+    - name: Create database secret
+      shell: |
+        {{ kubectl }} create secret generic dissipate-db-secret \
+          --from-literal=reactive-url='{{ datasource_reactive_url }}' \
+          --from-literal=username='{{ datasource_username }}' \
+          --from-literal=password='{{ datasource_password }}' \
+          --namespace={{ k8s_namespace }} \
+          --dry-run=client -o yaml | {{ kubectl }} apply -f -
+      no_log: true
+
+    - name: Create OIDC secret
+      shell: |
+        {{ kubectl }} create secret generic dissipate-oidc-secret \
+          --from-literal=auth-server-url='{{ oidc_auth_server_url }}' \
+          --from-literal=client-id='{{ oidc_client_id }}' \
+          --namespace={{ k8s_namespace }} \
+          --dry-run=client -o yaml | {{ kubectl }} apply -f -
+      no_log: true
+
+    - name: Generate Kubernetes manifest
+      copy:
+        dest: "~/dissipate-k8s-{{ k8s_namespace }}-{{ image_tag }}.yaml"
+        content: |
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: {{ app_name }}
+            namespace: {{ k8s_namespace }}
+            labels:
+              app: {{ app_name }}
+          spec:
+            replicas: {{ replicas }}
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 1
+                maxUnavailable: 0
+            selector:
+              matchLabels:
+                app: {{ app_name }}
+            template:
+              metadata:
+                labels:
+                  app: {{ app_name }}
+              spec:
+                imagePullSecrets:
+                  - name: docker-registry-secret
+                containers:
+                  - name: {{ container_name }}
+                    image: {{ registry_user }}/dissipate-server:{{ image_tag }}
+                    imagePullPolicy: Always
+                    ports:
+                      - containerPort: 8080
+                        name: http
+                        protocol: TCP
+                    env:
+                      - name: QUARKUS_PROFILE
+                        value: "{{ quarkus_profile }}"
+                      - name: QUARKUS_HTTP_HOST
+                        value: "0.0.0.0"
+                      - name: QUARKUS_DATASOURCE_REACTIVE_URL
+                        valueFrom:
+                          secretKeyRef:
+                            name: dissipate-db-secret
+                            key: reactive-url
+                      - name: QUARKUS_DATASOURCE_USERNAME
+                        valueFrom:
+                          secretKeyRef:
+                            name: dissipate-db-secret
+                            key: username
+                      - name: QUARKUS_DATASOURCE_PASSWORD
+                        valueFrom:
+                          secretKeyRef:
+                            name: dissipate-db-secret
+                            key: password
+                      {% if hibernate_default_schema %}
+                      - name: QUARKUS_HIBERNATE_ORM_DATABASE_DEFAULT_SCHEMA
+                        value: "{{ hibernate_default_schema }}"
+                      {% endif %}
+                      - name: QUARKUS_OIDC_AUTH_SERVER_URL
+                        valueFrom:
+                          secretKeyRef:
+                            name: dissipate-oidc-secret
+                            key: auth-server-url
+                      - name: QUARKUS_OIDC_CLIENT_ID
+                        valueFrom:
+                          secretKeyRef:
+                            name: dissipate-oidc-secret
+                            key: client-id
+                    resources:
+                      requests:
+                        memory: "{{ memory_request }}"
+                        cpu: "{{ cpu_request }}"
+                      limits:
+                        memory: "{{ memory_limit }}"
+                        cpu: "{{ cpu_limit }}"
+                    livenessProbe:
+                      httpGet:
+                        path: /q/health/live
+                        port: 8080
+                      initialDelaySeconds: 15
+                      periodSeconds: 10
+                      timeoutSeconds: 3
+                      failureThreshold: 3
+                    readinessProbe:
+                      httpGet:
+                        path: /q/health/ready
+                        port: 8080
+                      initialDelaySeconds: 5
+                      periodSeconds: 5
+                      timeoutSeconds: 3
+                      failureThreshold: 3
+
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: {{ service_name }}
+            namespace: {{ k8s_namespace }}
+            labels:
+              app: {{ app_name }}
+          spec:
+            type: ClusterIP
+            selector:
+              app: {{ app_name }}
+            ports:
+              - port: 80
+                targetPort: 8080
+                protocol: TCP
+                name: http
+
+          ---
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: {{ ingress_name }}
+            namespace: {{ k8s_namespace }}
+            labels:
+              app: {{ app_name }}
+            annotations:
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+              nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+              nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+          spec:
+            ingressClassName: nginx
+            rules:
+              - host: {{ ingress_host }}
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: {{ service_name }}
+                          port:
+                            number: 80
+
+    - name: Apply Kubernetes manifest
+      shell: "{{ kubectl }} apply -f ~/dissipate-k8s-{{ k8s_namespace }}-{{ image_tag }}.yaml"
+
+    - name: Wait for deployment to be ready
+      shell: "{{ kubectl }} rollout status deployment/{{ app_name }} -n {{ k8s_namespace }} --timeout=5m"
+
+    - name: Get pod status
+      shell: "{{ kubectl }} get pods -n {{ k8s_namespace }} -l app={{ app_name }}"
+      register: pod_status
+      changed_when: false
+
+    - name: Display pod status
+      debug:
+        msg: "{{ pod_status.stdout_lines }}"
+
+    - name: Clean up old manifest files
+      shell: "find ~ -name 'dissipate-k8s-*.yaml' -mmin +60 -delete 2>/dev/null || true"
+      changed_when: false
