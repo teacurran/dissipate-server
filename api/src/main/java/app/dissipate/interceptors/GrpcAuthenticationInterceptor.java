@@ -13,8 +13,8 @@ import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.grpc.GlobalInterceptor;
-import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.Prioritized;
 import jakarta.inject.Inject;
 
 /**
@@ -32,11 +32,18 @@ import jakarta.inject.Inject;
  */
 @GlobalInterceptor
 @ApplicationScoped
-@Priority(100)
-public class GrpcAuthenticationInterceptor implements ServerInterceptor {
+public class GrpcAuthenticationInterceptor implements ServerInterceptor, Prioritized {
+
+  /** Runs after metrics, before validation. Ordered via Prioritized (Quarkus ignores @Priority here). */
+  public static final int PRIORITY = 100;
 
   @Inject
   PrincipalResolver principalResolver;
+
+  @Override
+  public int getPriority() {
+    return PRIORITY;
+  }
 
   @SuppressWarnings("java:S119")
   @Override

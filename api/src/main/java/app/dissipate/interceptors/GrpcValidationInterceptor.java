@@ -12,8 +12,8 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.quarkus.grpc.GlobalInterceptor;
-import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.Prioritized;
 
 /**
  * Enforces the {@code (buf.validate.field)} constraints declared in the protos: every inbound
@@ -23,10 +23,17 @@ import jakarta.enterprise.context.ApplicationScoped;
  */
 @GlobalInterceptor
 @ApplicationScoped
-@Priority(75)
-public class GrpcValidationInterceptor implements ServerInterceptor {
+public class GrpcValidationInterceptor implements ServerInterceptor, Prioritized {
+
+  /** Runs after authn (so unauthenticated calls reject first). Ordered via Prioritized. */
+  public static final int PRIORITY = 75;
 
   private final Validator validator = ValidatorFactory.newBuilder().build();
+
+  @Override
+  public int getPriority() {
+    return PRIORITY;
+  }
 
   @SuppressWarnings("java:S119")
   @Override

@@ -9,8 +9,8 @@ import io.grpc.Status;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.grpc.GlobalInterceptor;
-import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.Prioritized;
 import jakarta.inject.Inject;
 
 /**
@@ -18,17 +18,27 @@ import jakarta.inject.Inject;
  * fully-qualified method and the terminal status code. Highest priority so it runs outermost and
  * still times calls that a downstream interceptor (e.g. authn) rejects. Exposed via the Prometheus
  * registry at {@code /q/metrics}.
+ *
+ * <p>Ordering is via {@link Prioritized} (higher = invoked first / outermost) because Quarkus gRPC
+ * orders interceptors by that interface, not the {@code @Priority} annotation.
  */
 @GlobalInterceptor
 @ApplicationScoped
-@Priority(200)
-public class GrpcMetricsInterceptor implements ServerInterceptor {
+public class GrpcMetricsInterceptor implements ServerInterceptor, Prioritized {
+
+  /** Pipeline order (higher runs first/outermost): metrics &gt; authn &gt; validation. */
+  public static final int PRIORITY = 200;
 
   /** Timer name for server-side gRPC call latency + counts. */
   public static final String CALLS_TIMER = "grpc.server.calls";
 
   @Inject
   MeterRegistry registry;
+
+  @Override
+  public int getPriority() {
+    return PRIORITY;
+  }
 
   @SuppressWarnings("java:S119")
   @Override
