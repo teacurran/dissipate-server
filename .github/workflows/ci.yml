@@ -53,11 +53,11 @@ jobs:
         env:
           POSTGRES_USER: dissipate
           POSTGRES_PASSWORD: dissipate
-          POSTGRES_DB: dissipate_test
+          POSTGRES_DB: dissipate
         ports:
           - 5433:5432
         options: >-
-          --health-cmd "pg_isready -U dissipate -d dissipate_test"
+          --health-cmd "pg_isready -U dissipate -d dissipate"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
@@ -76,6 +76,12 @@ jobs:
       - name: Compile backend
         working-directory: api
         run: ./mvnw -B compile -DskipTests -Dquarkus.quinoa=false
+
+      # The postgis image pre-installs the postgis extension into template1, so create the test DB
+      # from the pristine template0 — otherwise the baseline migration's CREATE EXTENSION postgis
+      # fails with "already exists".
+      - name: Create pristine test database
+        run: PGPASSWORD=dissipate psql -h localhost -p 5433 -U dissipate -d dissipate -c "CREATE DATABASE dissipate_test TEMPLATE template0;"
 
       - name: Apply database migrations (test env)
         working-directory: api
@@ -97,11 +103,11 @@ jobs:
         env:
           POSTGRES_USER: dissipate
           POSTGRES_PASSWORD: dissipate
-          POSTGRES_DB: dissipate_test
+          POSTGRES_DB: dissipate
         ports:
           - 5433:5432
         options: >-
-          --health-cmd "pg_isready -U dissipate -d dissipate_test"
+          --health-cmd "pg_isready -U dissipate -d dissipate"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
@@ -125,6 +131,10 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+
+      # See backend-build: create the test DB from template0 so postgis isn't pre-installed.
+      - name: Create pristine test database
+        run: PGPASSWORD=dissipate psql -h localhost -p 5433 -U dissipate -d dissipate -c "CREATE DATABASE dissipate_test TEMPLATE template0;"
 
       - name: Apply database migrations (test env)
         working-directory: api
