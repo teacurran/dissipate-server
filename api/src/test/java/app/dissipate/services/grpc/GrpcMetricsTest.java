@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -47,6 +46,24 @@ class GrpcMetricsTest {
     return timer == null ? 0d : timer.count();
   }
 
+  // The timer is recorded server-side in the call's close() callback, which can land just after the
+  // client observes the response — so poll rather than read once to avoid a race.
+  private boolean awaitTimerAbove(String code, double baseline) {
+    long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+    while (System.nanoTime() < deadline) {
+      if (timerCount(code) > baseline) {
+        return true;
+      }
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+    return timerCount(code) > baseline;
+  }
+
   @Test
   void recordsTimerForSuccessfulCall() throws Throwable {
     String sid = VertxContextSupport.subscribeAndAwait(() -> seeder.seedValidatedSession());
@@ -57,9 +74,8 @@ class GrpcMetricsTest {
     GrpcClientUtils.attachHeaders(sessionClient, md)
         .getSession(GetSessionRequest.newBuilder().build()).await().atMost(TIMEOUT);
 
-    Timer timer = registry.find(GrpcMetricsInterceptor.CALLS_TIMER).tag("method", METHOD).tag("code", "OK").timer();
-    assertNotNull(timer, "expected a grpc.server.calls timer tagged code=OK for " + METHOD);
-    assertTrue(timer.count() > before, "timer count should increase after a successful call");
+    assertTrue(awaitTimerAbove("OK", before),
+        "expected the grpc.server.calls timer tagged code=OK to increase after a successful call");
   }
 
   @Test
@@ -70,7 +86,7 @@ class GrpcMetricsTest {
     sessionClient.getSession(GetSessionRequest.newBuilder().build())
         .subscribe().withSubscriber(UniAssertSubscriber.create()).awaitFailure(TIMEOUT);
 
-    assertTrue(timerCount("UNAUTHENTICATED") > before,
+    assertTrue(awaitTimerAbove("UNAUTHENTICATED", before),
         "metrics stage should time calls rejected by the auth pipeline");
   }
 }
