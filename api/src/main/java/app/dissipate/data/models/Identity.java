@@ -71,7 +71,7 @@ public class Identity extends DefaultPanacheEntityWithTimestamps {
   //   IdentityFollow.findFollowingOf(identity, limit, cursor)
 
   public static Uni<Identity> findById(Object id) {
-    return Identity.findById(id);
+    return find("id = ?1", id).firstResult();
   }
 
   public Uni<Identity> persistAndFlush(EncryptionUtil encryptionUtil) {

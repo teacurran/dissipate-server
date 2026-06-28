@@ -32,7 +32,10 @@ public class LocalizationService {
     if (bundles == null) {
       init();
     }
-    if (!bundles.containsKey(locale)) {
+    // `bundles` is an immutable Map.of(...), whose containsKey(null) throws NPE — so null-check
+    // first. A null locale is common: it is read from the gRPC context inside a @WithSession
+    // reactive continuation, where that context is no longer current.
+    if (locale == null || !bundles.containsKey(locale)) {
       return bundles.get(DEFAULT_LOCALE);
     }
     return bundles.get(locale);

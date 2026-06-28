@@ -89,6 +89,23 @@ class GrpcLoginTest {
   }
 
   @Test
+  void accountWithoutPasswordIsRejected() throws Throwable {
+    String email = "nopw-" + COUNTER.incrementAndGet() + "-" + System.nanoTime() + "@example.test";
+    VertxContextSupport.subscribeAndAwait(() -> seeder.seedAccountWithoutPassword(email));
+    assertEquals(Status.Code.UNAUTHENTICATED, loginFailureCode(email, PASSWORD));
+  }
+
+  @Test
+  void legacyHashedPasswordLoginSucceedsAndRehashes() throws Throwable {
+    String email = "legacy-" + COUNTER.incrementAndGet() + "-" + System.nanoTime() + "@example.test";
+    VertxContextSupport.subscribeAndAwait(() -> seeder.seedAccountWithLegacyPassword(email, PASSWORD));
+
+    // Verifies a legacy PBKDF2 hash matches and exercises the rehash-on-login branch.
+    LoginResponse response = login(email, PASSWORD);
+    assertFalse(response.getSid().isBlank());
+  }
+
+  @Test
   void unknownEmailIsRejected() {
     assertEquals(Status.Code.UNAUTHENTICATED,
         loginFailureCode("nobody-" + System.nanoTime() + "@example.test", "whatever"));

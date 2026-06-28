@@ -5,11 +5,16 @@ import app.dissipate.grpc.v1.ChatServiceGrpc;
 import app.dissipate.grpc.v1.IdentityServiceGrpc;
 import app.dissipate.grpc.v1.MethodPolicy;
 import app.dissipate.grpc.v1.Role;
+import app.dissipate.grpc.v1.GetSessionRequest;
+import app.dissipate.grpc.v1.GetSessionResponse;
 import app.dissipate.grpc.v1.SessionServiceGrpc;
+import io.grpc.MethodDescriptor;
+import io.grpc.protobuf.ProtoUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -60,5 +65,20 @@ class MethodPolicyResolverTest {
     MethodPolicy first = MethodPolicyResolver.resolve(SessionServiceGrpc.getGetSessionMethod());
     MethodPolicy second = MethodPolicyResolver.resolve(SessionServiceGrpc.getGetSessionMethod());
     assertEquals(first, second);
+  }
+
+  @Test
+  void methodWithoutProtoSchemaFailsClosedToDefault() {
+    // A descriptor with no proto schema descriptor (so no policy option) must fall back to the
+    // fail-closed default rather than allow the call.
+    MethodDescriptor<GetSessionRequest, GetSessionResponse> noSchema =
+        MethodDescriptor.<GetSessionRequest, GetSessionResponse>newBuilder()
+            .setType(MethodDescriptor.MethodType.UNARY)
+            .setFullMethodName("dissipate.v1.Test/NoSchema")
+            .setRequestMarshaller(ProtoUtils.marshaller(GetSessionRequest.getDefaultInstance()))
+            .setResponseMarshaller(ProtoUtils.marshaller(GetSessionResponse.getDefaultInstance()))
+            .build();
+
+    assertSame(MethodPolicyResolver.DEFAULT_POLICY, MethodPolicyResolver.resolve(noSchema));
   }
 }

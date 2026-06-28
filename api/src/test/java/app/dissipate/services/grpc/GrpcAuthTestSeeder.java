@@ -12,6 +12,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Locale;
 
@@ -50,10 +51,35 @@ public class GrpcAuthTestSeeder {
   /** Create an ACTIVE account with a validated email and the given password (for login tests). */
   @WithTransaction
   public Uni<Void> seedAccountWithPassword(String email, String password) {
+    return seedAccount(email, account -> account.password = password);
+  }
+
+  /** Create an ACTIVE account with a validated email but no password set. */
+  @WithTransaction
+  public Uni<Void> seedAccountWithoutPassword(String email) {
+    return seedAccount(email, account -> { /* leave all password fields null */ });
+  }
+
+  /**
+   * Create an ACTIVE account whose password is stored as a legacy PBKDF2 hash (not Argon2id), so a
+   * successful login exercises LoginMethod's rehash-on-login branch.
+   */
+  @WithTransaction
+  public Uni<Void> seedAccountWithLegacyPassword(String email, String password) {
+    return seedAccount(email, account -> {
+      byte[] salt = new byte[16];
+      new SecureRandom().nextBytes(salt);
+      account.passwordHash = encryptionUtil.generatePkcs552tHash(password, salt);
+      account.passwordSalt = salt;
+      account.passwordHashStr = null; // force the legacy verification path
+    });
+  }
+
+  private Uni<Void> seedAccount(String email, java.util.function.Consumer<Account> customize) {
     return Account.createNewAnonymousAccount(Locale.ENGLISH, email, idGenerator, encryptionUtil)
         .onItem().transformToUni(account -> {
           account.status = AccountStatus.ACTIVE;
-          account.password = password; // hashed into passwordHashStr by persistAndFlush(encryptionUtil)
+          customize.accept(account);
           AccountEmail accountEmail = account.emails.get(0);
           accountEmail.validated = Instant.now();
           return account.persistAndFlush(encryptionUtil)
