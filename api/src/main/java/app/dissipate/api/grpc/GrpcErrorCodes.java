@@ -14,6 +14,7 @@ public class GrpcErrorCodes {
   public static final String AUTH_FORBIDDEN      = "error.auth.forbidden";
   public static final String AUTH_LOGIN_FAILED   = "error.auth.login.failed";
   public static final String AUTH_ACCOUNT_LOCKED = "error.auth.account.locked";
+  public static final String OAUTH_INVALID_CLIENT = "error.oauth.invalid_client";
 
   private GrpcErrorCodes() {
     // class cannot be instantiated
