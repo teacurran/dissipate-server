@@ -2,6 +2,7 @@ package app.dissipate.services.grpc;
 
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.models.Account;
+import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.AccountStatus;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
@@ -43,6 +44,21 @@ public class GrpcAuthTestSeeder {
             sv.validated = Instant.now();
             return sv.persistAndFlush().onItem().transform(ignored -> saved.id.toString());
           });
+        });
+  }
+
+  /** Create an ACTIVE account with a validated email and the given password (for login tests). */
+  @WithTransaction
+  public Uni<Void> seedAccountWithPassword(String email, String password) {
+    return Account.createNewAnonymousAccount(Locale.ENGLISH, email, idGenerator, encryptionUtil)
+        .onItem().transformToUni(account -> {
+          account.status = AccountStatus.ACTIVE;
+          account.password = password; // hashed into passwordHashStr by persistAndFlush(encryptionUtil)
+          AccountEmail accountEmail = account.emails.get(0);
+          accountEmail.validated = Instant.now();
+          return account.persistAndFlush(encryptionUtil)
+              .onItem().transformToUni(saved -> accountEmail.persistAndFlush())
+              .replaceWithVoid();
         });
   }
 }

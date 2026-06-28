@@ -6,6 +6,7 @@ option java_package = "app.dissipate.grpc.v1";
 option java_multiple_files = true;
 option optimize_for = SPEED;
 
+import "buf/validate/validate.proto";
 import "dissipate/v1/common.proto";
 
 // Account lifecycle: registration and OTP/session validation. These are the
@@ -19,6 +20,13 @@ service AccountService {
   // Validate an OTP for a session (completes email/phone verification).
   rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse) {
     option (dissipate.v1.policy) = {allow_unauthenticated: true, cost: 2};
+  }
+
+  // Password login: exchanges email + password for a logged-in session id (the Bearer
+  // token for subsequent calls). Pre-authentication, so unauthenticated; weighted high
+  // because it runs Argon2id verification and is a brute-force target.
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (dissipate.v1.policy) = {allow_unauthenticated: true, cost: 10};
   }
 }
 
@@ -40,11 +48,21 @@ message RegisterResponse {
 }
 
 message ValidateSessionRequest {
-  string sid = 1;
-  string otp = 2;
+  string sid = 1 [(buf.validate.field).string.min_len = 1];
+  string otp = 2 [(buf.validate.field).string.min_len = 1];
 }
 
 message ValidateSessionResponse {
   bool valid = 1;
   optional string error_message = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  // Session id to send as the Authorization: Bearer token on subsequent calls.
+  string sid = 1;
 }

@@ -27,6 +27,13 @@ import java.time.Instant;
       FROM AccountEmail
       WHERE LOWER(email) = LOWER(:email)
       AND validated IS NOT NULL
+      """),
+  @NamedQuery(name = AccountEmail.QUERY_FIND_BY_VALIDATED_EMAIL_WITH_ACCOUNT,
+    query = """
+      FROM AccountEmail ae
+      JOIN FETCH ae.account
+      WHERE LOWER(ae.email) = LOWER(:email)
+      AND ae.validated IS NOT NULL
       """)
 })
 public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
@@ -35,6 +42,7 @@ public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
 
   public static final String QUERY_FIND_BY_EMAIL_VALIDATED = "AccountEmail.findByEmailValidated";
   public static final String QUERY_FIND_BY_VALIDATED_EMAIL = "AccountEmail.findByValidatedEmail";
+  public static final String QUERY_FIND_BY_VALIDATED_EMAIL_WITH_ACCOUNT = "AccountEmail.findByValidatedEmailWithAccount";
 
   @ManyToOne
   public Account account;
@@ -67,6 +75,15 @@ public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
    */
   public static Uni<AccountEmail> findByValidatedEmail(String email) {
     return find("#" + AccountEmail.QUERY_FIND_BY_VALIDATED_EMAIL, Parameters.with("email", email)).firstResult();
+  }
+
+  /**
+   * Like {@link #findByValidatedEmail(String)} but eagerly fetches the owning {@link Account} so the
+   * caller can read account state (password hash, lockout) within its own session — used by login.
+   */
+  public static Uni<AccountEmail> findByValidatedEmailWithAccount(String email) {
+    return find("#" + AccountEmail.QUERY_FIND_BY_VALIDATED_EMAIL_WITH_ACCOUNT,
+      Parameters.with("email", email)).firstResult();
   }
 
   @SuppressWarnings("unchecked")

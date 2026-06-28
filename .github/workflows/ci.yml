@@ -44,6 +44,24 @@ jobs:
     name: Backend Build & Test
     runs-on: ubuntu-latest
 
+    # The @QuarkusTest gRPC e2e tests boot the app against a real Postgres (Hibernate validate +
+    # MyBatis migrations). Provide one as a service mapped to host port 5433 so it matches the
+    # datasource in api/src/test/resources/application.properties (localhost:5433/dissipate_test).
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: dissipate
+          POSTGRES_PASSWORD: dissipate
+          POSTGRES_DB: dissipate
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U dissipate -d dissipate"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -59,6 +77,16 @@ jobs:
         working-directory: api
         run: ./mvnw -B compile -DskipTests -Dquarkus.quinoa=false
 
+      # The postgis image pre-installs the postgis extension into template1, so create the test DB
+      # from the pristine template0 — otherwise the baseline migration's CREATE EXTENSION postgis
+      # fails with "already exists".
+      - name: Create pristine test database
+        run: PGPASSWORD=dissipate psql -h localhost -p 5433 -U dissipate -d dissipate -c "CREATE DATABASE dissipate_test TEMPLATE template0;"
+
+      - name: Apply database migrations (test env)
+        working-directory: api
+        run: ./mvnw -B -ntp -f ../api-db/pom.xml migration:up -Dmigration.env=test
+
       - name: Run unit tests
         working-directory: api
         run: ./mvnw -B verify -Dquarkus.quinoa=false
@@ -67,6 +95,22 @@ jobs:
     name: SonarQube Analysis
     runs-on: ubuntu-latest
     needs: [backend-build]
+
+    # Re-runs the test suite for coverage, so it needs the same Postgres the tests boot against.
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: dissipate
+          POSTGRES_PASSWORD: dissipate
+          POSTGRES_DB: dissipate
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U dissipate -d dissipate"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout code
@@ -87,6 +131,14 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+
+      # See backend-build: create the test DB from template0 so postgis isn't pre-installed.
+      - name: Create pristine test database
+        run: PGPASSWORD=dissipate psql -h localhost -p 5433 -U dissipate -d dissipate -c "CREATE DATABASE dissipate_test TEMPLATE template0;"
+
+      - name: Apply database migrations (test env)
+        working-directory: api
+        run: ./mvnw -B -ntp -f ../api-db/pom.xml migration:up -Dmigration.env=test
 
       - name: Build, Test with Coverage, and SonarQube Scan
         working-directory: api
