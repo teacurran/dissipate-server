@@ -48,6 +48,25 @@ class PrincipalTest {
   }
 
   @Test
+  void appPrincipalIsAuthenticatedAndCarriesScopes() {
+    Principal app = new Principal(null, null, null, java.util.Set.of("posts:write"), 7L, "tier-1");
+    assertTrue(app.isAuthenticated());
+    assertTrue(app.isApp());
+    assertTrue(app.hasScope("posts:write"));
+    assertFalse(app.hasScope("posts:read"));
+    assertFalse(app.hasRoleAtLeast(AccountRole.USER));
+  }
+
+  @Test
+  void forSessionWithoutAccountIsRoleless() {
+    Session session = new Session();
+    Principal p = Principal.forSession(session);
+    assertNull(p.accountId());
+    assertEquals(AccountRole.USER, p.role());
+    assertFalse(p.isApp());
+  }
+
+  @Test
   void forSessionDefaultsToUserWhenRoleUnset() {
     Account account = new Account();
     account.id = 5L;
