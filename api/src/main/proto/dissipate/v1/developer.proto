@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package dissipate.v1;
+
+option java_package = "app.dissipate.grpc.v1";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+import "buf/validate/validate.proto";
+import "dissipate/v1/common.proto";
+
+// Verified-owner management of third-party API applications. Every method requires a verified user
+// (min_role ROLE_VERIFIED) and operates only on apps owned by that user.
+service DeveloperService {
+  rpc RegisterApp(RegisterAppRequest) returns (RegisterAppResponse) {
+    option (dissipate.v1.policy) = {min_role: ROLE_VERIFIED, cost: 5};
+  }
+  rpc ListApps(ListAppsRequest) returns (ListAppsResponse) {
+    option (dissipate.v1.policy) = {min_role: ROLE_VERIFIED, cost: 2};
+  }
+  rpc RotateSecret(RotateSecretRequest) returns (RotateSecretResponse) {
+    option (dissipate.v1.policy) = {min_role: ROLE_VERIFIED, cost: 3};
+  }
+  rpc SetScopes(SetScopesRequest) returns (AppSummary) {
+    option (dissipate.v1.policy) = {min_role: ROLE_VERIFIED, cost: 2};
+  }
+}
+
+// Public view of an app — never includes the client secret.
+message AppSummary {
+  string id = 1;
+  string name = 2;
+  string client_id = 3;
+  repeated string scopes = 4;
+  string rate_tier = 5;
+  string status = 6;
+}
+
+message RegisterAppRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1];
+  repeated string scopes = 2;
+}
+
+message RegisterAppResponse {
+  AppSummary app = 1;
+  // Plaintext client secret — shown ONCE; only its SHA-256 hash is stored.
+  string client_secret = 2;
+}
+
+message ListAppsRequest {}
+
+message ListAppsResponse {
+  repeated AppSummary apps = 1;
+}
+
+message RotateSecretRequest {
+  string app_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message RotateSecretResponse {
+  string client_id = 1;
+  // New plaintext client secret — shown ONCE.
+  string client_secret = 2;
+}
+
+message SetScopesRequest {
+  string app_id = 1 [(buf.validate.field).string.min_len = 1];
+  repeated string scopes = 2;
+}

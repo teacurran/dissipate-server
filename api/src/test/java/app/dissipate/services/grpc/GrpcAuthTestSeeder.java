@@ -32,12 +32,23 @@ public class GrpcAuthTestSeeder {
   @Inject
   EncryptionUtil encryptionUtil;
 
-  /** Create an ACTIVE account + session + validated SessionValidation; returns the session sid. */
+  /** Create an ACTIVE USER account + validated session; returns the session sid. */
   @WithTransaction
   public Uni<String> seedValidatedSession() {
+    return seedSession(AccountRole.USER);
+  }
+
+  /** Create an ACTIVE VERIFIED account + validated session; returns the session sid. */
+  @WithTransaction
+  public Uni<String> seedVerifiedSession() {
+    return seedSession(AccountRole.VERIFIED);
+  }
+
+  private Uni<String> seedSession(AccountRole role) {
     return Account.createNewAnonymousAccount(Locale.ENGLISH, idGenerator, encryptionUtil)
         .onItem().transformToUni(account -> {
           account.status = AccountStatus.ACTIVE;
+          account.role = role;
           Session session = new Session();
           session.account = account;
           return session.persistAndFlush().onItem().transformToUni(saved -> {
