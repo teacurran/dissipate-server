@@ -58,6 +58,25 @@ class PrincipalTest {
   }
 
   @Test
+  void forAppParsesScopesIntoSetAndDefaultsEmpty() {
+    app.dissipate.data.models.ApiApp app = new app.dissipate.data.models.ApiApp();
+    app.id = 5L;
+    app.rateTier = "tier";
+    app.dissipate.data.models.ApiAppToken token = new app.dissipate.data.models.ApiAppToken();
+    token.apiApp = app;
+
+    token.scopes = "posts:read   posts:write";
+    Principal multi = Principal.forApp(token);
+    assertTrue(multi.isApp());
+    assertEquals(5L, multi.appId());
+    assertTrue(multi.hasScope("posts:read"));
+    assertTrue(multi.hasScope("posts:write"));
+
+    token.scopes = null;
+    assertTrue(Principal.forApp(token).scopes().isEmpty());
+  }
+
+  @Test
   void forSessionWithoutAccountIsRoleless() {
     Session session = new Session();
     Principal p = Principal.forSession(session);

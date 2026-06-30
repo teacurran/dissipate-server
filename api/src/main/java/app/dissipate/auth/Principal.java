@@ -1,9 +1,12 @@
 package app.dissipate.auth;
 
 import app.dissipate.data.models.AccountRole;
+import app.dissipate.data.models.ApiAppToken;
 import app.dissipate.data.models.Session;
 
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The resolved caller of a gRPC method, produced by {@link PrincipalResolver} and used by the
@@ -43,6 +46,19 @@ public record Principal(
         : AccountRole.USER;
     Long identityId = session.identity != null ? session.identity.id : null;
     return new Principal(accountId, identityId, role, Set.of(), null, null);
+  }
+
+  /** Build a third-party app principal from a resolved access token (scopes parsed from the token). */
+  public static Principal forApp(ApiAppToken token) {
+    return new Principal(null, null, null, parseScopes(token.scopes), token.apiApp.id, token.apiApp.rateTier);
+  }
+
+  /** Parse OAuth space-delimited scopes into a set. */
+  static Set<String> parseScopes(String scopes) {
+    if (scopes == null || scopes.isBlank()) {
+      return Set.of();
+    }
+    return Arrays.stream(scopes.trim().split("\\s+")).collect(Collectors.toUnmodifiableSet());
   }
 
   public boolean isAuthenticated() {

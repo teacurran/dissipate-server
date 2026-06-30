@@ -2,19 +2,25 @@ package app.dissipate.auth;
 
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountRole;
+import app.dissipate.data.models.ApiApp;
+import app.dissipate.data.models.ApiAppStatus;
+import app.dissipate.data.models.ApiAppToken;
 import app.dissipate.data.models.Identity;
 import app.dissipate.data.models.Session;
 import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.v1.MethodPolicy;
 import app.dissipate.grpc.v1.Role;
 import app.dissipate.services.LocalizationService;
+import app.dissipate.utils.EncryptionUtil;
 import io.grpc.Status;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,7 +40,28 @@ class PrincipalResolverTest {
   private static PrincipalResolver resolver() {
     PrincipalResolver resolver = new PrincipalResolver();
     resolver.localizationService = new LocalizationService();
+    resolver.encryptionUtil = new EncryptionUtil();
     return resolver;
+  }
+
+  /** A non-UUID token so authorize() routes to the app-token path. */
+  private static final String APP_TOKEN = "opaque-app-token-not-a-uuid";
+
+  private static ApiAppToken appToken(String scopes, ApiAppStatus status, Instant expiresAt) {
+    ApiApp app = new ApiApp();
+    app.id = 7L;
+    app.status = status;
+    app.rateTier = "default";
+    ApiAppToken token = new ApiAppToken();
+    token.apiApp = app;
+    token.scopes = scopes;
+    token.expiresAt = expiresAt;
+    return token;
+  }
+
+  private static void stubAppToken(MockedStatic<ApiAppToken> mock, ApiAppToken token) {
+    mock.when(() -> ApiAppToken.findActiveByHash(ArgumentMatchers.anyString()))
+        .thenReturn(Uni.createFrom().item(token));
   }
 
   private static MethodPolicy policy(boolean allowUnauthenticated, Role minRole) {
@@ -104,13 +131,86 @@ class PrincipalResolverTest {
   }
 
   @Test
-  void malformedTokenIsRecoveredAndRejected() {
-    try (MockedStatic<Session> mock = Mockito.mockStatic(Session.class)) {
-      mock.when(() -> Session.findAuthenticatedBySid("bad"))
-          .thenThrow(new IllegalArgumentException("not a uuid"));
+  void unknownAppTokenIsRejected() {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+      mock.when(() -> ApiAppToken.findActiveByHash(ArgumentMatchers.anyString()))
+          .thenReturn(Uni.createFrom().nullItem());
       PrincipalResolver resolver = resolver();
-      resolver.bind(policy(false, Role.ROLE_USER), "bad");
+      resolver.bind(policy(false, Role.ROLE_USER), APP_TOKEN);
       assertEquals(Status.Code.UNAUTHENTICATED, failureCode(resolver.authorize()));
+    }
+  }
+
+  @Test
+  void appTokenWithAllowAppAndRequiredScopeYieldsAppPrincipal() {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+      stubAppToken(mock, appToken("posts:read posts:write", ApiAppStatus.ACTIVE, Instant.now().plusSeconds(3600)));
+      PrincipalResolver resolver = resolver();
+      MethodPolicy appPolicy = MethodPolicy.newBuilder().setAllowApp(true).addScopes("posts:read").build();
+      resolver.bind(appPolicy, APP_TOKEN);
+
+      Principal principal = resolver.authorize().subscribe().withSubscriber(UniAssertSubscriber.create())
+          .awaitItem().getItem();
+
+      assertTrue(principal.isApp());
+      assertEquals(7L, principal.appId());
+      assertTrue(principal.hasScope("posts:write"));
+      assertNull(resolver.session());
+    }
+  }
+
+  @Test
+  void appTokenMissingRequiredScopeIsDenied() {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+      stubAppToken(mock, appToken("posts:read", ApiAppStatus.ACTIVE, Instant.now().plusSeconds(3600)));
+      PrincipalResolver resolver = resolver();
+      MethodPolicy appPolicy = MethodPolicy.newBuilder().setAllowApp(true).addScopes("posts:delete").build();
+      resolver.bind(appPolicy, APP_TOKEN);
+      assertEquals(Status.Code.PERMISSION_DENIED, failureCode(resolver.authorize()));
+    }
+  }
+
+  @Test
+  void appTokenOnUserOnlyMethodIsDenied() {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+      stubAppToken(mock, appToken("posts:read", ApiAppStatus.ACTIVE, Instant.now().plusSeconds(3600)));
+      PrincipalResolver resolver = resolver();
+      // min_role USER, allow_app defaults false -> apps may not call it.
+      resolver.bind(policy(false, Role.ROLE_USER), APP_TOKEN);
+      assertEquals(Status.Code.PERMISSION_DENIED, failureCode(resolver.authorize()));
+    }
+  }
+
+  @Test
+  void expiredAppTokenIsRejected() {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+      stubAppToken(mock, appToken("posts:read", ApiAppStatus.ACTIVE, Instant.now().minusSeconds(1)));
+      PrincipalResolver resolver = resolver();
+      resolver.bind(MethodPolicy.newBuilder().setAllowApp(true).build(), APP_TOKEN);
+      assertEquals(Status.Code.UNAUTHENTICATED, failureCode(resolver.authorize()));
+    }
+  }
+
+  @Test
+  void tokenOfDisabledAppIsRejected() {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+      stubAppToken(mock, appToken("posts:read", ApiAppStatus.DISABLED, Instant.now().plusSeconds(3600)));
+      PrincipalResolver resolver = resolver();
+      resolver.bind(MethodPolicy.newBuilder().setAllowApp(true).build(), APP_TOKEN);
+      assertEquals(Status.Code.UNAUTHENTICATED, failureCode(resolver.authorize()));
+    }
+  }
+
+  @Test
+  void appTokenOnUnauthenticatedMethodSkipsEnforcement() {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+      stubAppToken(mock, appToken("posts:read", ApiAppStatus.ACTIVE, Instant.now().plusSeconds(3600)));
+      PrincipalResolver resolver = resolver();
+      // allow_unauthenticated method: a valid app token is accepted without allow_app/scope checks.
+      resolver.bind(policy(true, Role.ROLE_UNSPECIFIED), APP_TOKEN);
+      Principal principal = resolver.authorize().subscribe().withSubscriber(UniAssertSubscriber.create())
+          .awaitItem().getItem();
+      assertTrue(principal.isApp());
     }
   }
 
