@@ -2,38 +2,49 @@ package app.dissipate.auth;
 
 import app.dissipate.constants.AuthenticationConstants;
 import app.dissipate.data.models.AccountRole;
+import app.dissipate.data.models.ApiAppToken;
 import app.dissipate.data.models.Session;
 import app.dissipate.grpc.v1.MethodPolicy;
 import app.dissipate.grpc.v1.Role;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.services.LocalizationService;
+import app.dissipate.utils.EncryptionUtil;
 import io.grpc.Status;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
+import java.time.Instant;
 import java.util.Locale;
+import java.util.UUID;
 
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_FORBIDDEN;
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_REQUIRED;
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_SESSION_INVALID;
 
 /**
- * Stage 2 of the auth pipeline (reactive, per-call). Resolves the caller into a {@link Principal}
- * and enforces the method's {@link MethodPolicy}, which {@link app.dissipate.interceptors.GrpcAuthenticationInterceptor}
- * stashed in the gRPC context.
+ * Stage 2 of the auth pipeline (reactive, per-call). Resolves the caller into a {@link Principal} and
+ * enforces the method's {@link MethodPolicy}, which {@link app.dissipate.interceptors.GrpcAuthenticationInterceptor}
+ * bound into this request-scoped bean.
  *
- * <p>Resolution is deliberately done here rather than in the interceptor so it runs inside the
- * method's own {@code @WithSession} reactive context — the resolved {@link Session} and its
- * fetched account/identity are then managed by the same Hibernate session the handler uses,
- * avoiding cross-session entity errors (the same reason the REST {@code CurrentSession} resolves
- * lazily). Call {@link #authorize()} at the start of every gRPC handler.
+ * <p>A bearer token is either a first-party session sid (a UUID) or a third-party app access token
+ * (opaque). They are disambiguated by UUID-parseability and resolved against the session table or the
+ * {@code api_app_tokens} table respectively. Authorization then diverges by principal kind:
+ * <ul>
+ *   <li><b>user</b> — must meet {@code min_role};</li>
+ *   <li><b>app</b> — the method must set {@code allow_app}, and the token must hold every required
+ *       {@code scope}.</li>
+ * </ul>
+ * Methods declaring {@code allow_unauthenticated} skip enforcement entirely (any caller is allowed).
  */
 @RequestScoped
 public class PrincipalResolver {
 
   @Inject
   LocalizationService localizationService;
+
+  @Inject
+  EncryptionUtil encryptionUtil;
 
   private Principal principal;
   private Session session;
@@ -43,11 +54,9 @@ public class PrincipalResolver {
   private boolean bound;
 
   /**
-   * Capture the call's policy and bearer token, called synchronously by
-   * {@link app.dissipate.interceptors.GrpcAuthenticationInterceptor} while the gRPC context is
-   * current. Bound here (rather than read from {@code io.grpc.Context} inside {@link #authorize()})
-   * because the request runs inside a @WithSession reactive continuation by then, where the gRPC
-   * context is no longer current — but this @RequestScoped bean is propagated across it.
+   * Capture the call's policy and bearer token, called synchronously by the authn interceptor while
+   * the gRPC context is current (the handler later runs in a @WithSession reactive continuation where
+   * that context is gone, but this @RequestScoped bean is propagated across it).
    */
   public void bind(MethodPolicy policy, String token) {
     this.boundPolicy = policy;
@@ -55,18 +64,12 @@ public class PrincipalResolver {
     this.bound = true;
   }
 
-  /**
-   * Resolve the principal and enforce the in-flight method's policy. Caches the result for the
-   * request, so calling it more than once per call is cheap. Fails the {@link Uni} with a
-   * localized {@code UNAUTHENTICATED} / {@code PERMISSION_DENIED} when the policy is not met.
-   */
+  /** Resolve the principal and enforce the in-flight method's policy. Cached for the request. */
   public Uni<Principal> authorize() {
     if (principal != null) {
       return Uni.createFrom().item(principal);
     }
 
-    // Prefer values bound synchronously by the interceptor; fall back to the gRPC context for any
-    // call path that reaches authorize() without the interceptor having bound (fails closed).
     MethodPolicy policy = bound ? boundPolicy : AuthenticationConstants.POLICY_KEY.get();
     if (policy == null) {
       policy = MethodPolicyResolver.DEFAULT_POLICY;
@@ -82,24 +85,54 @@ public class PrincipalResolver {
       return fail(locale, Status.UNAUTHENTICATED, AUTH_REQUIRED);
     }
 
-    // findAuthenticatedBySid parses the token as a UUID and throws synchronously on a malformed
-    // value; defer so that surfaces as a Uni failure we can map cleanly.
+    // A session sid is a UUID; anything else is treated as an opaque app access token.
+    return isUuid(token) ? resolveUser(token, p, locale) : resolveApp(token, p, locale);
+  }
+
+  private Uni<Principal> resolveUser(String token, MethodPolicy p, Locale locale) {
     return Uni.createFrom().deferred(() -> Session.findAuthenticatedBySid(token))
         .onFailure(IllegalArgumentException.class).recoverWithItem((Session) null)
         .onItem().transformToUni(resolved -> {
           if (resolved == null) {
-            if (p.getAllowUnauthenticated()) {
-              return Uni.createFrom().item(cache(Principal.anonymous(), null));
-            }
-            return fail(locale, Status.UNAUTHENTICATED, AUTH_SESSION_INVALID);
+            return unresolved(p, locale);
           }
-          Principal resolvedPrincipal = Principal.forSession(resolved);
+          Principal user = Principal.forSession(resolved);
           AccountRole minRole = minRole(p);
-          if (minRole != null && !resolvedPrincipal.hasRoleAtLeast(minRole)) {
+          if (minRole != null && !user.hasRoleAtLeast(minRole)) {
             return fail(locale, Status.PERMISSION_DENIED, AUTH_FORBIDDEN);
           }
-          return Uni.createFrom().item(cache(resolvedPrincipal, resolved));
+          return Uni.createFrom().item(cache(user, resolved));
         });
+  }
+
+  private Uni<Principal> resolveApp(String token, MethodPolicy p, Locale locale) {
+    String tokenHash = encryptionUtil.sha256(token);
+    return ApiAppToken.findActiveByHash(tokenHash).onItem().transformToUni(appToken -> {
+      if (appToken == null || appToken.isExpired(Instant.now())
+          || appToken.apiApp == null || !appToken.apiApp.isActive()) {
+        return unresolved(p, locale);
+      }
+      Principal app = Principal.forApp(appToken);
+      if (!p.getAllowUnauthenticated()) {
+        if (!p.getAllowApp()) {
+          return fail(locale, Status.PERMISSION_DENIED, AUTH_FORBIDDEN);
+        }
+        for (String required : p.getScopesList()) {
+          if (!app.hasScope(required)) {
+            return fail(locale, Status.PERMISSION_DENIED, AUTH_FORBIDDEN);
+          }
+        }
+      }
+      return Uni.createFrom().item(cache(app, null));
+    });
+  }
+
+  /** A present-but-unresolvable token: anonymous on open methods, otherwise rejected. */
+  private Uni<Principal> unresolved(MethodPolicy p, Locale locale) {
+    if (p.getAllowUnauthenticated()) {
+      return Uni.createFrom().item(cache(Principal.anonymous(), null));
+    }
+    return fail(locale, Status.UNAUTHENTICATED, AUTH_SESSION_INVALID);
   }
 
   /** The session resolved by {@link #authorize()}, or null for anonymous/app callers. */
@@ -116,6 +149,15 @@ public class PrincipalResolver {
     this.principal = resolvedPrincipal;
     this.session = resolvedSession;
     return resolvedPrincipal;
+  }
+
+  private static boolean isUuid(String token) {
+    try {
+      UUID.fromString(token);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
   }
 
   /** Translate a policy's {@code min_role} into the domain role, or null when no floor is set. */
