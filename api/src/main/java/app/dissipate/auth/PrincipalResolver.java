@@ -8,6 +8,7 @@ import app.dissipate.grpc.v1.MethodPolicy;
 import app.dissipate.grpc.v1.Role;
 import app.dissipate.interceptors.GrpcLocaleInterceptor;
 import app.dissipate.services.LocalizationService;
+import app.dissipate.services.UsageMeterService;
 import app.dissipate.utils.EncryptionUtil;
 import io.grpc.Status;
 import io.smallrye.mutiny.Uni;
@@ -45,6 +46,9 @@ public class PrincipalResolver {
 
   @Inject
   EncryptionUtil encryptionUtil;
+
+  @Inject
+  UsageMeterService usageMeterService;
 
   private Principal principal;
   private Session session;
@@ -148,7 +152,19 @@ public class PrincipalResolver {
   private Principal cache(Principal resolvedPrincipal, Session resolvedSession) {
     this.principal = resolvedPrincipal;
     this.session = resolvedSession;
+    // Meter the call once, here at resolution (not on cached re-reads). No-op for anonymous.
+    usageMeterService.record(resolvedPrincipal, effectiveCost());
     return resolvedPrincipal;
+  }
+
+  /** The in-flight method's rate-limit weight; 0/absent is treated as the default weight of 1. */
+  private long effectiveCost() {
+    MethodPolicy policy = bound ? boundPolicy : AuthenticationConstants.POLICY_KEY.get();
+    if (policy == null) {
+      return 1;
+    }
+    int cost = policy.getCost();
+    return cost <= 0 ? 1 : cost;
   }
 
   private static boolean isUuid(String token) {

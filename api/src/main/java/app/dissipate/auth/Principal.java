@@ -2,6 +2,7 @@ package app.dissipate.auth;
 
 import app.dissipate.data.models.AccountRole;
 import app.dissipate.data.models.ApiAppToken;
+import app.dissipate.data.models.PrincipalKind;
 import app.dissipate.data.models.Session;
 
 import java.util.Arrays;
@@ -67,6 +68,16 @@ public record Principal(
 
   public boolean isApp() {
     return appId != null;
+  }
+
+  /** Whether this caller a usage counter is attributed to: APP if an app, else USER. */
+  public PrincipalKind kind() {
+    return isApp() ? PrincipalKind.APP : PrincipalKind.USER;
+  }
+
+  /** The id a usage counter is keyed by: app id for apps, account id for users (null if anonymous). */
+  public Long meteredId() {
+    return isApp() ? appId : accountId;
   }
 
   public boolean hasScope(String scope) {

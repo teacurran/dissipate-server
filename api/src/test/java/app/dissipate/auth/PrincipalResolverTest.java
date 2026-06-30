@@ -11,6 +11,7 @@ import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.v1.MethodPolicy;
 import app.dissipate.grpc.v1.Role;
 import app.dissipate.services.LocalizationService;
+import app.dissipate.services.UsageMeterService;
 import app.dissipate.utils.EncryptionUtil;
 import io.grpc.Status;
 import io.smallrye.mutiny.Uni;
@@ -41,6 +42,7 @@ class PrincipalResolverTest {
     PrincipalResolver resolver = new PrincipalResolver();
     resolver.localizationService = new LocalizationService();
     resolver.encryptionUtil = new EncryptionUtil();
+    resolver.usageMeterService = new UsageMeterService();
     return resolver;
   }
 
