@@ -5,7 +5,9 @@ import app.dissipate.data.models.AccountRole;
 import app.dissipate.data.models.ApiApp;
 import app.dissipate.data.models.ApiAppStatus;
 import app.dissipate.data.models.ApiAppToken;
+import app.dissipate.data.models.ApiUsageCounter;
 import app.dissipate.data.models.Identity;
+import app.dissipate.data.models.PrincipalKind;
 import app.dissipate.data.models.Session;
 import app.dissipate.exceptions.ApiException;
 import app.dissipate.grpc.v1.MethodPolicy;
@@ -22,6 +24,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,11 +43,37 @@ class PrincipalResolverTest {
   private static final String TOKEN = UUID.randomUUID().toString();
 
   private static PrincipalResolver resolver() {
+    return resolver(1_000_000L); // effectively unlimited unless a test overrides
+  }
+
+  private static PrincipalResolver resolver(long limit) {
     PrincipalResolver resolver = new PrincipalResolver();
     resolver.localizationService = new LocalizationService();
     resolver.encryptionUtil = new EncryptionUtil();
     resolver.usageMeterService = new UsageMeterService();
+    resolver.rateLimitConfig = limitConfig(limit);
     return resolver;
+  }
+
+  private static RateLimitConfig limitConfig(long limit) {
+    return new RateLimitConfig() {
+      @Override public long userPerMinute() { return limit; }
+      @Override public long appDefaultPerMinute() { return limit; }
+      @Override public Map<String, Long> tier() { return Map.of(); }
+    };
+  }
+
+  /** Stub the global usage read with the given existing rows (empty = no prior usage). */
+  private static void stubUsage(MockedStatic<ApiUsageCounter> mock, List<ApiUsageCounter> rows) {
+    mock.when(() -> ApiUsageCounter.findForPrincipalMinute(
+        ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any()))
+        .thenReturn(Uni.createFrom().item(rows));
+  }
+
+  private static ApiUsageCounter usageRow(long cost) {
+    ApiUsageCounter row = new ApiUsageCounter();
+    row.cost = cost;
+    return row;
   }
 
   /** A non-UUID token so authorize() routes to the app-token path. */
@@ -145,8 +175,10 @@ class PrincipalResolverTest {
 
   @Test
   void appTokenWithAllowAppAndRequiredScopeYieldsAppPrincipal() {
-    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class);
+         MockedStatic<ApiUsageCounter> usage = Mockito.mockStatic(ApiUsageCounter.class)) {
       stubAppToken(mock, appToken("posts:read posts:write", ApiAppStatus.ACTIVE, Instant.now().plusSeconds(3600)));
+      stubUsage(usage, List.of());
       PrincipalResolver resolver = resolver();
       MethodPolicy appPolicy = MethodPolicy.newBuilder().setAllowApp(true).addScopes("posts:read").build();
       resolver.bind(appPolicy, APP_TOKEN);
@@ -205,8 +237,10 @@ class PrincipalResolverTest {
 
   @Test
   void appTokenOnUnauthenticatedMethodSkipsEnforcement() {
-    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class)) {
+    try (MockedStatic<ApiAppToken> mock = Mockito.mockStatic(ApiAppToken.class);
+         MockedStatic<ApiUsageCounter> usage = Mockito.mockStatic(ApiUsageCounter.class)) {
       stubAppToken(mock, appToken("posts:read", ApiAppStatus.ACTIVE, Instant.now().plusSeconds(3600)));
+      stubUsage(usage, List.of());
       PrincipalResolver resolver = resolver();
       // allow_unauthenticated method: a valid app token is accepted without allow_app/scope checks.
       resolver.bind(policy(true, Role.ROLE_UNSPECIFIED), APP_TOKEN);
@@ -218,9 +252,11 @@ class PrincipalResolverTest {
 
   @Test
   void resolvedSessionMeetingRoleYieldsPrincipal() {
-    try (MockedStatic<Session> mock = Mockito.mockStatic(Session.class)) {
+    try (MockedStatic<Session> mock = Mockito.mockStatic(Session.class);
+         MockedStatic<ApiUsageCounter> usage = Mockito.mockStatic(ApiUsageCounter.class)) {
       mock.when(() -> Session.findAuthenticatedBySid(TOKEN))
           .thenReturn(Uni.createFrom().item(session(AccountRole.VERIFIED)));
+      stubUsage(usage, List.of());
       PrincipalResolver resolver = resolver();
       resolver.bind(policy(false, Role.ROLE_VERIFIED), TOKEN);
 
@@ -270,9 +306,11 @@ class PrincipalResolverTest {
 
   @Test
   void authorizeIsCachedAcrossCalls() {
-    try (MockedStatic<Session> mock = Mockito.mockStatic(Session.class)) {
+    try (MockedStatic<Session> mock = Mockito.mockStatic(Session.class);
+         MockedStatic<ApiUsageCounter> usage = Mockito.mockStatic(ApiUsageCounter.class)) {
       mock.when(() -> Session.findAuthenticatedBySid(TOKEN))
           .thenReturn(Uni.createFrom().item(session(AccountRole.USER)));
+      stubUsage(usage, List.of());
       PrincipalResolver resolver = resolver();
       resolver.bind(policy(false, Role.ROLE_USER), TOKEN);
 
@@ -282,6 +320,35 @@ class PrincipalResolverTest {
       assertSame(first, second);
       // Resolution happened once; the second call short-circuits on the cached principal.
       mock.verify(() -> Session.findAuthenticatedBySid(TOKEN), Mockito.times(1));
+    }
+  }
+
+  @Test
+  void callAtTheRateLimitIsResourceExhausted() {
+    try (MockedStatic<Session> mock = Mockito.mockStatic(Session.class);
+         MockedStatic<ApiUsageCounter> usage = Mockito.mockStatic(ApiUsageCounter.class)) {
+      mock.when(() -> Session.findAuthenticatedBySid(TOKEN))
+          .thenReturn(Uni.createFrom().item(session(AccountRole.USER)));
+      stubUsage(usage, List.of(usageRow(5))); // already at the limit of 5
+      PrincipalResolver resolver = resolver(5);
+      resolver.bind(policy(false, Role.ROLE_USER), TOKEN);
+      assertEquals(Status.Code.RESOURCE_EXHAUSTED, failureCode(resolver.authorize()));
+    }
+  }
+
+  @Test
+  void callUnderTheRateLimitIsAdmitted() {
+    try (MockedStatic<Session> mock = Mockito.mockStatic(Session.class);
+         MockedStatic<ApiUsageCounter> usage = Mockito.mockStatic(ApiUsageCounter.class)) {
+      mock.when(() -> Session.findAuthenticatedBySid(TOKEN))
+          .thenReturn(Uni.createFrom().item(session(AccountRole.USER)));
+      stubUsage(usage, List.of(usageRow(4))); // under the limit of 5
+      PrincipalResolver resolver = resolver(5);
+      resolver.bind(policy(false, Role.ROLE_USER), TOKEN);
+
+      Principal principal = resolver.authorize().subscribe().withSubscriber(UniAssertSubscriber.create())
+          .awaitItem().getItem();
+      assertEquals(4242L, principal.accountId());
     }
   }
 }

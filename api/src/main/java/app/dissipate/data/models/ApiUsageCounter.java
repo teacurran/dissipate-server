@@ -65,4 +65,9 @@ public class ApiUsageCounter extends DefaultPanacheEntityWithTimestamps {
     return find("#" + QUERY_BY_KEY, Parameters.with("principalType", principalType)
         .and("principalId", principalId).and("nodeId", nodeId).and("minute", minute)).firstResult();
   }
+
+  /** All nodes' counter rows for the given principal + minute (one per node; sum for the global total). */
+  public static Uni<java.util.List<ApiUsageCounter>> findForPrincipalMinute(PrincipalKind principalType, Long principalId, Instant minute) {
+    return list("principalType = ?1 and principalId = ?2 and minute = ?3", principalType, principalId, minute);
+  }
 }

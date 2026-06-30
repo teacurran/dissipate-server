@@ -17,6 +17,7 @@ public class GrpcErrorCodes {
   public static final String OAUTH_INVALID_CLIENT = "error.oauth.invalid_client";
   public static final String DEV_INVALID_SCOPE   = "error.dev.invalid_scope";
   public static final String DEV_APP_NOT_FOUND   = "error.dev.app_not_found";
+  public static final String RATE_LIMITED        = "error.ratelimit.exceeded";
 
   private GrpcErrorCodes() {
     // class cannot be instantiated
