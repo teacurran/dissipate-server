@@ -3,6 +3,7 @@ package app.dissipate.utils;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -44,6 +45,41 @@ public class EncryptionUtil {
     byte[] salt = new byte[16];
     random.nextBytes(salt);
     return salt;
+  }
+
+  /**
+   * Generate a high-entropy, URL-safe opaque token (256 bits). Used for API client secrets and
+   * access tokens — values shown to the caller once and then stored only as a {@link #sha256(String)}
+   * hash.
+   */
+  public String generateOpaqueToken() {
+    byte[] bytes = new byte[32];
+    new SecureRandom().nextBytes(bytes);
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+  }
+
+  /**
+   * SHA-256 of a value, Base64-encoded. Appropriate for hashing <em>high-entropy</em> tokens (client
+   * secrets, access tokens) at rest — NOT for low-entropy passwords, which must use
+   * {@link #hashPassword(String)} (Argon2id).
+   */
+  public String sha256(String value) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      return Base64.getEncoder().encodeToString(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 algorithm unavailable", e);
+    }
+  }
+
+  /** Constant-time check that {@code presented} hashes to {@code storedHash} (a {@link #sha256} value). */
+  public boolean matchesSha256(String presented, String storedHash) {
+    if (presented == null || storedHash == null) {
+      return false;
+    }
+    return MessageDigest.isEqual(
+        sha256(presented).getBytes(StandardCharsets.UTF_8),
+        storedHash.getBytes(StandardCharsets.UTF_8));
   }
 
   @WithSpan

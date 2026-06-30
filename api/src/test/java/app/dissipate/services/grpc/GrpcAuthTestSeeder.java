@@ -3,7 +3,10 @@ package app.dissipate.services.grpc;
 import app.dissipate.data.jpa.SnowflakeIdGenerator;
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
+import app.dissipate.data.models.AccountRole;
 import app.dissipate.data.models.AccountStatus;
+import app.dissipate.data.models.ApiApp;
+import app.dissipate.data.models.ApiAppStatus;
 import app.dissipate.data.models.Session;
 import app.dissipate.data.models.SessionValidation;
 import app.dissipate.utils.EncryptionUtil;
@@ -73,6 +76,27 @@ public class GrpcAuthTestSeeder {
       account.passwordSalt = salt;
       account.passwordHashStr = null; // force the legacy verification path
     });
+  }
+
+  /** Register an API app (with a verified owner account) and the SHA-256 of its client secret. */
+  @WithTransaction
+  public Uni<Void> seedApiApp(String clientId, String clientSecret, String scopes, ApiAppStatus status) {
+    return Account.createNewAnonymousAccount(Locale.ENGLISH, idGenerator, encryptionUtil)
+        .onItem().transformToUni(owner -> {
+          owner.status = AccountStatus.ACTIVE;
+          owner.role = AccountRole.VERIFIED;
+          return owner.persistAndFlush(encryptionUtil).onItem().transformToUni(savedOwner -> {
+            ApiApp app = new ApiApp();
+            app.id = idGenerator.generate(ApiApp.ID_GENERATOR_KEY);
+            app.ownerAccountId = savedOwner.id;
+            app.clientId = clientId;
+            app.clientSecretHash = encryptionUtil.sha256(clientSecret);
+            app.name = "Test App";
+            app.grantedScopes = scopes;
+            app.status = status;
+            return app.persistAndFlush().replaceWithVoid();
+          });
+        });
   }
 
   private Uni<Void> seedAccount(String email, java.util.function.Consumer<Account> customize) {

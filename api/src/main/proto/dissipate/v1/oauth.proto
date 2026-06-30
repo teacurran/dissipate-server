@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package dissipate.v1;
+
+option java_package = "app.dissipate.grpc.v1";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+import "buf/validate/validate.proto";
+import "dissipate/v1/common.proto";
+
+// OAuth2 client-credentials grant for third-party API applications. Exchanges a registered app's
+// client_id + client_secret for a short-lived opaque access token (the Bearer token for subsequent
+// calls). Pre-authentication, so unauthenticated; the token issuer is Postgres-backed (not Keycloak).
+service OAuthService {
+  rpc Token(TokenRequest) returns (TokenResponse) {
+    option (dissipate.v1.policy) = {allow_unauthenticated: true, cost: 5};
+  }
+}
+
+message TokenRequest {
+  string client_id = 1 [(buf.validate.field).string.min_len = 1];
+  string client_secret = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message TokenResponse {
+  // Opaque access token to send as the Authorization: Bearer token on subsequent calls.
+  string access_token = 1;
+  // Always "Bearer".
+  string token_type = 2;
+  // Token lifetime in seconds.
+  int64 expires_in = 3;
+  // Space-delimited scopes granted to the token.
+  string scope = 4;
+}
