@@ -80,16 +80,17 @@ public class UsageMeterService {
         .replaceWithVoid();
   }
 
-  // -- test visibility into the pending (un-flushed) in-memory deltas --
+  /** This node's not-yet-flushed cost for the principal in the minute (for live limit checks). */
+  public long pendingCost(PrincipalKind kind, long principalId, Instant minute) {
+    Accumulator accumulator = counters.get(new CounterKey(kind, principalId, minute));
+    return accumulator == null ? 0 : accumulator.cost.get();
+  }
+
+  // -- test visibility into the pending (un-flushed) request count --
 
   int pendingRequests(PrincipalKind kind, long principalId, Instant minute) {
     Accumulator accumulator = counters.get(new CounterKey(kind, principalId, minute));
     return accumulator == null ? 0 : accumulator.requests.get();
-  }
-
-  long pendingCost(PrincipalKind kind, long principalId, Instant minute) {
-    Accumulator accumulator = counters.get(new CounterKey(kind, principalId, minute));
-    return accumulator == null ? 0 : accumulator.cost.get();
   }
 
   /** Atomically take and zero the accumulated deltas (holders stay so concurrent records continue). */

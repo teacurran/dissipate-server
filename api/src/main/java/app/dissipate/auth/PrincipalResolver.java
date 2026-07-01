@@ -3,6 +3,7 @@ package app.dissipate.auth;
 import app.dissipate.constants.AuthenticationConstants;
 import app.dissipate.data.models.AccountRole;
 import app.dissipate.data.models.ApiAppToken;
+import app.dissipate.data.models.ApiUsageCounter;
 import app.dissipate.data.models.Session;
 import app.dissipate.grpc.v1.MethodPolicy;
 import app.dissipate.grpc.v1.Role;
@@ -16,27 +17,23 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.UUID;
 
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_FORBIDDEN;
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_REQUIRED;
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_SESSION_INVALID;
+import static app.dissipate.api.grpc.GrpcErrorCodes.RATE_LIMITED;
 
 /**
- * Stage 2 of the auth pipeline (reactive, per-call). Resolves the caller into a {@link Principal} and
- * enforces the method's {@link MethodPolicy}, which {@link app.dissipate.interceptors.GrpcAuthenticationInterceptor}
- * bound into this request-scoped bean.
+ * Stage 2 of the auth pipeline (reactive, per-call). Resolves the caller into a {@link Principal},
+ * enforces the method's {@link MethodPolicy} (min_role for users; allow_app + scopes for apps), then
+ * enforces the per-minute rate limit and meters the call.
  *
  * <p>A bearer token is either a first-party session sid (a UUID) or a third-party app access token
- * (opaque). They are disambiguated by UUID-parseability and resolved against the session table or the
- * {@code api_app_tokens} table respectively. Authorization then diverges by principal kind:
- * <ul>
- *   <li><b>user</b> — must meet {@code min_role};</li>
- *   <li><b>app</b> — the method must set {@code allow_app}, and the token must hold every required
- *       {@code scope}.</li>
- * </ul>
- * Methods declaring {@code allow_unauthenticated} skip enforcement entirely (any caller is allowed).
+ * (opaque), disambiguated by UUID-parseability. Methods declaring {@code allow_unauthenticated} skip
+ * authorization, rate limiting, and metering for any caller.
  */
 @RequestScoped
 public class PrincipalResolver {
@@ -49,6 +46,9 @@ public class PrincipalResolver {
 
   @Inject
   UsageMeterService usageMeterService;
+
+  @Inject
+  RateLimitConfig rateLimitConfig;
 
   private Principal principal;
   private Session session;
@@ -68,7 +68,7 @@ public class PrincipalResolver {
     this.bound = true;
   }
 
-  /** Resolve the principal and enforce the in-flight method's policy. Cached for the request. */
+  /** Resolve the principal, enforce the policy + rate limit, and meter the call. Cached per request. */
   public Uni<Principal> authorize() {
     if (principal != null) {
       return Uni.createFrom().item(principal);
@@ -84,7 +84,7 @@ public class PrincipalResolver {
 
     if (token == null || token.isBlank()) {
       if (p.getAllowUnauthenticated()) {
-        return Uni.createFrom().item(cache(Principal.anonymous(), null));
+        return admit(Principal.anonymous(), null);
       }
       return fail(locale, Status.UNAUTHENTICATED, AUTH_REQUIRED);
     }
@@ -105,7 +105,7 @@ public class PrincipalResolver {
           if (minRole != null && !user.hasRoleAtLeast(minRole)) {
             return fail(locale, Status.PERMISSION_DENIED, AUTH_FORBIDDEN);
           }
-          return Uni.createFrom().item(cache(user, resolved));
+          return admit(user, resolved);
         });
   }
 
@@ -127,16 +127,46 @@ public class PrincipalResolver {
           }
         }
       }
-      return Uni.createFrom().item(cache(app, null));
+      return admit(app, null);
     });
   }
 
   /** A present-but-unresolvable token: anonymous on open methods, otherwise rejected. */
   private Uni<Principal> unresolved(MethodPolicy p, Locale locale) {
     if (p.getAllowUnauthenticated()) {
-      return Uni.createFrom().item(cache(Principal.anonymous(), null));
+      return admit(Principal.anonymous(), null);
     }
     return fail(locale, Status.UNAUTHENTICATED, AUTH_SESSION_INVALID);
+  }
+
+  /**
+   * Final admission: anonymous callers pass through (not limited, not metered); authenticated callers
+   * are checked against their per-minute cost ceiling (global current-minute usage across nodes plus
+   * this node's un-flushed delta) and, if under it, metered and admitted.
+   */
+  private Uni<Principal> admit(Principal resolved, Session resolvedSession) {
+    if (!resolved.isAuthenticated()) {
+      return cache(resolved, resolvedSession);
+    }
+    Instant minute = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+    long limit = rateLimitConfig.limitFor(resolved);
+    long callCost = effectiveCost();
+    return ApiUsageCounter.findForPrincipalMinute(resolved.kind(), resolved.meteredId(), minute)
+        .onItem().transformToUni(rows -> {
+          long current = rows.stream().mapToLong(row -> row.cost).sum()
+              + usageMeterService.pendingCost(resolved.kind(), resolved.meteredId(), minute);
+          if (current >= limit) {
+            return fail(currentLocale(), Status.RESOURCE_EXHAUSTED, RATE_LIMITED);
+          }
+          usageMeterService.record(resolved, callCost);
+          return cache(resolved, resolvedSession);
+        });
+  }
+
+  private Uni<Principal> cache(Principal resolvedPrincipal, Session resolvedSession) {
+    this.principal = resolvedPrincipal;
+    this.session = resolvedSession;
+    return Uni.createFrom().item(resolvedPrincipal);
   }
 
   /** The session resolved by {@link #authorize()}, or null for anonymous/app callers. */
@@ -147,14 +177,6 @@ public class PrincipalResolver {
   /** The principal resolved by {@link #authorize()}, or null if it has not been called yet. */
   public Principal principal() {
     return principal;
-  }
-
-  private Principal cache(Principal resolvedPrincipal, Session resolvedSession) {
-    this.principal = resolvedPrincipal;
-    this.session = resolvedSession;
-    // Meter the call once, here at resolution (not on cached re-reads). No-op for anonymous.
-    usageMeterService.record(resolvedPrincipal, effectiveCost());
-    return resolvedPrincipal;
   }
 
   /** The in-flight method's rate-limit weight; 0/absent is treated as the default weight of 1. */
