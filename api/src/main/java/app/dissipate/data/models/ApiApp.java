@@ -9,6 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+import java.util.UUID;
+
 /**
  * A registered third-party API application (the platform half of the product). Created by a verified
  * account owner; authenticates to the gRPC channel via OAuth2 client-credentials. The client secret
@@ -35,14 +37,13 @@ import jakarta.persistence.Table;
     """)
 public class ApiApp extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "ApiApp";
   public static final String QUERY_BY_CLIENT_ID = "ApiApp.findByClientId";
   public static final String QUERY_BY_OWNER = "ApiApp.findByOwner";
   public static final String QUERY_BY_ID_AND_OWNER = "ApiApp.findByIdAndOwner";
 
   /** Account that registered this app (a verified owner). */
   @Column(name = "owner_account_id", nullable = false)
-  public Long ownerAccountId;
+  public UUID ownerAccountId;
 
   /** Public, non-secret client identifier presented on the token grant. */
   @Column(nullable = false, unique = true)
@@ -81,12 +82,12 @@ public class ApiApp extends DefaultPanacheEntityWithTimestamps {
   }
 
   /** All apps registered by the given owner, newest first. */
-  public static Uni<java.util.List<ApiApp>> findByOwner(Long ownerAccountId) {
+  public static Uni<java.util.List<ApiApp>> findByOwner(UUID ownerAccountId) {
     return find("#" + QUERY_BY_OWNER, Parameters.with("ownerAccountId", ownerAccountId)).list();
   }
 
   /** A single app by id, scoped to its owner (null if it does not exist or is owned by someone else). */
-  public static Uni<ApiApp> findByIdAndOwner(Long id, Long ownerAccountId) {
+  public static Uni<ApiApp> findByIdAndOwner(UUID id, UUID ownerAccountId) {
     return find("#" + QUERY_BY_ID_AND_OWNER,
         Parameters.with("id", id).and("ownerAccountId", ownerAccountId)).firstResult();
   }

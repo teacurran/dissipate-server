@@ -1,9 +1,5 @@
 package app.dissipate.data.models;
 
-import app.dissipate.utils.SnowflakeBase36Deserializer;
-import app.dissipate.utils.SnowflakeBase36Serializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
@@ -13,19 +9,19 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @MappedSuperclass
 public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBase {
 
   /**
-   * Snowflake-encoded BIGINT primary key. JSON-serialized as base-36 for compactness
-   * and JavaScript-precision-safety; database storage is {@code BIGINT}.
+   * UUIDv7 (RFC 9562) primary key, assigned in-app at creation via
+   * {@link app.dissipate.data.jpa.UuidGenerator}. Time-ordered for index locality and
+   * protocol-neutral for federation; stored as native Postgres {@code uuid}.
    */
   @Id
-  @Column(columnDefinition = "BIGINT")
-  @JsonSerialize(using = SnowflakeBase36Serializer.class)
-  @JsonDeserialize(using = SnowflakeBase36Deserializer.class)
-  public Long id;
+  @Column(columnDefinition = "uuid")
+  public UUID id;
 
   @CreationTimestamp
   @Column(nullable = false, updatable = false)
@@ -40,7 +36,7 @@ public abstract class DefaultPanacheEntityWithTimestamps extends PanacheEntityBa
   @Override
   public String toString() {
     String name = this.getClass().getSimpleName();
-    String rendered = this.id == null ? "null" : Long.toString(this.id, 36);
+    String rendered = this.id == null ? "null" : this.id.toString();
     return name + "<" + rendered + ">";
   }
 }

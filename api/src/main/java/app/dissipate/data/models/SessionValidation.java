@@ -54,7 +54,6 @@ import java.util.UUID;
     """)
 public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "SessionValidation";
 
   /** Time-to-live for a freshly issued OTP. Mirrors the "expires in 10 minutes" email copy. */
   public static final Duration OTP_TTL = Duration.ofMinutes(10);
@@ -104,7 +103,7 @@ public class SessionValidation extends DefaultPanacheEntityWithTimestamps {
     return super.persistAndFlush();
   }
 
-  public static Uni<SessionValidation> byId(Long id) {
+  public static Uni<SessionValidation> byId(UUID id) {
     // Eagerly fetch related rows so callers running outside a Hibernate session
     // (e.g. background job handlers) can dereference session/account/email/phone.
     return find("#" + QUERY_BY_ID, Parameters.with("id", id)).firstResult();

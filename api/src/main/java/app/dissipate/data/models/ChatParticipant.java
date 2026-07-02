@@ -8,6 +8,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "chat_participants")
@@ -30,7 +31,7 @@ public class ChatParticipant extends DefaultPanacheEntityWithTimestamps {
 
   public ChatParticipantType type;
 
-  public static Uni<List<ChatParticipant>> findOtherParticipants(Long chatId, Long excludeIdentityId) {
+  public static Uni<List<ChatParticipant>> findOtherParticipants(UUID chatId, UUID excludeIdentityId) {
     return find("#" + QUERY_FIND_OTHER_PARTICIPANTS,
       Parameters.with("chatId", chatId).and("excludeIdentityId", excludeIdentityId)).list();
   }

@@ -13,6 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.Locale;
+import java.util.UUID;
 
 import static app.dissipate.api.grpc.GrpcErrorCodes.AUTH_EMAIL_INVALID;
 
@@ -31,10 +32,10 @@ public class ChangeIdentityMethod {
       String sid = principalResolver.session().id.toString();
       Locale locale = GrpcLocaleInterceptor.LOCALE_CONTEXT_KEY.get();
 
-      final Long iid;
+      final UUID iid;
       try {
-        iid = Long.parseLong(request.getIid(), 36);
-      } catch (NumberFormatException e) {
+        iid = UUID.fromString(request.getIid());
+      } catch (IllegalArgumentException e) {
         return Uni.createFrom().failure(localizationService.getApiException(locale, Status.PERMISSION_DENIED, AUTH_EMAIL_INVALID));
       }
       return Identity.findById(iid).onItem().transformToUni(i -> {
@@ -44,7 +45,7 @@ public class ChangeIdentityMethod {
 
         // TODO: validate identity ownership via account linking once implemented
         return Uni.createFrom().item(ChangeIdentityResponse.newBuilder()
-          .setIid(Long.toString(i.id, 36))
+          .setIid(i.id.toString())
           .setSid(sid)
           .setUsername(i.username)
           .setName(i.name).build());

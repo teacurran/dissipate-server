@@ -14,7 +14,6 @@ import java.util.TimeZone;
   AND ct.timezone = :timezone
   """)
 public class CountryTimezone extends DefaultPanacheEntityWithTimestamps {
-  public static final String ID_GENERATOR_KEY = "CountryTimezone";
 
   public static final String QUERY_FIND_BY_COUNTRY_TIMEZONE = "CountryTimezone.findByCountryTimezone";
 

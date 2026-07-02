@@ -7,6 +7,7 @@ import app.dissipate.data.models.Session;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -26,11 +27,11 @@ import java.util.stream.Collectors;
  * Phase 2/3; Phase 1 only ever produces user or anonymous principals.
  */
 public record Principal(
-    Long accountId,
-    Long identityId,
+    UUID accountId,
+    UUID identityId,
     AccountRole role,
     Set<String> scopes,
-    Long appId,
+    UUID appId,
     String rateTier) {
 
   private static final Principal ANONYMOUS = new Principal(null, null, null, Set.of(), null, null);
@@ -41,11 +42,11 @@ public record Principal(
 
   /** Build a first-party user principal from a resolved, validated session. */
   public static Principal forSession(Session session) {
-    Long accountId = session.account != null ? session.account.id : null;
+    UUID accountId = session.account != null ? session.account.id : null;
     AccountRole role = session.account != null && session.account.role != null
         ? session.account.role
         : AccountRole.USER;
-    Long identityId = session.identity != null ? session.identity.id : null;
+    UUID identityId = session.identity != null ? session.identity.id : null;
     return new Principal(accountId, identityId, role, Set.of(), null, null);
   }
 
@@ -76,7 +77,7 @@ public record Principal(
   }
 
   /** The id a usage counter is keyed by: app id for apps, account id for users (null if anonymous). */
-  public Long meteredId() {
+  public UUID meteredId() {
     return isApp() ? appId : accountId;
   }
 

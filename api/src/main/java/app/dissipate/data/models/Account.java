@@ -1,6 +1,6 @@
 package app.dissipate.data.models;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.jpa.converters.EncryptedStringConverter;
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -18,7 +18,6 @@ import java.util.Locale;
 @Table(name = "accounts")
 public class Account extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "Account";
 
   public int region;
 
@@ -189,10 +188,10 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   }
 
   public static Uni<Account> createNewAnonymousAccount(Locale locale,
-                                                       SnowflakeIdGenerator snowflakeIdGenerator,
+                                                       UuidGenerator uuidGenerator,
                                                        EncryptionUtil encryptionUtil) {
     Account account = new Account();
-    account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
+    account.id = uuidGenerator.generate();
     account.status = AccountStatus.ANONYMOUS;
     account.locale = locale;
     return account.persistAndFlush(encryptionUtil);
@@ -200,15 +199,15 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   public static Uni<Account> createNewAnonymousAccount(Locale locale,
                                                        String email,
-                                                       SnowflakeIdGenerator snowflakeIdGenerator,
+                                                       UuidGenerator uuidGenerator,
                                                        EncryptionUtil encryptionUtil) {
     Account account = new Account();
-    account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
+    account.id = uuidGenerator.generate();
     account.status = AccountStatus.ANONYMOUS;
     account.locale = locale;
     return account.persistAndFlush(encryptionUtil).onItem().transformToUni(a -> {
       AccountEmail accountEmail = new AccountEmail();
-      accountEmail.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
+      accountEmail.id = uuidGenerator.generate();
       accountEmail.account = a;
       accountEmail.email = email;
       account.emails.add(accountEmail);

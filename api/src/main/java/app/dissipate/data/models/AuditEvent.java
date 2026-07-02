@@ -1,9 +1,5 @@
 package app.dissipate.data.models;
 
-import app.dissipate.utils.SnowflakeBase36Deserializer;
-import app.dissipate.utils.SnowflakeBase36Serializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,8 +19,8 @@ import java.util.UUID;
  * records (see {@code AuditService}); a scheduled {@code AuditPublisher} later drains rows where
  * {@link #publishedAt} is null to an external append-only sink.
  *
- * <p>Snowflake-id reference columns ({@link #actorAccountId}, {@link #actorIdentityId},
- * {@link #targetId}) are loosely coupled BIGINTs rather than FKs so audit rows survive deletion of
+ * <p>Id reference columns ({@link #actorAccountId}, {@link #actorIdentityId},
+ * {@link #targetId}) are loosely coupled UUIDs rather than FKs so audit rows survive deletion of
  * the entities they describe.
  */
 @Entity
@@ -37,7 +33,6 @@ import java.util.UUID;
     """)
 public class AuditEvent extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "AuditEvent";
   public static final String QUERY_UNPUBLISHED = "AuditEvent.findUnpublished";
 
   @Column(nullable = false)
@@ -51,15 +46,9 @@ public class AuditEvent extends DefaultPanacheEntityWithTimestamps {
   @Column(nullable = false)
   public AuditOutcome outcome;
 
-  @Column(columnDefinition = "BIGINT")
-  @JsonSerialize(using = SnowflakeBase36Serializer.class)
-  @JsonDeserialize(using = SnowflakeBase36Deserializer.class)
-  public Long actorAccountId;
+  public UUID actorAccountId;
 
-  @Column(columnDefinition = "BIGINT")
-  @JsonSerialize(using = SnowflakeBase36Serializer.class)
-  @JsonDeserialize(using = SnowflakeBase36Deserializer.class)
-  public Long actorIdentityId;
+  public UUID actorIdentityId;
 
   /** Session under which the action occurred (sessions use UUID ids). */
   public UUID sessionId;
@@ -67,10 +56,7 @@ public class AuditEvent extends DefaultPanacheEntityWithTimestamps {
   /** Logical type of the entity acted on, e.g. {@code Identity}, {@code Session}. */
   public String targetType;
 
-  @Column(columnDefinition = "BIGINT")
-  @JsonSerialize(using = SnowflakeBase36Serializer.class)
-  @JsonDeserialize(using = SnowflakeBase36Deserializer.class)
-  public Long targetId;
+  public UUID targetId;
 
   public String clientIp;
 

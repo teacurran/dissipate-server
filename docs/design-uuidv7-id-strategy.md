@@ -178,3 +178,11 @@ schema and the `FederatedEntity` superclass both change materially.
 3. **Id-gen library: `com.github.f4b6a3:uuid-creator`** (`UuidCreator.getTimeOrderedEpoch()`),
    monotonic variant for same-ms ordering.
 4. **`Region`: enum-backed short string** (`us-east`, `us-west`, `eu`).
+5. **Generation stays app-side** (the `UuidGenerator` bean), not in-DB. Postgres's built-in
+   `uuidv7()` is PG18+, and we run PG17; an in-DB path would need the `pg_uuidv7` extension or
+   a custom function in every environment. More importantly, the reactive flow wants the id
+   *in hand at creation* (to wire relationships, return it, and publish it on the node-to-node
+   notify bus) without an `INSERT ... RETURNING` round-trip, and app-side generation stays
+   mockable in tests. **Future option** (non-blocking): once on PG18, add
+   `id uuid NOT NULL DEFAULT uuidv7()` as a belt-and-suspenders default — the app-set value
+   always wins; the default only fills out-of-band/raw inserts. No app-code change.

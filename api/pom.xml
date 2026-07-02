@@ -117,6 +117,13 @@
       <artifactId>quarkus-websockets-next</artifactId>
     </dependency>
     <dependency>
+      <!-- UUIDv7 (RFC 9562) generation: UuidCreator.getTimeOrderedEpoch(). Sortable, in-app,
+           reactive-safe id minting that replaced the Snowflake generator. -->
+      <groupId>com.github.f4b6a3</groupId>
+      <artifactId>uuid-creator</artifactId>
+      <version>6.0.0</version>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-vertx</artifactId>
     </dependency>

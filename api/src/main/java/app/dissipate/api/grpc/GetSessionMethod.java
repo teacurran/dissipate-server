@@ -31,7 +31,7 @@ public class GetSessionMethod {
         .setSid(session.id.toString())
         .setStatus(status(session));
     if (session.identity != null) {
-      rb.setIid(Long.toString(session.identity.id, 36));
+      rb.setIid(session.identity.id.toString());
     }
     if (session.created != null) {
       rb.setCreated(toTimestamp(session.created));

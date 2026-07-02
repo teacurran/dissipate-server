@@ -1,6 +1,6 @@
 package app.dissipate.services;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.DelayedJob;
 import app.dissipate.data.models.DelayedJobQueue;
 import app.dissipate.data.models.Server;
@@ -23,6 +23,7 @@ import org.jboss.logging.Logger;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.UUID;
 
 @ApplicationScoped
 public class DelayedJobService {
@@ -39,7 +40,7 @@ public class DelayedJobService {
   EventBus bus;
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   @Inject
   DelayedJobHandlers jobHandlers;
@@ -54,8 +55,8 @@ public class DelayedJobService {
   @ConfigProperty(name = "dissipate.delayed-job.max-attempts", defaultValue = "3")
   int maxAttempts;
 
-  public Uni<DelayedJob> createDelayedJob(Long actorId, DelayedJobQueue queue, Instant runAt) {
-    return DelayedJob.createDelayedJob(actorId, queue, runAt, snowflakeIdGenerator)
+  public Uni<DelayedJob> createDelayedJob(UUID actorId, DelayedJobQueue queue, Instant runAt) {
+    return DelayedJob.createDelayedJob(actorId, queue, runAt, uuidGenerator)
       .onItem().invoke(dj -> {
         if (dj == null) {
           LOGGER.error("Failed to create delayed job for actor: " + actorId);
@@ -83,7 +84,7 @@ public class DelayedJobService {
   @WithSession
   @ConsumeEvent(DELAYED_JOB_RUN)
   @WithSpan("DelayedJobService.handleDelayedJobRun")
-  public Uni<Void> run(Long id) {
+  public Uni<Void> run(UUID id) {
     return getDelayedJobToWorkOn(id)
       .onItem()
       .ifNotNull()
@@ -174,7 +175,7 @@ public class DelayedJobService {
   }
 
   @WithSpan("DelayedJobService.getDelayedJobToWorkOn")
-  public Uni<DelayedJob> getDelayedJobToWorkOn(Long id) {
+  public Uni<DelayedJob> getDelayedJobToWorkOn(UUID id) {
     return DelayedJob.byId(id).onItem().transformToUni(dj -> {
       if (dj == null) {
         LOGGER.error("DelayedJob not found: " + id);

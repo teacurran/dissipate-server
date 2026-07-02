@@ -1,10 +1,6 @@
 package app.dissipate.data.models;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
-import app.dissipate.utils.SnowflakeBase36Deserializer;
-import app.dissipate.utils.SnowflakeBase36Serializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import app.dissipate.data.jpa.UuidGenerator;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import io.quarkus.hibernate.reactive.panache.PanacheQuery;
 import io.quarkus.panache.common.Parameters;
@@ -18,6 +14,7 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "delayed_jobs", indexes = {
@@ -33,8 +30,6 @@ import java.util.List;
     """)
 public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "DelayedJob";
-
   public static final String QUERY_FIND_READY_TO_RUN = "DelayedJob.findReadyToRun";
 
   public Integer priority = 0;
@@ -44,13 +39,9 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
   public DelayedJobQueue queue;
 
   /**
-   * Snowflake ID of the entity being processed by this job (e.g. SessionValidation, Url).
-   * Stored as BIGINT; serialized as base-36 over JSON for parity with entity ids.
+   * ID of the entity being processed by this job (e.g. SessionValidation, Url).
    */
-  @Column(columnDefinition = "BIGINT")
-  @JsonSerialize(using = SnowflakeBase36Serializer.class)
-  @JsonDeserialize(using = SnowflakeBase36Deserializer.class)
-  public Long actorId;
+  public UUID actorId;
 
   @Column(columnDefinition = "TEXT")
   public String lastError;
@@ -77,16 +68,16 @@ public class DelayedJob extends DefaultPanacheEntityWithTimestamps {
   @ManyToOne
   public Server lastRunBy;
 
-  public static Uni<DelayedJob> byId(Long id) {
+  public static Uni<DelayedJob> byId(UUID id) {
     return findById(id);
   }
 
-  public static Uni<DelayedJob> createDelayedJob(Long actorId,
+  public static Uni<DelayedJob> createDelayedJob(UUID actorId,
                                                  DelayedJobQueue queue,
                                                  Instant runAt,
-                                                 SnowflakeIdGenerator snowflakeIdGenerator) {
+                                                 UuidGenerator uuidGenerator) {
     DelayedJob delayedJob = new DelayedJob();
-    delayedJob.id = snowflakeIdGenerator.generate(ID_GENERATOR_KEY);
+    delayedJob.id = uuidGenerator.generate();
     delayedJob.actorId = actorId;
     delayedJob.runAt = runAt;
     delayedJob.queue = queue;

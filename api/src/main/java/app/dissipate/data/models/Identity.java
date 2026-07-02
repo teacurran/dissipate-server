@@ -20,7 +20,6 @@ import java.util.Locale;
   """)
 public class Identity extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "Identity";
 
   public static final String QUERY_BY_USERNAME = "Identity.findByUsername";
 

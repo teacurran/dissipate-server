@@ -29,7 +29,6 @@ import java.time.Instant;
     """)
 public class ApiAppToken extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "ApiAppToken";
   public static final String QUERY_ACTIVE_BY_HASH = "ApiAppToken.findActiveByHash";
 
   @ManyToOne(fetch = FetchType.LAZY)

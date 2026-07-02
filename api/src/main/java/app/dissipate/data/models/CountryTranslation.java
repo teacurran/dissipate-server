@@ -10,7 +10,6 @@ import java.util.Locale;
 @Table(name = "country_translations")
 public class CountryTranslation extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "CountryTranslation";
 
   @ManyToOne
   public Country country;

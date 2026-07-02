@@ -37,15 +37,15 @@ public class StructuredLogAuditPublisher implements AuditPublisher {
 
   private String toJsonLine(AuditEvent e) {
     ObjectNode node = objectMapper.createObjectNode();
-    node.put("id", base36(e.id));
+    node.put("id", uuidStr(e.id));
     node.put("occurredAt", e.occurredAt != null ? e.occurredAt.toString() : null);
     node.put("eventType", e.eventType != null ? e.eventType.name() : null);
     node.put("outcome", e.outcome != null ? e.outcome.name() : null);
-    node.put("actorAccountId", base36(e.actorAccountId));
-    node.put("actorIdentityId", base36(e.actorIdentityId));
+    node.put("actorAccountId", uuidStr(e.actorAccountId));
+    node.put("actorIdentityId", uuidStr(e.actorIdentityId));
     node.put("sessionId", e.sessionId != null ? e.sessionId.toString() : null);
     node.put("targetType", e.targetType);
-    node.put("targetId", base36(e.targetId));
+    node.put("targetId", uuidStr(e.targetId));
     node.put("clientIp", e.clientIp);
     node.put("userAgent", e.userAgent);
     node.put("reason", e.reason);
@@ -55,7 +55,7 @@ public class StructuredLogAuditPublisher implements AuditPublisher {
       return objectMapper.writeValueAsString(node);
     } catch (Exception ex) {
       // Never let a serialization hiccup drop an audit line entirely.
-      return "{\"id\":\"" + base36(e.id) + "\",\"eventType\":\""
+      return "{\"id\":\"" + uuidStr(e.id) + "\",\"eventType\":\""
         + (e.eventType != null ? e.eventType.name() : "null") + "\",\"_serializationError\":\""
         + ex.getClass().getSimpleName() + "\"}";
     }
@@ -73,7 +73,7 @@ public class StructuredLogAuditPublisher implements AuditPublisher {
     }
   }
 
-  private static String base36(Long id) {
-    return id == null ? null : Long.toString(id, 36);
+  private static String uuidStr(java.util.UUID id) {
+    return id == null ? null : id.toString();
   }
 }
