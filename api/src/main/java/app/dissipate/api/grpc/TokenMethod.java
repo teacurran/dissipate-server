@@ -1,6 +1,6 @@
 package app.dissipate.api.grpc;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.ApiApp;
 import app.dissipate.data.models.ApiAppToken;
 import app.dissipate.grpc.v1.TokenRequest;
@@ -31,7 +31,7 @@ import static app.dissipate.api.grpc.GrpcErrorCodes.OAUTH_INVALID_CLIENT;
 public class TokenMethod {
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   @Inject
   EncryptionUtil encryptionUtil;
@@ -60,7 +60,7 @@ public class TokenMethod {
 
       String accessToken = encryptionUtil.generateOpaqueToken();
       ApiAppToken token = new ApiAppToken();
-      token.id = snowflakeIdGenerator.generate(ApiAppToken.ID_GENERATOR_KEY);
+      token.id = uuidGenerator.generate();
       token.apiApp = app;
       token.tokenHash = encryptionUtil.sha256(accessToken);
       token.scopes = app.grantedScopes;

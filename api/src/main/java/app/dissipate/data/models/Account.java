@@ -1,7 +1,8 @@
 package app.dissipate.data.models;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.jpa.converters.EncryptedStringConverter;
+import app.dissipate.data.jpa.converters.RegionConverter;
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
@@ -18,9 +19,15 @@ import java.util.Locale;
 @Table(name = "accounts")
 public class Account extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "Account";
 
-  public int region;
+  /**
+   * The account's source-of-truth region — where its identity, logins, sessions, and payments
+   * live. Data locality is a property of the account (re-homeable by changing this column), not
+   * of an id. Nullable until assigned at signup.
+   */
+  @Convert(converter = RegionConverter.class)
+  @Column(name = "home_region", length = 16)
+  public Region homeRegion;
 
   public AccountStatus status;
 
@@ -189,10 +196,10 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
   }
 
   public static Uni<Account> createNewAnonymousAccount(Locale locale,
-                                                       SnowflakeIdGenerator snowflakeIdGenerator,
+                                                       UuidGenerator uuidGenerator,
                                                        EncryptionUtil encryptionUtil) {
     Account account = new Account();
-    account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
+    account.id = uuidGenerator.generate();
     account.status = AccountStatus.ANONYMOUS;
     account.locale = locale;
     return account.persistAndFlush(encryptionUtil);
@@ -200,15 +207,15 @@ public class Account extends DefaultPanacheEntityWithTimestamps {
 
   public static Uni<Account> createNewAnonymousAccount(Locale locale,
                                                        String email,
-                                                       SnowflakeIdGenerator snowflakeIdGenerator,
+                                                       UuidGenerator uuidGenerator,
                                                        EncryptionUtil encryptionUtil) {
     Account account = new Account();
-    account.id = snowflakeIdGenerator.generate(Account.ID_GENERATOR_KEY);
+    account.id = uuidGenerator.generate();
     account.status = AccountStatus.ANONYMOUS;
     account.locale = locale;
     return account.persistAndFlush(encryptionUtil).onItem().transformToUni(a -> {
       AccountEmail accountEmail = new AccountEmail();
-      accountEmail.id = snowflakeIdGenerator.generate(AccountEmail.ID_GENERATOR_KEY);
+      accountEmail.id = uuidGenerator.generate();
       accountEmail.account = a;
       accountEmail.email = email;
       account.emails.add(accountEmail);

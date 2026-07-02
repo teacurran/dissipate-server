@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -18,11 +19,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class UsageMeterServiceTest {
 
-  private static Principal user(long accountId) {
+  private static final UUID ACCOUNT_ID = UUID.fromString("00000000-0000-0000-0000-000000001001");
+  private static final UUID APP_ID = UUID.fromString("00000000-0000-0000-0000-000000000007");
+
+  private static Principal user(UUID accountId) {
     return new Principal(accountId, null, AccountRole.USER, Set.of(), null, null);
   }
 
-  private static Principal app(long appId) {
+  private static Principal app(UUID appId) {
     return new Principal(null, null, null, Set.of(), appId, "default");
   }
 
@@ -31,14 +35,14 @@ class UsageMeterServiceTest {
     UsageMeterService meter = new UsageMeterService();
     Instant minute = Instant.now().truncatedTo(ChronoUnit.MINUTES);
 
-    meter.record(user(1001L), 3);
-    meter.record(user(1001L), 3);
-    meter.record(app(7L), 0); // cost 0 -> weighted as 1
+    meter.record(user(ACCOUNT_ID), 3);
+    meter.record(user(ACCOUNT_ID), 3);
+    meter.record(app(APP_ID), 0); // cost 0 -> weighted as 1
 
-    assertEquals(2, meter.pendingRequests(PrincipalKind.USER, 1001L, minute));
-    assertEquals(6, meter.pendingCost(PrincipalKind.USER, 1001L, minute));
-    assertEquals(1, meter.pendingRequests(PrincipalKind.APP, 7L, minute));
-    assertEquals(1, meter.pendingCost(PrincipalKind.APP, 7L, minute));
+    assertEquals(2, meter.pendingRequests(PrincipalKind.USER, ACCOUNT_ID, minute));
+    assertEquals(6, meter.pendingCost(PrincipalKind.USER, ACCOUNT_ID, minute));
+    assertEquals(1, meter.pendingRequests(PrincipalKind.APP, APP_ID, minute));
+    assertEquals(1, meter.pendingCost(PrincipalKind.APP, APP_ID, minute));
   }
 
   @Test
@@ -49,6 +53,7 @@ class UsageMeterServiceTest {
     meter.record(Principal.anonymous(), 5);
     meter.record(null, 5);
 
-    assertEquals(0, meter.pendingRequests(PrincipalKind.USER, 0L, minute));
+    assertEquals(0, meter.pendingRequests(PrincipalKind.USER,
+        UUID.fromString("00000000-0000-0000-0000-000000000000"), minute));
   }
 }

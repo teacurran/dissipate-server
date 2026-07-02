@@ -10,6 +10,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Per-minute API usage for a single authenticated caller, recorded by a single node. Rows are
@@ -29,7 +30,6 @@ import java.time.Instant;
     """)
 public class ApiUsageCounter extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "ApiUsageCounter";
   public static final String QUERY_BY_KEY = "ApiUsageCounter.findByKey";
 
   @Enumerated(EnumType.STRING)
@@ -37,10 +37,10 @@ public class ApiUsageCounter extends DefaultPanacheEntityWithTimestamps {
   public PrincipalKind principalType;
 
   @Column(name = "principal_id", nullable = false)
-  public Long principalId;
+  public UUID principalId;
 
   @Column(name = "node_id", nullable = false)
-  public Long nodeId;
+  public UUID nodeId;
 
   /** Start of the minute bucket (UTC), truncated to the minute. */
   @Column(nullable = false)
@@ -61,13 +61,13 @@ public class ApiUsageCounter extends DefaultPanacheEntityWithTimestamps {
   }
 
   /** This node's counter row for the given principal + minute, or null if not yet created. */
-  public static Uni<ApiUsageCounter> findByKey(PrincipalKind principalType, Long principalId, Long nodeId, Instant minute) {
+  public static Uni<ApiUsageCounter> findByKey(PrincipalKind principalType, UUID principalId, UUID nodeId, Instant minute) {
     return find("#" + QUERY_BY_KEY, Parameters.with("principalType", principalType)
         .and("principalId", principalId).and("nodeId", nodeId).and("minute", minute)).firstResult();
   }
 
   /** All nodes' counter rows for the given principal + minute (one per node; sum for the global total). */
-  public static Uni<java.util.List<ApiUsageCounter>> findForPrincipalMinute(PrincipalKind principalType, Long principalId, Instant minute) {
+  public static Uni<java.util.List<ApiUsageCounter>> findForPrincipalMinute(PrincipalKind principalType, UUID principalId, Instant minute) {
     return list("principalType = ?1 and principalId = ?2 and minute = ?3", principalType, principalId, minute);
   }
 }

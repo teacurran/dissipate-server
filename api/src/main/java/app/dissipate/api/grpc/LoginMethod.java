@@ -125,8 +125,8 @@ public class LoginMethod {
     return Uni.createFrom().failure(localizationService.getApiException(locale, status, code));
   }
 
-  private Uni<AuditEvent> audit(AuditEventType type, AuditOutcome outcome, Long actorAccountId,
-                                java.util.UUID sessionId, String targetType, Long targetId,
+  private Uni<AuditEvent> audit(AuditEventType type, AuditOutcome outcome, java.util.UUID actorAccountId,
+                                java.util.UUID sessionId, String targetType, java.util.UUID targetId,
                                 String clientIp, String reason) {
     AuditEvent event = new AuditEvent();
     event.eventType = type;

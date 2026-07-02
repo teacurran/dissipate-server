@@ -1,6 +1,6 @@
 package app.dissipate.api.grpc;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.Session;
@@ -43,7 +43,7 @@ public class RegisterMethod {
   LocalizationService localizationService;
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   @Inject
   EncryptionUtil encryptionUtil;
@@ -75,13 +75,13 @@ public class RegisterMethod {
           }
 
           return identity.getDeferredIdentity().onItem().transformToUni(si -> {
-            return Account.createNewAnonymousAccount(locale, email, snowflakeIdGenerator, encryptionUtil).onItem().transformToUni(a -> {
+            return Account.createNewAnonymousAccount(locale, email, uuidGenerator, encryptionUtil).onItem().transformToUni(a -> {
               Session session = new Session();
               session.account = a;
               return session.persistAndFlush().onItem().transformToUni(s -> {
                 SessionValidation sessionValidation = new SessionValidation();
                 sessionValidation.session = s;
-                sessionValidation.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+                sessionValidation.id = uuidGenerator.generate();
                 sessionValidation.email = a.emails.getFirst();
                 sessionValidation.token = StringUtil.generateRandomString(6);
                 return sessionValidation.persistAndFlush()

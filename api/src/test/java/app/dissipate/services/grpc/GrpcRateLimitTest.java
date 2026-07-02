@@ -45,7 +45,7 @@ class GrpcRateLimitTest {
   ServerInstance serverInstance;
 
   // This test runs in its own (restarted) Quarkus instance via @TestProfile; the node registers
-  // asynchronously at startup and the Snowflake id generator needs it, so wait for it before seeding.
+  // asynchronously at startup and usage metering keys on the current node id, so wait for it before seeding.
   private void awaitServer() throws InterruptedException {
     long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
     while (System.nanoTime() < deadline) {

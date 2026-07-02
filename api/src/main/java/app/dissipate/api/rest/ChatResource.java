@@ -5,12 +5,11 @@ import app.dissipate.api.rest.auth.RestAuthenticated;
 import app.dissipate.api.rest.dto.SendMessageResponse;
 import app.dissipate.api.rest.error.RestApiException;
 import app.dissipate.api.rest.error.RestErrorCodes;
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.Chat;
 import app.dissipate.data.models.ChatEvent;
 import app.dissipate.data.models.ChatEventType;
 import app.dissipate.services.ChatNotificationService;
-import app.dissipate.utils.SnowflakeId;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
@@ -24,6 +23,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.UUID;
+
 @Path("/api/chat")
 public class ChatResource {
 
@@ -31,7 +32,7 @@ public class ChatResource {
   ChatNotificationService chatNotificationService;
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   @Inject
   CurrentSession currentSession;
@@ -43,7 +44,7 @@ public class ChatResource {
   @RestAuthenticated
   @WithTransaction
   public Uni<Response> sendMessage(
-    @PathParam("chatId") @SnowflakeId Long chatId,
+    @PathParam("chatId") UUID chatId,
     @Valid SendMessageRequest body
   ) {
     return currentSession.requireIdentity().onItem().transformToUni(identity ->
@@ -53,7 +54,7 @@ public class ChatResource {
         }
 
         ChatEvent event = new ChatEvent();
-        event.id = snowflakeIdGenerator.generate("ChatEvent");
+        event.id = uuidGenerator.generate();
         event.chat = chat;
         event.identity = identity;
         event.type = ChatEventType.MESSAGE;

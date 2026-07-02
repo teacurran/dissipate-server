@@ -1,7 +1,7 @@
 package app.dissipate.api.grpc;
 
 import app.dissipate.auth.PrincipalResolver;
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.Identity;
 import app.dissipate.grpc.v1.CreateIdentityRequest;
 import app.dissipate.grpc.v1.CreateIdentityResponse;
@@ -15,7 +15,7 @@ import jakarta.inject.Inject;
 public class CreateIdentityMethod {
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   @Inject
   EncryptionUtil encryptionUtil;
@@ -29,13 +29,13 @@ public class CreateIdentityMethod {
       String sid = principalResolver.session().id.toString();
 
       Identity identity = new Identity();
-      identity.id = snowflakeIdGenerator.generate(Identity.ID_GENERATOR_KEY);
+      identity.id = uuidGenerator.generate();
       // account linking will be implemented later — for now identity is standalone
       identity.username = request.getUsername();
       identity.name = request.getName();
       return identity.persistAndFlush(encryptionUtil)
         .onItem().transform(i -> CreateIdentityResponse.newBuilder()
-          .setIid(Long.toString(i.id, 36))
+          .setIid(i.id.toString())
           .setSid(sid)
           .setUsername(i.username)
           .setName(i.name).build());

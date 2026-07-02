@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 @ApplicationScoped
 public class EmailAuthJobHandler implements DelayedJobHandler {
@@ -49,7 +50,7 @@ public class EmailAuthJobHandler implements DelayedJobHandler {
 
   @Override
   @WithSpan("EmailAuthJobHandler.run")
-  public Uni<Void> run(Long actorId) {
+  public Uni<Void> run(UUID actorId) {
     return SessionValidation.byId(actorId).onItem().transformToUni(sessionValidation -> {
       if (sessionValidation == null) {
         LOGGER.error("SessionValidation not found: " + actorId);

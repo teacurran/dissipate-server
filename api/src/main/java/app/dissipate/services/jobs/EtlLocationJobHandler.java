@@ -6,6 +6,8 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.UUID;
+
 @ApplicationScoped
 public class EtlLocationJobHandler implements DelayedJobHandler {
 
@@ -14,7 +16,7 @@ public class EtlLocationJobHandler implements DelayedJobHandler {
 
   @Override
   @WithSpan("EtlLocationJobHandler.run")
-  public Uni<Void> run(Long actorId) {
+  public Uni<Void> run(UUID actorId) {
     return etlLocation.loadWorldLocations();
   }
 }

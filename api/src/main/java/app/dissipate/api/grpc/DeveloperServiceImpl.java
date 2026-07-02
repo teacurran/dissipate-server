@@ -2,7 +2,7 @@ package app.dissipate.api.grpc;
 
 import app.dissipate.auth.PrincipalResolver;
 import app.dissipate.auth.ScopeCatalog;
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.ApiApp;
 import app.dissipate.data.models.ApiAppStatus;
 import app.dissipate.grpc.v1.AppSummary;
@@ -27,6 +27,7 @@ import jakarta.inject.Inject;
 
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 import static app.dissipate.api.grpc.GrpcErrorCodes.DEV_APP_NOT_FOUND;
 import static app.dissipate.api.grpc.GrpcErrorCodes.DEV_INVALID_SCOPE;
@@ -45,7 +46,7 @@ public class DeveloperServiceImpl implements DeveloperService {
   PrincipalResolver principalResolver;
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   @Inject
   EncryptionUtil encryptionUtil;
@@ -64,7 +65,7 @@ public class DeveloperServiceImpl implements DeveloperService {
       }
       String secret = encryptionUtil.generateOpaqueToken();
       ApiApp app = new ApiApp();
-      app.id = snowflakeIdGenerator.generate(ApiApp.ID_GENERATOR_KEY);
+      app.id = uuidGenerator.generate();
       app.ownerAccountId = principal.accountId();
       app.clientId = encryptionUtil.generateOpaqueToken();
       app.clientSecretHash = encryptionUtil.sha256(secret);
@@ -92,7 +93,7 @@ public class DeveloperServiceImpl implements DeveloperService {
   public Uni<RotateSecretResponse> rotateSecret(RotateSecretRequest request) {
     return principalResolver.authorize().onItem().transformToUni(principal -> {
       Locale locale = locale();
-      Long appId = parseId(request.getAppId());
+      UUID appId = parseId(request.getAppId());
       if (appId == null) {
         return fail(locale, Status.NOT_FOUND, DEV_APP_NOT_FOUND);
       }
@@ -117,7 +118,7 @@ public class DeveloperServiceImpl implements DeveloperService {
       if (!unknown.isEmpty()) {
         return fail(locale, Status.INVALID_ARGUMENT, DEV_INVALID_SCOPE);
       }
-      Long appId = parseId(request.getAppId());
+      UUID appId = parseId(request.getAppId());
       if (appId == null) {
         return fail(locale, Status.NOT_FOUND, DEV_APP_NOT_FOUND);
       }
@@ -133,7 +134,7 @@ public class DeveloperServiceImpl implements DeveloperService {
 
   private AppSummary summary(ApiApp app) {
     AppSummary.Builder rb = AppSummary.newBuilder()
-        .setId(Long.toString(app.id, 36))
+        .setId(app.id.toString())
         .setClientId(app.clientId)
         .setRateTier(app.rateTier)
         .setStatus(app.status.name());
@@ -148,11 +149,11 @@ public class DeveloperServiceImpl implements DeveloperService {
     return rb.build();
   }
 
-  /** Parse a base-36 app id, or null if malformed (treated as "no such app"). */
-  private static Long parseId(String appId) {
+  /** Parse a UUID app id, or null if malformed (treated as "no such app"). */
+  private static UUID parseId(String appId) {
     try {
-      return Long.parseLong(appId.trim(), 36);
-    } catch (NumberFormatException e) {
+      return UUID.fromString(appId.trim());
+    } catch (IllegalArgumentException e) {
       return null;
     }
   }

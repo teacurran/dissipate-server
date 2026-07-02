@@ -1,8 +1,9 @@
 package app.dissipate.services;
 
+import app.dissipate.data.jpa.UuidGenerator;
+import app.dissipate.data.models.Region;
 import app.dissipate.data.models.Server;
 import app.dissipate.data.models.ServerStatus;
-import app.dissipate.data.models.dto.MaxIntDto;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
@@ -36,10 +37,16 @@ public class ServerInstance {
   Mutiny.SessionFactory factory;
 
   @Inject
+  UuidGenerator uuidGenerator;
+
+  @Inject
   ZoneOffset zoneOffset;
 
   @Inject
   VertxHttpConfig httpConfiguration;
+
+  @org.eclipse.microprofile.config.inject.ConfigProperty(name = "dissipate.region", defaultValue = "us-east")
+  String regionCode;
 
   @Produces
   @Named("currentServer")
@@ -56,13 +63,9 @@ public class ServerInstance {
     // Run the logic on the context created above
     context.runOnContext(event1 -> {
       // We cannot use the Panache.withTransaction() and friends because the CDI request context is not active yet
+      // UUIDv7 ids need no instance-number lease, so every boot simply registers a fresh node row.
       factory.withTransaction(session ->
-          Server.findMaxInstanceId().onItem().call(maxIntDto -> {
-            if (maxIntDto == null || maxIntDto.maxValue < 1000) {
-              return createNewServer(maxIntDto);
-            }
-            return findFirstUnusedServer();
-          }).onItem().transformToUni(s -> {
+          registerNewServer().onItem().transformToUni(s -> {
             LOGGER.info("Server instance started: " + s);
             return Uni.createFrom().nullItem();
           })
@@ -126,9 +129,10 @@ public class ServerInstance {
     return Uni.createFrom().nullItem();
   }
 
-  private Uni<Server> createNewServer(MaxIntDto maxIntDto) {
+  private Uni<Server> registerNewServer() {
     server = new Server();
-    server.instanceNumber = maxIntDto == null ? 1 : maxIntDto.maxValue + 1;
+    server.id = uuidGenerator.generate();
+    server.region = Region.fromCode(regionCode);
     server.launched = LocalDateTime.now().toInstant(zoneOffset);
     server.seen = LocalDateTime.now().toInstant(zoneOffset);
     server.status = ServerStatus.ACTIVE;
@@ -137,23 +141,6 @@ public class ServerInstance {
     server.isShutdown = false;
     server.token = UUID.randomUUID().toString();
     return server.persistAndFlush();
-  }
-
-  private Uni<Server> findFirstUnusedServer() {
-    return Server.findFirstUnusedServer().call(s -> {
-      if (s == null) {
-        return Uni.createFrom().failure(new RuntimeException("No server instance available"));
-      }
-      server = s;
-      server.launched = LocalDateTime.now().toInstant(zoneOffset);
-      server.seen = LocalDateTime.now().toInstant(zoneOffset);
-      server.status = ServerStatus.ACTIVE;
-      server.hostname = httpConfiguration.host();
-      server.port = httpConfiguration.port();
-      server.isShutdown = false;
-      server.token = UUID.randomUUID().toString();
-      return server.persistAndFlush();
-    });
   }
 
   @WithSpan("ServerInstance.onStop")

@@ -38,7 +38,6 @@ import java.time.Instant;
 })
 public class AccountEmail extends DefaultPanacheEntityWithTimestamps {
 
-  public static final String ID_GENERATOR_KEY = "AccountEmail";
 
   public static final String QUERY_FIND_BY_EMAIL_VALIDATED = "AccountEmail.findByEmailValidated";
   public static final String QUERY_FIND_BY_VALIDATED_EMAIL = "AccountEmail.findByValidatedEmail";

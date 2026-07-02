@@ -1,6 +1,6 @@
 package app.dissipate.services;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.location.json.CityJson;
 import app.dissipate.data.location.json.CountryJson;
 import app.dissipate.data.location.json.CountryTranslationJson;
@@ -41,7 +41,7 @@ public class EtlLocation {
   private static final Logger LOGGER = Logger.getLogger(EtlLocation.class);
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   @Inject
   ObjectMapper mapper;
@@ -71,7 +71,7 @@ public class EtlLocation {
 
             return Multi.createFrom().iterable(countryJsons).onItem().transformToUniAndConcatenate(countryJson -> {
               Country country = new Country();
-              country.id = (long) countryJson.id;
+              country.id = uuidGenerator.generate();
               country.capital = countryJson.capital;
               country.currency = countryJson.currency;
               country.currencyName = countryJson.currencyName;
@@ -110,7 +110,7 @@ public class EtlLocation {
     return Multi.createFrom().iterable(states)
       .onItem().transformToUniAndConcatenate(stateJson -> {
         State state = new State();
-        state.id = (long) stateJson.id;
+        state.id = uuidGenerator.generate();
         state.name = stateJson.name;
         state.country = country;
         return session.merge(state)
@@ -123,7 +123,7 @@ public class EtlLocation {
     return Multi.createFrom().iterable(cities)
       .onItem().transformToUniAndConcatenate(cityJson -> {
         City city = new City();
-        city.id = (long) cityJson.id;
+        city.id = uuidGenerator.generate();
         city.state = state;
         city.country = country;
         city.name = cityJson.name;
@@ -136,7 +136,7 @@ public class EtlLocation {
     return Multi.createFrom().iterable(translations)
       .onItem().transformToUniAndConcatenate(translationJson -> {
         CountryTranslation countryTranslation = new CountryTranslation();
-        countryTranslation.id = snowflakeIdGenerator.generate(CountryTranslation.ID_GENERATOR_KEY);
+        countryTranslation.id = uuidGenerator.generate();
         countryTranslation.country = country;
         countryTranslation.locale = Locale.forLanguageTag(translationJson.language);
         countryTranslation.name = translationJson.translation;
@@ -152,7 +152,7 @@ public class EtlLocation {
         return CountryTimezone.findByCountryTimezone(country, tz).onItem().transformToUni(ct -> {
           if (ct == null) {
             CountryTimezone countryTimezone = new CountryTimezone();
-            countryTimezone.id = snowflakeIdGenerator.generate(CountryTimezone.ID_GENERATOR_KEY);
+            countryTimezone.id = uuidGenerator.generate();
             countryTimezone.country = country;
             countryTimezone.timezone = tz;
             return session.merge(countryTimezone);

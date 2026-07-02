@@ -83,8 +83,8 @@ class GrpcIdentityTest {
 
   @Test
   void changeIdentityRejectsUnknownId() {
-    // Well-formed base-36 id that maps to no identity -> the not-found branch.
-    String unknownIid = Long.toString(987654321L, 36);
+    // Well-formed UUID id that maps to no identity -> the not-found branch.
+    String unknownIid = java.util.UUID.randomUUID().toString();
     UniAssertSubscriber<ChangeIdentityResponse> sub = authed()
         .changeIdentity(ChangeIdentityRequest.newBuilder().setIid(unknownIid).build())
         .subscribe().withSubscriber(UniAssertSubscriber.create());

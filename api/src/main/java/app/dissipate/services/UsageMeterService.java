@@ -1,7 +1,7 @@
 package app.dissipate.services;
 
 import app.dissipate.auth.Principal;
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.ApiUsageCounter;
 import app.dissipate.data.models.PrincipalKind;
 import app.dissipate.data.models.Server;
@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -34,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class UsageMeterService {
 
   @Inject
-  SnowflakeIdGenerator idGenerator;
+  UuidGenerator idGenerator;
 
   @Inject
   ServerInstance serverInstance;
@@ -46,7 +47,7 @@ public class UsageMeterService {
     if (principal == null || !principal.isAuthenticated()) {
       return;
     }
-    Long principalId = principal.meteredId();
+    UUID principalId = principal.meteredId();
     if (principalId == null) {
       return;
     }
@@ -69,7 +70,7 @@ public class UsageMeterService {
   }
 
   /** Drain and upsert this node's pending deltas. Must run inside a reactive transaction/session. */
-  Uni<Void> flushTo(Long nodeId) {
+  Uni<Void> flushTo(UUID nodeId) {
     List<Drained> drained = drain();
     if (drained.isEmpty()) {
       return Uni.createFrom().voidItem();
@@ -81,14 +82,14 @@ public class UsageMeterService {
   }
 
   /** This node's not-yet-flushed cost for the principal in the minute (for live limit checks). */
-  public long pendingCost(PrincipalKind kind, long principalId, Instant minute) {
+  public long pendingCost(PrincipalKind kind, UUID principalId, Instant minute) {
     Accumulator accumulator = counters.get(new CounterKey(kind, principalId, minute));
     return accumulator == null ? 0 : accumulator.cost.get();
   }
 
   // -- test visibility into the pending (un-flushed) request count --
 
-  int pendingRequests(PrincipalKind kind, long principalId, Instant minute) {
+  int pendingRequests(PrincipalKind kind, UUID principalId, Instant minute) {
     Accumulator accumulator = counters.get(new CounterKey(kind, principalId, minute));
     return accumulator == null ? 0 : accumulator.requests.get();
   }
@@ -106,7 +107,7 @@ public class UsageMeterService {
     return out;
   }
 
-  private Uni<Void> upsert(Long nodeId, Drained d) {
+  private Uni<Void> upsert(UUID nodeId, Drained d) {
     return ApiUsageCounter.findByKey(d.key.principalType(), d.key.principalId(), nodeId, d.key.minute())
         .onItem().transformToUni(existing -> {
           if (existing != null) {
@@ -115,7 +116,7 @@ public class UsageMeterService {
             return existing.persistAndFlush().replaceWithVoid();
           }
           ApiUsageCounter counter = new ApiUsageCounter();
-          counter.id = idGenerator.generate(ApiUsageCounter.ID_GENERATOR_KEY);
+          counter.id = idGenerator.generate();
           counter.principalType = d.key.principalType();
           counter.principalId = d.key.principalId();
           counter.nodeId = nodeId;
@@ -126,7 +127,7 @@ public class UsageMeterService {
         });
   }
 
-  private record CounterKey(PrincipalKind principalType, Long principalId, Instant minute) {
+  private record CounterKey(PrincipalKind principalType, UUID principalId, Instant minute) {
   }
 
   private record Drained(CounterKey key, int requests, long cost) {

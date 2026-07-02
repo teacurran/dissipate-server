@@ -120,14 +120,14 @@ class GrpcDeveloperTest {
   void setScopesUnknownAppIsNotFound() throws Throwable {
     DeveloperService dev = asVerifiedOwner();
     assertEquals(Status.Code.NOT_FOUND, failureCode(dev.setScopes(
-        SetScopesRequest.newBuilder().setAppId(Long.toString(987654321L, 36)).addScopes("posts:read").build())));
+        SetScopesRequest.newBuilder().setAppId(java.util.UUID.randomUUID().toString()).addScopes("posts:read").build())));
   }
 
   @Test
   void rotateUnknownAppIsNotFound() throws Throwable {
     DeveloperService dev = asVerifiedOwner();
-    // Well-formed base-36 id that the owner has no app for.
-    String unknown = Long.toString(987654321L, 36);
+    // Well-formed UUID id that the owner has no app for.
+    String unknown = java.util.UUID.randomUUID().toString();
     assertEquals(Status.Code.NOT_FOUND,
         failureCode(dev.rotateSecret(RotateSecretRequest.newBuilder().setAppId(unknown).build())));
   }

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -20,12 +21,14 @@ class RateLimitConfigTest {
   }
 
   private static Principal app(String rateTier) {
-    return new Principal(null, null, null, Set.of(), 7L, rateTier);
+    return new Principal(null, null, null, Set.of(),
+        UUID.fromString("00000000-0000-0000-0000-000000000007"), rateTier);
   }
 
   @Test
   void usersGetTheUserCeiling() {
-    Principal user = new Principal(1L, null, AccountRole.USER, Set.of(), null, null);
+    Principal user = new Principal(UUID.fromString("00000000-0000-0000-0000-000000000001"),
+        null, AccountRole.USER, Set.of(), null, null);
     assertEquals(1200, config(1200, 600, Map.of()).limitFor(user));
   }
 

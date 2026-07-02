@@ -1,6 +1,6 @@
 package app.dissipate.services.audit;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.AuditEvent;
 import app.dissipate.data.models.AuditEventType;
 import app.dissipate.data.models.AuditOutcome;
@@ -21,15 +21,15 @@ import java.time.Instant;
 public class AuditService {
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   /**
-   * Persist a pre-populated audit event. Stamps the Snowflake id and (if unset) {@code occurredAt}.
+   * Persist a pre-populated audit event. Stamps the id and (if unset) {@code occurredAt}.
    * Must be called within an active reactive transaction.
    */
   @WithSpan("AuditService.record")
   public Uni<AuditEvent> record(AuditEvent event) {
-    event.id = snowflakeIdGenerator.generate(AuditEvent.ID_GENERATOR_KEY);
+    event.id = uuidGenerator.generate();
     if (event.occurredAt == null) {
       event.occurredAt = Instant.now();
     }

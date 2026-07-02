@@ -53,7 +53,7 @@ public class DissipateInternalServiceImpl implements DissipateInternalService {
     long uptimeSeconds = Duration.between(startedAt, Instant.now()).getSeconds();
     return Uni.createFrom().item(
       PingResponse.newBuilder()
-        .setServerId(currentServer.id)
+        .setServerId(currentServer.id.toString())
         .setUptimeSeconds(uptimeSeconds)
         .build()
     );

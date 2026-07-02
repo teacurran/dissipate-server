@@ -47,7 +47,7 @@ class GetSessionMethodTest {
     account.status = AccountStatus.ACTIVE;
     session.account = account;
     Identity identity = new Identity();
-    identity.id = 123L;
+    identity.id = UUID.fromString("00000000-0000-0000-0000-000000000123");
     session.identity = identity;
     session.created = Instant.parse("2026-01-02T03:04:05Z");
     session.updated = Instant.parse("2026-01-02T03:05:05Z");
@@ -56,7 +56,7 @@ class GetSessionMethodTest {
 
     assertEquals(session.id.toString(), response.getSid());
     assertEquals(app.dissipate.grpc.v1.AccountStatus.ACCOUNT_STATUS_ACTIVE, response.getStatus());
-    assertEquals(Long.toString(123L, 36), response.getIid());
+    assertEquals(session.identity.id.toString(), response.getIid());
     assertEquals(Instant.parse("2026-01-02T03:04:05Z").getEpochSecond(), response.getCreated().getSeconds());
     assertTrue(response.hasLastSeen());
   }

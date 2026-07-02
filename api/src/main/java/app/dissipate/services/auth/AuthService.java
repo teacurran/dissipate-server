@@ -5,7 +5,7 @@ import app.dissipate.api.rest.dto.AuthVerifyResponse;
 import app.dissipate.api.rest.error.ApiErrorFactory;
 import app.dissipate.api.rest.error.RestErrorCodes;
 import app.dissipate.api.rest.i18n.RequestLocale;
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.AccountStatus;
@@ -42,7 +42,7 @@ import java.util.UUID;
 public class AuthService {
 
   @Inject
-  SnowflakeIdGenerator snowflakeIdGenerator;
+  UuidGenerator uuidGenerator;
 
   @Inject
   EncryptionUtil encryptionUtil;
@@ -95,14 +95,14 @@ public class AuthService {
           clientIp, userAgent, "email_exists", "{\"channel\":\"email\"}")
           .onItem().transform(a -> error(Response.Status.CONFLICT, RestErrorCodes.AUTH_EMAIL_EXISTS));
       }
-      return Account.createNewAnonymousAccount(requestLocale.getLocale(), emailToUse, snowflakeIdGenerator, encryptionUtil)
+      return Account.createNewAnonymousAccount(requestLocale.getLocale(), emailToUse, uuidGenerator, encryptionUtil)
         .onItem().transformToUni(account -> {
           Session session = new Session();
           session.account = account;
           session.clientIp = clientIp;
           return session.persistAndFlush().onItem().transformToUni(s -> {
             SessionValidation sv = new SessionValidation();
-            sv.id = snowflakeIdGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+            sv.id = uuidGenerator.generate();
             sv.session = s;
             sv.email = account.emails.get(0);
             sv.token = StringUtil.generateRandomString(SessionValidation.OTP_LENGTH);
@@ -141,7 +141,7 @@ public class AuthService {
         }
 
         UUID sessionId = sv.session.id;
-        Long accountId = sv.session.account != null ? sv.session.account.id : null;
+        UUID accountId = sv.session.account != null ? sv.session.account.id : null;
 
         if (sv.isExpired(now) || sv.attempts >= SessionValidation.MAX_OTP_ATTEMPTS) {
           return audit(AuditEventType.AUTH_VERIFY, AuditOutcome.FAILURE, accountId, sessionId, "SessionValidation",
@@ -209,8 +209,8 @@ public class AuthService {
     });
   }
 
-  private Uni<AuditEvent> audit(AuditEventType type, AuditOutcome outcome, Long actorAccountId, UUID sessionId,
-                                String targetType, Long targetId, String clientIp, String userAgent,
+  private Uni<AuditEvent> audit(AuditEventType type, AuditOutcome outcome, UUID actorAccountId, UUID sessionId,
+                                String targetType, UUID targetId, String clientIp, String userAgent,
                                 String reason, String metadata) {
     AuditEvent event = new AuditEvent();
     event.eventType = type;

@@ -1,6 +1,6 @@
 package app.dissipate.services.grpc;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.Account;
 import app.dissipate.data.models.AccountEmail;
 import app.dissipate.data.models.AccountRole;
@@ -27,7 +27,7 @@ import java.util.Locale;
 public class GrpcAuthTestSeeder {
 
   @Inject
-  SnowflakeIdGenerator idGenerator;
+  UuidGenerator idGenerator;
 
   @Inject
   EncryptionUtil encryptionUtil;
@@ -53,7 +53,7 @@ public class GrpcAuthTestSeeder {
           session.account = account;
           return session.persistAndFlush().onItem().transformToUni(saved -> {
             SessionValidation sv = new SessionValidation();
-            sv.id = idGenerator.generate(SessionValidation.ID_GENERATOR_KEY);
+            sv.id = idGenerator.generate();
             sv.session = saved;
             sv.token = "SEEDED";
             sv.validated = Instant.now();
@@ -98,7 +98,7 @@ public class GrpcAuthTestSeeder {
           owner.role = AccountRole.VERIFIED;
           return owner.persistAndFlush(encryptionUtil).onItem().transformToUni(savedOwner -> {
             ApiApp app = new ApiApp();
-            app.id = idGenerator.generate(ApiApp.ID_GENERATOR_KEY);
+            app.id = idGenerator.generate();
             app.ownerAccountId = savedOwner.id;
             app.clientId = clientId;
             app.clientSecretHash = encryptionUtil.sha256(clientSecret);

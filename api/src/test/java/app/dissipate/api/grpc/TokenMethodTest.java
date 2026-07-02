@@ -1,6 +1,6 @@
 package app.dissipate.api.grpc;
 
-import app.dissipate.data.jpa.SnowflakeIdGenerator;
+import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.models.ApiApp;
 import app.dissipate.data.models.ApiAppStatus;
 import app.dissipate.exceptions.ApiException;
@@ -33,7 +33,7 @@ class TokenMethodTest {
     TokenMethod method = new TokenMethod();
     method.encryptionUtil = ENC;
     method.localizationService = new LocalizationService();
-    method.snowflakeIdGenerator = Mockito.mock(SnowflakeIdGenerator.class);
+    method.uuidGenerator = Mockito.mock(UuidGenerator.class);
     method.tokenTtl = Duration.ofHours(1);
     return method;
   }
