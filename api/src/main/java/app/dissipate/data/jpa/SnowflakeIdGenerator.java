@@ -55,6 +55,11 @@ public class SnowflakeIdGenerator {
     return snowflake.nextId();
   }
 
+  /** Decode the region a Snowflake id was minted in (bits 15-19). This is the id's origin region. */
+  public static int regionOf(long id) {
+    return (int) ((id >>> Snowflake.REGION_SHIFT) & Snowflake.MAX_REGION_ID);
+  }
+
   static class Snowflake {
     static final int SEQUENCE_BITS = 5;   // 0-31
     static final int INSTANCE_BITS = 10;  // 0-1023
