@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,7 +34,7 @@ class UsageMeterFlushTest {
   @Inject
   ServerInstance serverInstance;
 
-  private Long awaitNodeId() throws InterruptedException {
+  private UUID awaitNodeId() throws InterruptedException {
     long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
     while (System.nanoTime() < deadline) {
       Server server = serverInstance.getCurrentServer();
@@ -45,15 +46,15 @@ class UsageMeterFlushTest {
     throw new IllegalStateException("current server not registered in time");
   }
 
-  private ApiUsageCounter counter(long principalId, Long nodeId, Instant minute) throws Throwable {
+  private ApiUsageCounter counter(UUID principalId, UUID nodeId, Instant minute) throws Throwable {
     return VertxContextSupport.subscribeAndAwait(() ->
         Panache.withSession(() -> ApiUsageCounter.findByKey(PrincipalKind.USER, principalId, nodeId, minute)));
   }
 
   @Test
   void flushUpsertsAndAccumulatesPerNodeMinute() throws Throwable {
-    Long nodeId = awaitNodeId();
-    long principalId = System.nanoTime(); // unique principal so the row is deterministic
+    UUID nodeId = awaitNodeId();
+    UUID principalId = UUID.randomUUID(); // unique principal so the row is deterministic
     Instant minute = Instant.now().truncatedTo(ChronoUnit.MINUTES);
     Principal user = new Principal(principalId, null, AccountRole.USER, Set.of(), null, null);
 
@@ -80,8 +81,8 @@ class UsageMeterFlushTest {
 
   @Test
   void scheduledFlushPersistsForTheCurrentNode() throws Throwable {
-    Long nodeId = awaitNodeId();
-    long principalId = System.nanoTime();
+    UUID nodeId = awaitNodeId();
+    UUID principalId = UUID.randomUUID();
     Instant minute = Instant.now().truncatedTo(ChronoUnit.MINUTES);
     meter.record(new Principal(principalId, null, AccountRole.USER, Set.of(), null, null), 4);
 

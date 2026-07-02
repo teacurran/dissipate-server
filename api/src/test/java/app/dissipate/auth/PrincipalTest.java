@@ -6,6 +6,8 @@ import app.dissipate.data.models.Identity;
 import app.dissipate.data.models.Session;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -24,12 +26,15 @@ class PrincipalTest {
 
   @Test
   void forSessionCarriesAccountRoleAndIdentity() {
+    UUID accountId = UUID.fromString("00000000-0000-0000-0000-000000001001");
+    UUID identityId = UUID.fromString("00000000-0000-0000-0000-000000002002");
+
     Account account = new Account();
-    account.id = 1001L;
+    account.id = accountId;
     account.role = AccountRole.VERIFIED;
 
     Identity identity = new Identity();
-    identity.id = 2002L;
+    identity.id = identityId;
 
     Session session = new Session();
     session.account = account;
@@ -39,8 +44,8 @@ class PrincipalTest {
 
     assertTrue(p.isAuthenticated());
     assertFalse(p.isApp());
-    assertEquals(1001L, p.accountId());
-    assertEquals(2002L, p.identityId());
+    assertEquals(accountId, p.accountId());
+    assertEquals(identityId, p.identityId());
     assertEquals(AccountRole.VERIFIED, p.role());
     assertTrue(p.hasRoleAtLeast(AccountRole.USER));
     assertTrue(p.hasRoleAtLeast(AccountRole.VERIFIED));
@@ -49,7 +54,8 @@ class PrincipalTest {
 
   @Test
   void appPrincipalIsAuthenticatedAndCarriesScopes() {
-    Principal app = new Principal(null, null, null, java.util.Set.of("posts:write"), 7L, "tier-1");
+    Principal app = new Principal(null, null, null, java.util.Set.of("posts:write"),
+        UUID.fromString("00000000-0000-0000-0000-000000000007"), "tier-1");
     assertTrue(app.isAuthenticated());
     assertTrue(app.isApp());
     assertTrue(app.hasScope("posts:write"));
@@ -59,8 +65,9 @@ class PrincipalTest {
 
   @Test
   void forAppParsesScopesIntoSetAndDefaultsEmpty() {
+    UUID appId = UUID.fromString("00000000-0000-0000-0000-000000000005");
     app.dissipate.data.models.ApiApp app = new app.dissipate.data.models.ApiApp();
-    app.id = 5L;
+    app.id = appId;
     app.rateTier = "tier";
     app.dissipate.data.models.ApiAppToken token = new app.dissipate.data.models.ApiAppToken();
     token.apiApp = app;
@@ -68,7 +75,7 @@ class PrincipalTest {
     token.scopes = "posts:read   posts:write";
     Principal multi = Principal.forApp(token);
     assertTrue(multi.isApp());
-    assertEquals(5L, multi.appId());
+    assertEquals(appId, multi.appId());
     assertTrue(multi.hasScope("posts:read"));
     assertTrue(multi.hasScope("posts:write"));
 
@@ -88,7 +95,7 @@ class PrincipalTest {
   @Test
   void forSessionDefaultsToUserWhenRoleUnset() {
     Account account = new Account();
-    account.id = 5L;
+    account.id = UUID.fromString("00000000-0000-0000-0000-000000000005");
     account.role = null;
 
     Session session = new Session();

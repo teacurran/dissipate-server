@@ -79,9 +79,13 @@ class PrincipalResolverTest {
   /** A non-UUID token so authorize() routes to the app-token path. */
   private static final String APP_TOKEN = "opaque-app-token-not-a-uuid";
 
+  private static final UUID APP_ID = UUID.fromString("00000000-0000-0000-0000-000000000007");
+  private static final UUID ACCOUNT_ID = UUID.fromString("00000000-0000-0000-0000-000000004242");
+  private static final UUID IDENTITY_ID = UUID.fromString("00000000-0000-0000-0000-000000000099");
+
   private static ApiAppToken appToken(String scopes, ApiAppStatus status, Instant expiresAt) {
     ApiApp app = new ApiApp();
-    app.id = 7L;
+    app.id = APP_ID;
     app.status = status;
     app.rateTier = "default";
     ApiAppToken token = new ApiAppToken();
@@ -102,10 +106,10 @@ class PrincipalResolverTest {
 
   private static Session session(AccountRole role) {
     Account account = new Account();
-    account.id = 4242L;
+    account.id = ACCOUNT_ID;
     account.role = role;
     Identity identity = new Identity();
-    identity.id = 99L;
+    identity.id = IDENTITY_ID;
     Session session = new Session();
     session.account = account;
     session.identity = identity;
@@ -187,7 +191,7 @@ class PrincipalResolverTest {
           .awaitItem().getItem();
 
       assertTrue(principal.isApp());
-      assertEquals(7L, principal.appId());
+      assertEquals(APP_ID, principal.appId());
       assertTrue(principal.hasScope("posts:write"));
       assertNull(resolver.session());
     }
@@ -263,8 +267,8 @@ class PrincipalResolverTest {
       Principal principal = resolver.authorize().subscribe().withSubscriber(UniAssertSubscriber.create())
           .awaitItem().getItem();
 
-      assertEquals(4242L, principal.accountId());
-      assertEquals(99L, principal.identityId());
+      assertEquals(ACCOUNT_ID, principal.accountId());
+      assertEquals(IDENTITY_ID, principal.identityId());
       assertTrue(principal.hasRoleAtLeast(AccountRole.VERIFIED));
       assertEquals(AccountRole.VERIFIED, resolver.session().account.role);
     }
@@ -348,7 +352,7 @@ class PrincipalResolverTest {
 
       Principal principal = resolver.authorize().subscribe().withSubscriber(UniAssertSubscriber.create())
           .awaitItem().getItem();
-      assertEquals(4242L, principal.accountId());
+      assertEquals(ACCOUNT_ID, principal.accountId());
     }
   }
 }
