@@ -70,7 +70,7 @@ public class UsageMeterService {
   }
 
   /** Drain and upsert this node's pending deltas. Must run inside a reactive transaction/session. */
-  Uni<Void> flushTo(Long nodeId) {
+  Uni<Void> flushTo(UUID nodeId) {
     List<Drained> drained = drain();
     if (drained.isEmpty()) {
       return Uni.createFrom().voidItem();
@@ -107,7 +107,7 @@ public class UsageMeterService {
     return out;
   }
 
-  private Uni<Void> upsert(Long nodeId, Drained d) {
+  private Uni<Void> upsert(UUID nodeId, Drained d) {
     return ApiUsageCounter.findByKey(d.key.principalType(), d.key.principalId(), nodeId, d.key.minute())
         .onItem().transformToUni(existing -> {
           if (existing != null) {

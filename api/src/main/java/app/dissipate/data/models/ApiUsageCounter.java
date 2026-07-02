@@ -40,7 +40,7 @@ public class ApiUsageCounter extends DefaultPanacheEntityWithTimestamps {
   public UUID principalId;
 
   @Column(name = "node_id", nullable = false)
-  public Long nodeId;
+  public UUID nodeId;
 
   /** Start of the minute bucket (UTC), truncated to the minute. */
   @Column(nullable = false)
@@ -61,7 +61,7 @@ public class ApiUsageCounter extends DefaultPanacheEntityWithTimestamps {
   }
 
   /** This node's counter row for the given principal + minute, or null if not yet created. */
-  public static Uni<ApiUsageCounter> findByKey(PrincipalKind principalType, UUID principalId, Long nodeId, Instant minute) {
+  public static Uni<ApiUsageCounter> findByKey(PrincipalKind principalType, UUID principalId, UUID nodeId, Instant minute) {
     return find("#" + QUERY_BY_KEY, Parameters.with("principalType", principalType)
         .and("principalId", principalId).and("nodeId", nodeId).and("minute", minute)).firstResult();
   }

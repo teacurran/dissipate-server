@@ -93,12 +93,12 @@ public class ChatNotificationService {
   }
 
   private Uni<Void> dispatchToNodes(List<Session> sessions, UUID chatId, UUID senderIdentityId, UUID eventId) {
-    Map<Long, List<Session>> sessionsByServer = sessions.stream()
+    Map<UUID, List<Session>> sessionsByServer = sessions.stream()
       .collect(Collectors.groupingBy(s -> s.connectedServer.id));
 
     List<Uni<Void>> dispatches = sessionsByServer.entrySet().stream()
       .map(entry -> {
-        Long serverId = entry.getKey();
+        UUID serverId = entry.getKey();
         List<String> sessionIds = entry.getValue().stream()
           .map(s -> s.id.toString())
           .toList();

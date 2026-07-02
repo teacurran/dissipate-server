@@ -2,6 +2,7 @@ package app.dissipate.data.models;
 
 import app.dissipate.data.jpa.UuidGenerator;
 import app.dissipate.data.jpa.converters.EncryptedStringConverter;
+import app.dissipate.data.jpa.converters.RegionConverter;
 import app.dissipate.utils.EncryptionUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
@@ -19,7 +20,14 @@ import java.util.Locale;
 public class Account extends DefaultPanacheEntityWithTimestamps {
 
 
-  public int region;
+  /**
+   * The account's source-of-truth region — where its identity, logins, sessions, and payments
+   * live. Data locality is a property of the account (re-homeable by changing this column), not
+   * of an id. Nullable until assigned at signup.
+   */
+  @Convert(converter = RegionConverter.class)
+  @Column(name = "home_region", length = 16)
+  public Region homeRegion;
 
   public AccountStatus status;
 

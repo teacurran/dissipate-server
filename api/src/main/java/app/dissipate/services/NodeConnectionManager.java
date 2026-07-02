@@ -12,6 +12,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import org.jboss.logging.Logger;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -20,7 +21,7 @@ public class NodeConnectionManager {
 
   private static final Logger LOGGER = Logger.getLogger(NodeConnectionManager.class);
 
-  private final ConcurrentHashMap<Long, ClientEntry> clients = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<UUID, ClientEntry> clients = new ConcurrentHashMap<>();
 
   public Uni<NotifyChatUpdateResponse> sendNotification(Server server, NotifyChatUpdateRequest request) {
     var stub = getStub(server);
@@ -44,7 +45,7 @@ public class NodeConnectionManager {
     return entry.stub;
   }
 
-  public void evict(Long serverId) {
+  public void evict(UUID serverId) {
     ClientEntry entry = clients.remove(serverId);
     if (entry != null) {
       LOGGER.infov("Evicting gRPC channel for server {0}", serverId);
